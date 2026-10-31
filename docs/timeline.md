@@ -147,6 +147,10 @@ testsrc2 440 Hz, horizontal smptebars 660 Hz, horizontal hue-shifted testsrc2 33
   has audio (silence is generated if not).
 - **Captions/text need libass** (`subtitles` filter): present in the Docker image (Debian ffmpeg),
   missing in Homebrew ffmpeg; without it a render with captions/text fails with a clear message.
+- **Caption fonts**: the Docker image installs Hanken Grotesk (the default) and the brand
+  `CAPTION_FONTS` (Inter, Montserrat, Poppins, Bebas Neue, Anton, Roboto) from google/fonts,
+  pinned by sha256 (`apps/worker/Dockerfile`); libass picks them by family name. Any other name
+  falls back to DejaVu Sans.
 
 ## FFmpeg mapping
 Output: H.264 (`veryfast`, CRF 20, yuv420p) + AAC 160k, `+faststart`, 30 fps, `-t` = sum of segments.
