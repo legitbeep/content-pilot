@@ -6,6 +6,8 @@ covers:
   - apps/worker/tests/fixtures
   - apps/worker/ranking.py
   - apps/worker/seeds/clips.py
+  - apps/worker/loops/cleanup.py
+  - apps/web/src/lib/entities/clip
 last_updated: 2026-11-01
 ---
 # Pipeline
@@ -118,12 +120,14 @@ brand_fit question; answer it in the Queue and run again → B done, reasons ech
 `pnpm seed:clips:clean` deletes exactly these jobs and their R2 objects.
 
 ## Cleanup (not a step)
-`cleanup_source.py` runs from the worker's cleanup sweep, not from `STEPS`. Trigger: the user
+`cleanup_source.py` runs from the worker's cleanup loop (`loops/cleanup.py`, every 30s; one line in
+`main.py`; `python -m worker.run_once cleanup <job_id>` runs one due job), not from `STEPS`. Trigger: the user
 clicks **Proceed with editing** in the Clip Picker (`jobs.proceeded_at`), or 48h after
 `finished_at`, whichever first. Query: `status = 'done' and source_deleted_at is null and
 (proceeded_at is not null or finished_at < now() - interval '48 hours')`.
-Deletes the source video and every clip file where `selected = false` (sets their `file_key`
-to null; rows stay as a negative signal for brand memory), then sets `source_deleted_at`.
+Deletes the source video and every clip file + thumbnail where `selected = false` (sets their
+`file_key`/`thumb_key` to null; rows stay as a negative signal for brand memory), then sets
+`source_deleted_at`.
 Missing objects count as deleted (idempotent). Selected clips keep their files for rendering.
 
 `worker/r2.py` helpers: `presigned_get`, `put_json`, `exists`, `upload_file(path, key, content_type)`,

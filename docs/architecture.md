@@ -30,7 +30,7 @@ flowchart LR
   Vercel project `clip-studio`, production `https://clip-studio-pi.vercel.app`): UI, auth session, presigning uploads, BYOK save +
   validation, editor agent (server routes), enqueueing jobs/renders. Never touches video bytes.
 - **apps/worker** (Python, Docker, FFmpeg): one loop that claims queue jobs, runs the pipeline,
-  renders timelines, publishes scheduled posts, collects metric checkpoints.
+  renders timelines, publishes scheduled posts, cleans up sources after picking, collects metric checkpoints.
 - **packages/timeline-schema**: the contract between editor and renderer.
 - **packages/llm-registry**: model registry + response fixtures shared by both LLM adapters
   (`docs/llm.md`).

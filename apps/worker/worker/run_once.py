@@ -5,7 +5,7 @@ import sys
 from collections.abc import Callable
 
 import main
-from loops import publisher, render
+from loops import cleanup, publisher, render
 
 
 def run_job(job_id: str) -> str:
@@ -20,6 +20,7 @@ HANDLERS: dict[str, Callable[[str], str]] = {
     "job": run_job,
     "render": render.run_once,
     "post": publisher.run_once,
+    "cleanup": cleanup.run_once,
 }
 
 

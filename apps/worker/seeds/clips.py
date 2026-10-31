@@ -8,7 +8,9 @@
 `pnpm seed:clips:run`    run the real pipeline on A and B (probe, nsfw image model, steps, ffmpeg
                            cuts, R2, DB) with a FAKE LLM: A ends done (open the Clip Picker),
                            B asks the brand_fit question. Answer it in the Queue, then run again:
-                           B ends done with reasons that echo your answer.
+                           B ends done with reasons that echo your answer. Without AI keys the
+                           Queue can't answer (409): `pnpm seed:clips:run --answer "Critique or
+                           contrast it"` does what the Queue's answer action does, then runs.
 `pnpm seed:clips:clean`  delete exactly these jobs (cascade: clips, timelines, clip_feedback) and
                            their R2 objects.
 Ids are uuid5 of the user, so re-running resets the same rows.
@@ -261,6 +263,18 @@ def fake_clips(prompt: str) -> list[dict]:
     return out
 
 
+def answer(uid: str, text: str) -> None:
+    """Same writes as the web `?/answer` action for a brand_fit question."""
+    with db.connect() as c:
+        c.execute(
+            """update jobs set status = 'pending', user_intent = %(a)s,
+                 input_request = input_request || jsonb_build_object('answer', %(a)s::text)
+               where id = %(id)s and user_id = %(uid)s and status = 'needs_input'
+                 and input_request->>'kind' = 'brand_fit'""",
+            {"a": text, "id": job_id(uid, "b"), "uid": uid},
+        )
+
+
 def run() -> None:
     import main
     from pipeline import brand_fit, extract_clips, nsfw_check
@@ -273,6 +287,8 @@ def run() -> None:
         print("NSFW model missing (pnpm nsfw:model); using zero frame scores")
         nsfw_check.frame_scores = lambda url: [0.0]  # type: ignore[assignment]
     uid = user_id()
+    if "--answer" in sys.argv:
+        answer(uid, sys.argv[sys.argv.index("--answer") + 1])
     for label, *_ in JOBS:
         jid = job_id(uid, label)
         with db.connect() as c:  # claim by id without the per-user limit (slots hold it)

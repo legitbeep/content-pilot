@@ -5,6 +5,7 @@
 	import { StatusBadge } from '$lib/shared/ui/status-badge';
 	import { Timecode } from '$lib/shared/ui/timecode';
 	import { can, stepLabels, type Job, type Transcript } from '$lib/entities/job';
+	import { RequiresAI } from '$lib/entities/api-key';
 
 	let {
 		job,
@@ -114,17 +115,24 @@
 							</ul>
 						{/if}
 						{#if job.input_request?.options?.length}
-							<div class="flex flex-wrap gap-2">
-								{#each job.input_request.options as option (option)}
-									<Button
-										size="sm"
-										variant="outline"
-										onclick={() =>
-											option === 'Cancel' ? ondelete(job) : run('answer', job, { answer: option })}
-										>{option}</Button
-									>
-								{/each}
-							</div>
+							<!-- Answering re-runs AI steps; Cancel (= delete) never needs a key. -->
+							<RequiresAI need={['llm', 'transcription']}>
+								{#snippet children({ disabled })}
+									<div class="flex flex-wrap gap-2">
+										{#each job.input_request?.options ?? [] as option (option)}
+											<Button
+												size="sm"
+												variant="outline"
+												disabled={disabled && option !== 'Cancel'}
+												onclick={() =>
+													option === 'Cancel'
+														? ondelete(job)
+														: run('answer', job, { answer: option })}>{option}</Button
+											>
+										{/each}
+									</div>
+								{/snippet}
+							</RequiresAI>
 						{/if}
 						{#if !job.input_request?.options?.length || job.input_request.allow_text}
 							<Textarea
@@ -135,9 +143,14 @@
 									: 'Your answer'}
 							/>
 							<div class="flex justify-end">
-								<Button onclick={() => run('answer', job, { answer })} disabled={!answer.trim()}
-									>Send answer</Button
-								>
+								<RequiresAI need={['llm', 'transcription']}>
+									{#snippet children({ disabled })}
+										<Button
+											onclick={() => run('answer', job, { answer })}
+											disabled={disabled || !answer.trim()}>Send answer</Button
+										>
+									{/snippet}
+								</RequiresAI>
 							</div>
 						{/if}
 					</section>

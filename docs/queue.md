@@ -45,7 +45,7 @@ queue form action loads the job and checks `can(status, action)` first, then wri
 | pending | drag to reorder, edit request (details sheet), delete |
 | processing | stop |
 | needs_input | open question (details sheet): one-click options from `input_request.options`, free text when `allow_text`, flagged time ranges (nsfw); "Cancel" deletes the job; delete |
-| done | open clips (`/clips?job=<id>`, placeholder) |
+| done | open clips (`/clips/<id>`, the Clip Picker) |
 | stopped | re-queue, delete |
 | failed | retry, delete, error shown in the details sheet (user message + "Show details") |
 
@@ -124,7 +124,8 @@ root) processes one item and exits. Needs `DATABASE_URL` etc. in the environment
 (`claim_job(job_id)`: still must be `pending` and under the per-user limit), runs `process`, prints
 `job <id>: <status>`, and exits 1 if the job failed or could not be claimed, 2 on bad arguments.
 Kind `render` claims that clip if `render_status = 'queued'` and renders it (`loops/render.py`,
-`docs/timeline.md`). Kind `post` runs the publisher for one scheduled post (`docs/publishing.md`).
+`docs/timeline.md`). Kind `post` runs the publisher for one scheduled post (`docs/publishing.md`). Kind `cleanup`
+runs `cleanup_source` for one due job (`docs/pipeline.md`).
 Later kinds (checkpoint) add one entry to `HANDLERS` in `worker/run_once.py`.
 Like every worker module, it starts with `# Docs: docs/queue.md`.
 
