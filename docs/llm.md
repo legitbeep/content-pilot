@@ -80,11 +80,11 @@ plus transcription models. Web imports it via `@clip-studio/llm-registry`. The w
 build only sees `apps/worker`, so `pnpm gen:llm-registry` copies it to
 `apps/worker/worker/llm/registry.json`; `tests/test_llm.py` fails if the copies differ.
 
-Checked 2026-10-31 (sources in `registry.json` → `sources`):
+Checked 2026-11-01 (sources in `registry.json` → `sources`):
 | Provider | smart | fast | Notes |
 |---|---|---|---|
 | Claude | `claude-opus-5-5` | `claude-haiku-5-5` | 1M context; Opus always thinks (counts against `max_tokens`); prefill not supported |
-| Gemini | `gemini-4-argon` | `gemini-3.8-flash` | 1,048,576 input; thinking tokens counted as output |
+| Gemini | `gemini-3.5-flash-lite` | `gemini-3.5-flash-lite` | 1,048,576 input; thinking tokens counted as output. both tiers downgraded (smart from `gemini-4-argon`, fast from `gemini-3.8-flash`) to cut demo-key cost (2026-11-01) |
 | Groq | `openai/gpt-oss-120b` | `openai/gpt-oss-20b` | 131,072 context incl. output |
 
 ## Which key is used (ADR 0008)

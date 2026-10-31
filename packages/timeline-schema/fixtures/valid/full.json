@@ -48,7 +48,8 @@
 			"color": "#F5C842",
 			"position": "bottom",
 			"size": "large",
-			"wordsPerChunk": 2
+			"wordsPerChunk": 2,
+			"effect": "box"
 		}
 	},
 	"textOverlays": [

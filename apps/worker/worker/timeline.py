@@ -48,6 +48,7 @@ class CaptionStyle(_Strict):
     position: Position
     size: Literal["small", "medium", "large"]
     wordsPerChunk: int = Field(ge=1, le=5)  # noqa: N815
+    effect: Literal["outline", "shadow", "box"] = "outline"  # absent in older timelines
 
 
 class Captions(_Strict):

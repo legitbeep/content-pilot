@@ -70,7 +70,7 @@
 		void feedback(c, 'rejected', reason);
 	}
 
-	/** X / checkbox: selecting approves; unselecting just clears it (no feedback row). */
+	/** X / ✓: selecting approves; unselecting just clears it (no feedback row). */
 	function toggle(c: ClipCandidate) {
 		if (selected.has(c.id)) selected.delete(c.id);
 		else approve(c);
@@ -158,14 +158,6 @@
 					)}
 				>
 					<div class="flex gap-3">
-						<input
-							type="checkbox"
-							class="mt-1 size-4 accent-primary"
-							checked={on}
-							disabled={!c.file_key}
-							aria-label={on ? 'Unselect clip' : 'Select clip'}
-							onchange={() => toggle(c)}
-						/>
 						<button
 							class="flex min-w-0 flex-1 gap-3 text-left"
 							onclick={() => (focusId = c.id)}
@@ -194,16 +186,19 @@
 							</div>
 						</button>
 						<div class="flex shrink-0 flex-col items-end justify-between gap-2">
-							<span class="font-mono text-xs text-muted-foreground" title="Ranking score"
-								>{pct(c.ranking_score)}</span
-							>
+							{#if c.ranking_score !== null}
+								<span class="text-xs text-muted-foreground" title="Ranking score">
+									Score: <span class="font-mono">{pct(c.ranking_score)}/100</span>
+								</span>
+							{/if}
 							<div class="flex gap-1">
 								<Button
 									size="icon-sm"
-									variant={d?.decision === 'approved' ? 'secondary' : 'ghost'}
+									variant={on ? 'secondary' : 'ghost'}
 									disabled={!c.file_key}
-									aria-label="Approve"
-									onclick={() => approve(c)}><CheckIcon /></Button
+									aria-label={on ? 'Unselect clip' : 'Select clip'}
+									aria-pressed={on}
+									onclick={() => toggle(c)}><CheckIcon /></Button
 								>
 								<Button
 									size="icon-sm"
@@ -216,7 +211,7 @@
 						</div>
 					</div>
 					{#if rejecting === c.id}
-						<div class="flex flex-wrap gap-1.5 pl-7">
+						<div class="flex flex-wrap gap-1.5">
 							{#each REJECT_REASONS as reason (reason)}
 								<Button size="xs" variant="outline" onclick={() => reject(c, reason)}
 									>{reason}</Button
@@ -243,7 +238,12 @@
 						}}><track kind="captions" /></video
 					>
 				{/key}
-				{#if focused.description}<p class="text-muted-foreground">{focused.description}</p>{/if}
+				{#if focused.description}
+					<div class="flex flex-col gap-1">
+						<h3 class="text-sm font-medium">Summary</h3>
+						<p class="text-muted-foreground">{focused.description}</p>
+					</div>
+				{/if}
 				{#if Object.keys(focused.scores).length}
 					<dl class="grid grid-cols-[1fr_auto] gap-y-0.5 text-xs text-muted-foreground">
 						{#each Object.entries(focused.scores) as [k, v] (k)}

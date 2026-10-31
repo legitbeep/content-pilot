@@ -31,6 +31,7 @@
 	];
 	const positions = ['top', 'center', 'bottom'] as const;
 	const sizes = ['small', 'medium', 'large'] as const;
+	const effects = { outline: 'Outline', shadow: 'Soft shadow', box: 'Background box' } as const;
 	const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 
 	let overlayText = $state('');
@@ -263,6 +264,20 @@
 				<Select.Content>
 					{#each [1, 2, 3, 4, 5] as n (n)}
 						<Select.Item value={String(n)}>{n} words</Select.Item>
+					{/each}
+				</Select.Content>
+			</Select.Root>
+			<Select.Root
+				type="single"
+				value={t.captions.style.effect ?? 'outline'}
+				onValueChange={(v) => editor.apply('set_caption_style', { effect: v })}
+			>
+				<Select.Trigger class="w-full" aria-label="Caption effect">
+					{effects[t.captions.style.effect ?? 'outline']}
+				</Select.Trigger>
+				<Select.Content>
+					{#each Object.entries(effects) as [value, label] (value)}
+						<Select.Item {value}>{label}</Select.Item>
 					{/each}
 				</Select.Content>
 			</Select.Root>

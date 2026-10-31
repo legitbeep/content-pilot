@@ -70,13 +70,16 @@ async function foreignKeys(supabase: SupabaseClient, userId: string, keys: strin
 
 export const load: PageServerLoad = async ({ params, locals: { supabase, user } }) => {
 	const { clip, clips } = await session(supabase, params.clipId);
-	const timeline = await ensureTimeline(supabase, user!.id, clip);
+	const [timeline, { data: job }] = await Promise.all([
+		ensureTimeline(supabase, user!.id, clip),
+		supabase.from('jobs').select('title').eq('id', clip.job_id).maybeSingle()
+	]);
 	const keys = new Set(clips.map((c) => c.file_key!).filter(Boolean));
 	for (const k of timeline ? timelineKeys(timeline.data) : []) keys.add(k);
 	const urls = Object.fromEntries(
 		await Promise.all([...keys].map(async (k) => [k, await presignGet(k)] as const))
 	);
-	return { clip, clips, timeline, urls };
+	return { clip, clips, timeline, urls, sourceName: job?.title ?? 'original audio' };
 };
 
 const Events = z

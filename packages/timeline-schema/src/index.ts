@@ -28,7 +28,9 @@ export const CaptionStyle = z.strictObject({
 	color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
 	position,
 	size: z.enum(['small', 'medium', 'large']),
-	wordsPerChunk: z.number().int().min(1).max(5)
+	wordsPerChunk: z.number().int().min(1).max(5),
+	/** Text look; absent = 'outline'. */
+	effect: z.enum(['outline', 'shadow', 'box']).optional()
 });
 export const TextOverlay = z
 	.strictObject({ ...range, text: z.string().min(1), position })

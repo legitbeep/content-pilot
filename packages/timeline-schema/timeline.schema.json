@@ -81,7 +81,8 @@
 						"color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
 						"position": { "$ref": "#/$defs/position" },
 						"size": { "enum": ["small", "medium", "large"] },
-						"wordsPerChunk": { "type": "integer", "minimum": 1, "maximum": 5 }
+						"wordsPerChunk": { "type": "integer", "minimum": 1, "maximum": 5 },
+						"effect": { "enum": ["outline", "shadow", "box"], "description": "Text look: outline (default), soft drop shadow, or a rounded dark box behind the text" }
 					}
 				}
 			}

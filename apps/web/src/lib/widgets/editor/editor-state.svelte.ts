@@ -26,6 +26,9 @@ export type Selection = { kind: 'segment'; index: number } | { kind: 'audio'; id
 
 const AUTOSAVE_MS = 800;
 
+/** DataTransfer type of a session clip dragged from the clip list onto the timeline. */
+export const CLIP_DRAG_TYPE = 'application/x-clip-id';
+
 export class EditorState {
 	history: History<Timeline> = $state.raw()!;
 	revision = $state(0);
@@ -35,6 +38,11 @@ export class EditorState {
 	selected: Selection = $state(null);
 	markIn: number | null = $state(null);
 	markOut: number | null = $state(null);
+	/** Preview-only playback volume (0..1) and mute; never saved to the timeline. */
+	volume = $state(1);
+	previewMuted = $state(false);
+	/** True while the user drags the playhead: the preview shows frames only (no audio). */
+	scrubbing = $state(false);
 	/** R2 key → presigned GET URL (session clip files, timeline audio, new uploads). */
 	urls: Record<string, string> = $state({});
 	/** R2 key → media duration (s), filled as the preview loads metadata. */

@@ -11,7 +11,7 @@
 	import { StatusBadge } from '$lib/shared/ui/status-badge';
 	import { TopbarActions } from '$lib/shared/ui/topbar-actions';
 	import { cn } from '$lib/shared/lib/utils';
-	import { EditorState } from './editor-state.svelte';
+	import { CLIP_DRAG_TYPE, EditorState } from './editor-state.svelte';
 	import Preview from './preview.svelte';
 	import Tracks from './tracks.svelte';
 	import Properties from './properties.svelte';
@@ -25,13 +25,16 @@
 		clips,
 		timeline,
 		revision,
-		urls
+		urls,
+		sourceName
 	}: {
 		clip: EditorClip;
 		clips: EditorClip[];
 		timeline: Timeline;
 		revision: number;
 		urls: Record<string, string>;
+		/** The original video's name (job title). */
+		sourceName: string;
 	} = $props();
 
 	// svelte-ignore state_referenced_locally (the route re-creates this component per clip)
@@ -77,7 +80,8 @@
 		});
 	}
 
-	async function upload(kind: 'voiceover' | 'music' | 'video', file: File) {
+	/** `at` = segment index for a video, output time for a voiceover (defaults: end / playhead). */
+	async function upload(kind: 'voiceover' | 'music' | 'video', file: File, at?: number) {
 		uploading = kind;
 		try {
 			const length = kind === 'video' ? await mediaDuration(file) : 0;
@@ -91,9 +95,9 @@
 			editor.urls[r.key] = r.getUrl;
 			if (kind === 'video') {
 				editor.durations[r.key] = length;
-				editor.apply('merge_clip', { sourceKey: r.key, start: 0, end: length });
+				editor.apply('merge_clip', { sourceKey: r.key, start: 0, end: length, at });
 			} else {
-				const start = kind === 'voiceover' ? editor.playhead : 0;
+				const start = kind === 'voiceover' ? (at ?? editor.playhead) : 0;
 				editor.apply('add_audio', { kind, key: r.key, start });
 			}
 		} catch (e) {
@@ -103,13 +107,25 @@
 		}
 	}
 
-	function mergeClip(c: EditorClip) {
+	function mergeClip(c: EditorClip, at?: number) {
 		if (!c.file_key || c.file_start_s === null) return;
 		editor.apply('merge_clip', {
 			sourceKey: c.file_key,
 			start: c.start_s - c.file_start_s,
-			end: c.end_s - c.file_start_s
+			end: c.end_s - c.file_start_s,
+			at
 		});
+	}
+
+	/** Timeline drop: a session clip or a video goes in as a segment at the nearest cut; an
+	 * audio file becomes a voiceover starting where it was dropped. */
+	function dropOnTimeline(d: { clipId?: string; file?: File; time: number; at: number }) {
+		if (d.clipId) {
+			const c = clips.find((x) => x.id === d.clipId);
+			if (c) mergeClip(c, d.at);
+		} else if (d.file?.type.startsWith('video/')) void upload('video', d.file, d.at);
+		else if (d.file?.type.startsWith('audio/')) void upload('voiceover', d.file, d.time);
+		else if (d.file) toast.error('Drop a video or audio file.');
 	}
 
 	async function saveAndRender() {
@@ -219,8 +235,16 @@
 			<div
 				class={cn(
 					'flex flex-col gap-1.5 rounded-md border p-2',
-					c.id === clip.id ? 'border-border-strong bg-elevated' : 'border-transparent'
+					c.id === clip.id ? 'border-border-strong bg-elevated' : 'border-transparent',
+					c.id !== clip.id && 'cursor-grab'
 				)}
+				draggable={c.id !== clip.id}
+				ondragstart={(e) => {
+					e.dataTransfer?.setData(CLIP_DRAG_TYPE, c.id);
+					if (e.dataTransfer) e.dataTransfer.effectAllowed = 'copy';
+				}}
+				role="listitem"
+				title={c.id !== clip.id ? 'Drag onto the timeline to add it' : undefined}
 			>
 				<button
 					type="button"
@@ -258,7 +282,7 @@
 	</aside>
 
 	<div class="col-span-2">
-		<Tracks {editor} {wordsByKey} />
+		<Tracks {editor} {wordsByKey} {sourceName} ondrop={dropOnTimeline} />
 	</div>
 </div>
 

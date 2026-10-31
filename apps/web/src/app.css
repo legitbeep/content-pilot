@@ -19,6 +19,7 @@
 	--success: #4cc38a;
 	--danger: #f2555a;
 	--info: #5e9eff;
+	--caption: #a78bfa; /* editor caption track */
 	--warning: var(--accent);
 
 	/* shadcn-svelte semantic vars, mapped onto the raw tokens. */
@@ -84,6 +85,7 @@
 	--color-success: var(--success);
 	--color-danger: var(--danger);
 	--color-info: var(--info);
+	--color-caption: var(--caption);
 	--color-warning: var(--warning);
 
 	--font-sans: 'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif;

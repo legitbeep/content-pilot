@@ -286,7 +286,7 @@ export const ops = [
 	),
 	def(
 		'set_caption_style',
-		'Change caption font, colour (#RRGGBB), position, size or words per chunk.',
+		'Change caption font, colour (#RRGGBB), position, size, words per chunk or effect (outline, shadow, box).',
 		z.strictObject({
 			font: z.string().min(1).optional(),
 			color: z
@@ -295,7 +295,8 @@ export const ops = [
 				.optional(),
 			position: position.optional(),
 			size: z.enum(['small', 'medium', 'large']).optional(),
-			wordsPerChunk: z.number().int().min(1).max(5).optional()
+			wordsPerChunk: z.number().int().min(1).max(5).optional(),
+			effect: z.enum(['outline', 'shadow', 'box']).optional()
 		}),
 		false,
 		(t, a) => {

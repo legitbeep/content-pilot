@@ -1,5 +1,5 @@
 {
-	"checked": "2026-10-31",
+	"checked": "2026-11-01",
 	"tasks": {
 		"extract_clips": "smart",
 		"brand_fit": "smart",
@@ -33,12 +33,12 @@
 			"json_mode": "mime_type",
 			"tiers": {
 				"smart": {
-					"model": "gemini-4-argon",
+					"model": "gemini-3.5-flash-lite",
 					"max_input_tokens": 1048576,
 					"max_output_tokens": 32000
 				},
 				"fast": {
-					"model": "gemini-3.8-flash",
+					"model": "gemini-3.5-flash-lite",
 					"max_input_tokens": 1048576,
 					"max_output_tokens": 8000
 				}

@@ -89,6 +89,8 @@ Toasts: `toast()` from `svelte-sonner`; `<Toaster />` is mounted in the root lay
   Queue. Footer: avatar menu (Account, Sign out).
 - Main is `max-w-5xl`; a page that puts `data-full-width` on its root (the editor) gets full width.
 - Top bar: breadcrumbs (`crumbsFor()` in `nav.ts`), `TopbarActions` slot, search button (⌘K).
+- Loading bar: a thin `bg-info` pulse pinned to the top while a navigation is in flight
+  (`navigating.to`), so slow server loads (e.g. the Clip Picker presigning URLs) show the click landed.
 - Command palette (⌘/Ctrl+K): every nav route, "New job", "Open settings".
 - Shortcuts, defined only in `$lib/shared/config/shortcuts.ts`: ⌘K palette · ⌘B sidebar ·
   `?` shortcut sheet · `G` then `H/Q/C/B/S` → Home/Queue/Calendar/Brand memory/Settings.

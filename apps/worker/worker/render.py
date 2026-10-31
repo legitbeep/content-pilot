@@ -70,12 +70,19 @@ def build_ass(t: Timeline, words_by_key: dict[str, list[dict]]) -> str | None:
         f"Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, "
         f"BackColour, {fields}, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding"
     )
+    # effect -> (OutlineColour, BackColour, BorderStyle, Outline, Shadow). `box` is libass's opaque
+    # box (square corners; the preview rounds them), padded by its Outline width.
+    look = {
+        "outline": ("&H00000000", "&H80000000", 1, max(2, size // 12), 0),
+        "shadow": ("&H00000000", "&H60000000", 1, 0, max(2, size // 14)),
+        "box": ("&H59000000", "&H59000000", 3, max(4, size // 4), 0),
+    }[st.effect]
     styles = []
     for p, a in ALIGN.items():
         mv = 0 if p == "center" else margin
         styles.append(
-            f"Style: Caption-{p},{st.font},{size},{_ass_color(st.color)},&H00FFFFFF,&H00000000,"
-            f"&H80000000,-1,0,0,0,100,100,0,0,1,{max(2, size // 12)},0,{a},60,60,{mv},1"
+            f"Style: Caption-{p},{st.font},{size},{_ass_color(st.color)},&H00FFFFFF,{look[0]},"
+            f"{look[1]},-1,0,0,0,100,100,0,0,{look[2]},{look[3]},{look[4]},{a},60,60,{mv},1"
         )
         styles.append(
             f"Style: Overlay-{p},{st.font},{round(h * 0.05)},&H00FFFFFF,&H00FFFFFF,&H00000000,"
@@ -139,9 +146,13 @@ def build_command(
     for j, b in enumerate(t.blurRegions):
         bw, bh, bx, by = _even(b.w * w), _even(b.h * h), _even(b.x * w), _even(b.y * h)
         radius = max(1, min(20, min(bw, bh) // 4))
+        # Soft edge: alpha fades from the centre to the region's edge (an ellipse), not a hard box.
+        alpha = "255*clip(2*(1-hypot(2*X/W-1,2*Y/H-1)),0,1)"
         graph.append(
             f"{v}split[base{j}][src{j}];[src{j}]crop={bw}:{bh}:{bx}:{by},"
-            f"boxblur={radius}:1[blur{j}];[base{j}][blur{j}]overlay={bx}:{by}"
+            f"boxblur={radius}:1,format=yuva420p,"
+            f"geq=lum='lum(X,Y)':cb='cb(X,Y)':cr='cr(X,Y)':a='{alpha}'[blur{j}];"
+            f"[base{j}][blur{j}]overlay={bx}:{by}"
             f":enable='between(t,{b.start},{b.end})'[vb{j}]"
         )
         v = f"[vb{j}]"

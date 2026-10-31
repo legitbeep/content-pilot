@@ -54,7 +54,9 @@ pydantic enforce them.
   output timeline, `volume` 0..2 (1 = unchanged). `ducking`: lower music under speech.
 - `captions`: burned-in captions. **Text is not stored**: it is derived from `clips.words` of each
   segment's source (words whose midpoint is inside the segment, mapped to output time, grouped
-  `wordsPerChunk` at a time, never across a cut). Same function in both mirrors.
+  `wordsPerChunk` at a time, never across a cut). Same function in both mirrors. Optional
+  `style.effect`: `outline` (default when absent, so older timelines stay valid) | `shadow` |
+  `box` (dark box behind the text).
 - `textOverlays`, `blurRegions`: times on the **output** timeline. Blur `x, y, w, h` are
   fractions (0..1) of the output frame.
 - `aspect`: `9:16` | `1:1` | `16:9`.
@@ -87,7 +89,7 @@ these as tools. Times: "output" = seconds on the edited clip; segment `start/end
 | `blur_region` | `{ start, end, x, y, w, h }` | |
 | `add_text_overlay` | `{ start, end, text, position = top }` | |
 | `toggle_captions` | `{ enabled }` | |
-| `set_caption_style` | `{ font?, color?, position?, size?, wordsPerChunk? }` | |
+| `set_caption_style` | `{ font?, color?, position?, size?, wordsPerChunk?, effect? }` | |
 
 `history.ts`: pure undo/redo stack (`initHistory`, `push`, `undo`, `redo`) of `{ value, summary }`.
 
@@ -116,7 +118,16 @@ and again by the worker).
   `GET /editor/[clipId]/renders` → session render status + presigned render URLs (polled by the
   finish dialog). First open of a clip without a timeline creates `newTimeline(...)`.
 - Preview is approximate (CSS crop via `object-position`, ducking = music at 35%, volume capped at
-  100%); the render is the truth.
+  100%); the render is the truth. The frame always fits the timeline's aspect (letterboxed, never
+  stretched to fill); clicking it plays/pauses. Seeks go through one "latest target" slot applied on
+  `seeked`/`loadedmetadata`, so fast scrubs never stack stale seeks or source swaps.
+- Tracks (`tracks.svelte`): transport bar (play/pause, time / total, preview mute + volume, full
+  screen; preview-only `EditorState.volume`/`previewMuted`, never saved). Lanes are at least 40px
+  per second and scroll sideways. Dragging the playhead pauses, sets `scrubbing` (frames only, one
+  seek per animation frame, audio re-syncs on release). One purple captions lane ("Captions for
+  <job title>") over the original audio, with cut markers; it follows cuts because chunks are
+  derived from the segments. Drop targets: a session clip dragged from the left list or a video
+  file → `merge_clip` at the nearest cut; an audio file → voiceover starting at the drop time.
 
 ## Seed data
 `pnpm seed:editor` (`apps/worker/seeds/editor.py`): for the dev-login user (or `SEED_EMAIL`), one
@@ -147,8 +158,8 @@ Output: H.264 (`veryfast`, CRF 20, yuv420p) + AAC 160k, `+faststart`, 30 fps, `-
 |---|---|
 | `segments` | one input per segment: `-ss start -t len -i <url>`; per segment crop/scale/`fps=30`/`trim`, audio `aformat` 48k stereo + `apad,atrim` (or `anullsrc` if the source has no audio); `concat=n=N:v=1:a=1` |
 | `aspect` + `cropX` | cover crop `crop=w='min(iw,ih*R)':h='min(ih,iw/R)':x='(iw-ow)*cropX':y='(ih-oh)/2'`, then `scale` to 9:16 1080x1920 · 1:1 1080x1080 · 16:9 1920x1080 |
-| `blurRegions` | per region `split` → `crop` → `boxblur` → `overlay=…:enable='between(t,s,e)'` (pixels from fractions of the output) |
-| `captions` + `textOverlays` | one `.ass` file (`build_ass`) → `subtitles=` (burned in). Captions: `captionChunks`, style font/colour/size (4.5/6/7.5% of height)/position (ASS alignment 2/5/8); overlays: white, 5% of height |
+| `blurRegions` | per region `split` → `crop` → `boxblur` → `geq` alpha fading from the centre to the region's edge (soft ellipse, not a hard box) → `overlay=…:enable='between(t,s,e)'` (pixels from fractions of the output) |
+| `captions` + `textOverlays` | one `.ass` file (`build_ass`) → `subtitles=` (burned in). Captions: `captionChunks`, style font/colour/size (4.5/6/7.5% of height)/position (ASS alignment 2/5/8), effect `outline` (border) · `shadow` (no border, drop shadow) · `box` (`BorderStyle=3`, 65% black, square corners; the preview rounds them); overlays: white, 5% of height |
 | `originalAudio` | `volume` on the concatenated audio (0 when muted) |
 | `audio` | per unmuted track `-i <url>`, `volume`, `adelay=start_ms:all=1`; voiceovers mix with the original (`amix duration=first normalize=0`) |
 | `ducking` | music bus → `sidechaincompress` keyed by the speech bus (threshold 0.02, ratio 8), then mixed |

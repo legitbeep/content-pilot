@@ -2,7 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import type { User } from '@supabase/supabase-js';
 	import { goto } from '$app/navigation';
-	import { page } from '$app/state';
+	import { navigating, page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import LogOutIcon from '@lucide/svelte/icons/log-out';
 	import UserIcon from '@lucide/svelte/icons/user';
@@ -52,6 +52,15 @@
 </script>
 
 <svelte:window {onkeydown} />
+
+<!-- Server loads (e.g. presigning clip URLs) can take a second; show the click registered. -->
+{#if navigating.to}
+	<div
+		class="fixed inset-x-0 top-0 z-50 h-0.5 bg-info motion-safe:animate-pulse"
+		role="progressbar"
+		aria-label="Loading page"
+	></div>
+{/if}
 
 <Sidebar.Provider open={sidebarOpen}>
 	<Sidebar.Root collapsible="icon">

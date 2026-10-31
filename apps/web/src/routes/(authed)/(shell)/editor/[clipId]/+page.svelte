@@ -16,6 +16,7 @@
 			timeline={data.timeline.data}
 			revision={data.timeline.revision}
 			urls={data.urls}
+			sourceName={data.sourceName}
 		/>
 	{/key}
 {:else}
