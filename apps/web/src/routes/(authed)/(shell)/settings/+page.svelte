@@ -3,6 +3,7 @@
 	import { PageHeader } from '$lib/shared/ui/page-header';
 	import { providers } from '$lib/entities/api-key';
 	import { AiPreferences, ApiKeyRow } from '$lib/features/api-keys';
+	import { PlatformConnections } from '$lib/features/platform-connections';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -55,4 +56,11 @@
 			<p class="mt-2 text-muted-foreground">No AI calls yet.</p>
 		{/if}
 	</div>
+</section>
+
+<section class="mt-10 flex max-w-2xl flex-col gap-4">
+	<PlatformConnections
+		connections={data.connections}
+		message={form && 'connectionMessage' in form ? form.connectionMessage : undefined}
+	/>
 </section>

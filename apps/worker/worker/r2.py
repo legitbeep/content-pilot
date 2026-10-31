@@ -48,3 +48,15 @@ def exists(key: str) -> bool:
         if e.response.get("Error", {}).get("Code") in ("404", "NoSuchKey", "NotFound"):
             return False
         raise
+
+
+def upload_file(key: str, path: str, content_type: str = "video/mp4") -> None:
+    _client().upload_file(path, _bucket(), key, ExtraArgs={"ContentType": content_type})
+
+
+def download_file(key: str, path: str) -> None:
+    _client().download_file(_bucket(), key, path)
+
+
+def delete(key: str) -> None:
+    _client().delete_object(Bucket=_bucket(), Key=key)
