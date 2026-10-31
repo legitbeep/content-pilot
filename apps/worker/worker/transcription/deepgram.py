@@ -7,7 +7,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-from worker.llm.errors import AIError
+from worker.llm.errors import USER_AGENT, AIError
 from worker.llm.registry import REGISTRY
 from worker.transcript import Transcript, from_deepgram
 
@@ -26,7 +26,11 @@ def transcribe(api_key: str, media_url: str) -> Transcript:
     req = urllib.request.Request(
         URL,
         data=json.dumps({"url": media_url}).encode(),
-        headers={"Authorization": f"Token {api_key}", "Content-Type": "application/json"},
+        headers={
+            "Authorization": f"Token {api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": USER_AGENT,
+        },
         method="POST",
     )
     try:

@@ -71,7 +71,8 @@ Started from `main.py` (one line, own thread). Every 60s `tick()` claims due pos
 and platform='youtube' and scheduled_at <= now() order by scheduled_at for update skip locked
 limit 1)`. Per post (`publish`), always scoped by `user_id`:
 1. Load `clips.render_path` and the `platform_connections` row; decrypt the refresh token.
-2. `worker/youtube.py` `access_token()` (refresh grant at `oauth2.googleapis.com/token`).
+2. `worker/youtube.py` `access_token()` (refresh grant at `oauth2.googleapis.com/token`). Every
+   request there sends `User-Agent: clip-studio-worker/1.0` (see `llm.md`).
 3. Download the render from R2 to a temp dir, ffprobe it. **Shorts**: YouTube classifies a
    video as a Short when it is vertical or square and ≤ 3 minutes (since 2024-10-15; no API flag).
    Those get `#Shorts` appended to the description (if absent) and a `youtube.com/shorts/<id>` URL.

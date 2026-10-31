@@ -107,12 +107,17 @@ records `user` or `demo`. A provider 401/403 on the user's own key sets `invalid
 | kind | When | Retried |
 |---|---|---|
 | `missing_key` | no usable key (see above) | no |
-| `invalid_key` | 401/403, Gemini 400 "API key not valid" | no |
+| `invalid_key` | 401/403 (except a Cloudflare block), Gemini 400 "API key not valid" | no |
 | `rate_limited` | 429; `retryAfter` from `retry-after` or Gemini `RetryInfo` | 2x |
 | `overloaded` | 498/502/503/504/529 | 2x |
 | `context_too_long` | 413 or "prompt is too long" / `context_length_exceeded` / … | no |
 | `content_blocked` | Claude `stop_reason: refusal`, Gemini block/SAFETY, Groq `content_filter` | no |
-| `unknown` | anything else, network errors, unreadable JSON after repair | no |
+| `unknown` | anything else, network errors, unreadable JSON after repair, a Cloudflare 403 (`error code: 10xx`) | no |
+
+Every outbound call sends `User-Agent: clip-studio-worker/1.0` (worker, `USER_AGENT` in
+`worker/llm/errors.py`, also used by `worker/youtube.py`) or `clip-studio-web/1.0` (web): Cloudflare
+in front of Groq 403s urllib's default UA with `error code: 1010`. That 403 never marks a key
+invalid (and key validation saves it as unverified).
 
 Retries wait `retryAfter` seconds or 1s, 2s; a `retryAfter` over 20s fails fast instead.
 Messages (same text in both languages, checked by the fixtures), e.g. "Your Groq key hit its rate

@@ -13,7 +13,7 @@ import urllib.request
 import uuid
 from pathlib import Path
 
-from worker.llm.errors import AIError
+from worker.llm.errors import USER_AGENT, AIError
 from worker.llm.registry import REGISTRY
 from worker.transcript import Transcript, Utterance, Word, _group_by_speaker
 
@@ -104,6 +104,7 @@ def _post(api_key: str, audio: Path) -> dict:
         headers={
             "Authorization": f"Bearer {api_key}",
             "Content-Type": f"multipart/form-data; boundary={boundary}",
+            "User-Agent": USER_AGENT,
         },
         method="POST",
     )

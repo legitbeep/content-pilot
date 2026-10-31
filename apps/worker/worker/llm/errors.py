@@ -2,6 +2,7 @@
 """Normalised AI errors. Mirror of apps/web/src/lib/server/llm/errors.ts; the shared fixtures
 (packages/llm-registry/fixtures/responses.json) check both produce the same messages."""
 
+import re
 from typing import Literal
 
 from .registry import provider_name
@@ -15,6 +16,11 @@ ErrorKind = Literal[
     "content_blocked",
     "unknown",
 ]
+
+# Sent on every outbound worker HTTP call: Cloudflare (in front of Groq) 403s urllib's default UA.
+USER_AGENT = "clip-studio-worker/1.0"
+# Cloudflare edge block ("error code: 1010" etc.): not the key's fault.
+CLOUDFLARE_BLOCK = re.compile(r"error code: 10\d\d")
 
 MISSING_KEY_MESSAGE = "Add an AI provider key in Settings to use this."
 

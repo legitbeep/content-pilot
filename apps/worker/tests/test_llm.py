@@ -180,3 +180,16 @@ def test_smoke_runs_text_and_json_per_provider(monkeypatch, capsys):
     out = capsys.readouterr().out
     assert out.count("groq (user)") == 4 and " json: ok" in out and " text: ok" in out
     assert f.calls[1][2]["response_format"]["type"] == "json_schema"
+
+
+def test_http_sends_user_agent(monkeypatch):
+    seen = {}
+
+    def fake_urlopen(req, timeout):
+        seen["ua"] = req.get_header("User-agent")
+        raise llm.urllib.error.URLError("stop")
+
+    monkeypatch.setattr(llm.urllib.request, "urlopen", fake_urlopen)
+    with pytest.raises(llm.urllib.error.URLError):
+        llm._http("https://x", {}, {})
+    assert seen["ua"] == errors.USER_AGENT

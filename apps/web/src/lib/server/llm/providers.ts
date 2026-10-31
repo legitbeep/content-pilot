@@ -2,7 +2,7 @@
 // Raw HTTP per LLM provider (no SDKs): build the request, interpret the response. Mirrored in
 // apps/worker/worker/llm/providers.py; both run packages/llm-registry/fixtures/responses.json.
 import type { LLMProvider, TierInfo } from '@clip-studio/llm-registry';
-import type { ErrorKind } from './errors';
+import { CLOUDFLARE_BLOCK, USER_AGENT, type ErrorKind } from './errors';
 
 export type Usage = { inputTokens: number; outputTokens: number };
 export type CallRequest = {
@@ -25,7 +25,7 @@ export function buildRequest(
 ): { url: string; init: RequestInit } {
 	const json = (headers: Record<string, string>, body: unknown): RequestInit => ({
 		method: 'POST',
-		headers: { 'content-type': 'application/json', ...headers },
+		headers: { 'content-type': 'application/json', 'user-agent': USER_AGENT, ...headers },
 		body: JSON.stringify(body)
 	});
 	switch (provider) {
@@ -161,6 +161,7 @@ export function interpret(
 		kind,
 		retryAfter
 	});
+	if (status === 403 && CLOUDFLARE_BLOCK.test(text)) return fail('unknown'); // edge block, not a bad key
 	if (status === 401 || status === 403 || (status === 400 && BAD_KEY.test(text)))
 		return fail('invalid_key');
 	if (status === 429) return fail('rate_limited', retryAfterOf(headers, body));

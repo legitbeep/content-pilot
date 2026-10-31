@@ -146,6 +146,7 @@ describe('generateText / generateJSON', () => {
 		const [url, init] = fetchMock.mock.calls[0];
 		expect(url).toContain('generativelanguage.googleapis.com');
 		expect(init.headers['x-goog-api-key']).toBe('server-gemini');
+		expect(init.headers['user-agent']).toBe('clip-studio-web/1.0');
 		expect(state.inserts[0]).toMatchObject({ table: 'llm_calls', key_source: 'demo', ok: true });
 	});
 

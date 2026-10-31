@@ -493,6 +493,18 @@
 				"retry_after": null,
 				"message": "Groq refused this content. Try different wording or switch provider in Settings."
 			}
+		},
+		{
+			"name": "groq cloudflare block is not a bad key",
+			"provider": "groq",
+			"status": 403,
+			"headers": {},
+			"body": "error code: 1010",
+			"expect": {
+				"kind": "unknown",
+				"retry_after": null,
+				"message": "Groq returned an error. Try again or switch provider in Settings."
+			}
 		}
 	]
 }

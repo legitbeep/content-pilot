@@ -3,13 +3,17 @@
 
 import math
 
-from worker.llm.errors import AIError
+from worker.llm.errors import CLOUDFLARE_BLOCK, AIError
 
 
 def http_error(provider: str, status: int, body: str, retry_after: str | None = None) -> AIError:
     """Provider HTTP error -> AIError with the shared messages. No retries here: the job's
     Retry button re-runs the step."""
     detail = f"{provider} HTTP {status}: {body[:2000]}"
+    if status == 403 and CLOUDFLARE_BLOCK.search(body):
+        name = "Deepgram" if provider == "deepgram" else "Groq"
+        msg = f"{name} blocked the request at its network edge (not a key problem). Retry later."
+        return AIError("unknown", provider, detail=detail, message=msg)
     if status in (401, 403):
         return AIError("invalid_key", provider, detail=detail)
     if status == 402:

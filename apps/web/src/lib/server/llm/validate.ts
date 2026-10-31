@@ -1,14 +1,18 @@
 // Docs: docs/llm.md
 // Save-time key check: one cheap authenticated call per provider (checked 2026-10-31, docs/llm.md).
 import type { Provider } from '$lib/entities/api-key';
+import { CLOUDFLARE_BLOCK, USER_AGENT } from './errors';
 
 export type Validation = 'valid' | 'invalid' | 'unverified';
 
-/** `rejects` statuses → invalid (save refused); network error, 5xx, timeout → unverified (saved). */
+/** `rejects` statuses → invalid (save refused); network error, 5xx, timeout, Cloudflare block →
+ * unverified (saved). */
 async function check(url: string, init: RequestInit, rejects = [401, 403]): Promise<Validation> {
 	try {
-		const res = await fetch(url, { ...init, signal: AbortSignal.timeout(8000) });
+		const headers = { ...(init.headers as Record<string, string>), 'user-agent': USER_AGENT };
+		const res = await fetch(url, { ...init, headers, signal: AbortSignal.timeout(8000) });
 		if (res.ok) return 'valid';
+		if (res.status === 403 && CLOUDFLARE_BLOCK.test(await res.text())) return 'unverified';
 		return rejects.includes(res.status) ? 'invalid' : 'unverified';
 	} catch {
 		return 'unverified';

@@ -8,6 +8,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+from worker.llm.errors import USER_AGENT
+
 TOKEN_URL = "https://oauth2.googleapis.com/token"
 UPLOAD_URL = (
     "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status"
@@ -27,6 +29,7 @@ class YouTubeError(Exception):
 
 
 def _send(req: urllib.request.Request, timeout: int = 60):
+    req.add_header("User-Agent", USER_AGENT)
     try:
         return urllib.request.urlopen(req, timeout=timeout)
     except urllib.error.HTTPError as e:

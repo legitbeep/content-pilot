@@ -8,6 +8,8 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
+from .errors import CLOUDFLARE_BLOCK
+
 
 @dataclass
 class CallRequest:
@@ -145,6 +147,8 @@ def interpret(provider: str, status: int, headers: dict[str, str], body: Any) ->
     def fail(kind: str, retry_after: int | None = None) -> dict:
         return {"ok": False, "kind": kind, "retry_after": retry_after}
 
+    if status == 403 and CLOUDFLARE_BLOCK.search(text):
+        return fail("unknown")  # edge block, not a bad key
     if status in (401, 403) or (status == 400 and BAD_KEY.search(text)):
         return fail("invalid_key")
     if status == 429:

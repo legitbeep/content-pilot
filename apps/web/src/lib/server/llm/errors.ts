@@ -6,6 +6,11 @@ import { MISSING_KEY_MESSAGE } from '$lib/entities/api-key';
 
 export { MISSING_KEY_MESSAGE };
 
+/** Sent on every outbound AI call; Cloudflare (in front of Groq) blocks some default UAs. */
+export const USER_AGENT = 'clip-studio-web/1.0';
+/** Cloudflare edge block ("error code: 1010" etc.): not the key's fault. */
+export const CLOUDFLARE_BLOCK = /error code: 10\d\d/;
+
 /** Display name for a provider id ("groq" → "Groq"). */
 export const providerName = (id: string) =>
 	(llm as Record<string, { name: string }>)[id]?.name ??

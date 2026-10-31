@@ -86,3 +86,26 @@ def test_rejected_key_marks_invalid(monkeypatch):
     with pytest.raises(AIError, match="Your Groq key was rejected"):
         transcription.transcribe("u1", "https://r2/src")
     assert marked == ["groq"]
+
+
+def test_groq_request_sends_user_agent(monkeypatch, tmp_path):
+    seen = {}
+
+    def fake_urlopen(req, timeout):
+        seen["ua"] = req.get_header("User-agent")
+        raise groq.urllib.error.URLError("stop")
+
+    monkeypatch.setattr(groq.urllib.request, "urlopen", fake_urlopen)
+    audio = tmp_path / "a.mp3"
+    audio.write_bytes(b"x")
+    with pytest.raises(AIError):
+        groq._post("k", audio)
+    assert seen["ua"] == "clip-studio-worker/1.0"
+
+
+def test_cloudflare_403_is_not_a_bad_key():
+    from worker.transcription.errors import http_error
+
+    e = http_error("groq", 403, "error code: 1010")
+    assert e.kind != "invalid_key" and "rejected" not in e.message
+    assert http_error("groq", 403, '{"error":"forbidden"}').kind == "invalid_key"

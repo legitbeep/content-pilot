@@ -17,7 +17,7 @@ from pydantic import BaseModel, ValidationError
 from worker import db
 from worker import keys as user_keys
 
-from .errors import MISSING_KEY_MESSAGE, AIError
+from .errors import MISSING_KEY_MESSAGE, USER_AGENT, AIError
 from .keys import key_for, load_user_ai, resolve_llm
 from .providers import CallRequest, build_request, interpret
 from .registry import model_for, provider_name
@@ -34,7 +34,7 @@ def _http(url: str, headers: dict[str, str], body: dict) -> tuple[int, dict[str,
     req = urllib.request.Request(
         url,
         data=json.dumps(body).encode(),
-        headers={"content-type": "application/json", **headers},
+        headers={"content-type": "application/json", "user-agent": USER_AGENT, **headers},
         method="POST",
     )
     try:
