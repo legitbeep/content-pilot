@@ -11,6 +11,8 @@ covers:
   - apps/web/src/lib/server/publishing
   - apps/web/src/lib/features/publish-clip
   - apps/web/src/routes/(authed)/(shell)/publish
+  - apps/web/src/routes/(authed)/(shell)/calendar
+  - apps/web/src/lib/widgets/post-calendar
 last_updated: 2026-11-01
 ---
 # Publishing, scheduler, performance
@@ -86,6 +88,23 @@ Failures (`error` is user-readable; details go to the worker log):
 - No render / no connection → `failed` with a matching message.
 
 Run one: `python -m worker.run_once post <id>` claims that scheduled post even if not yet due.
+
+## Calendar (`/calendar`)
+`ssr = false` (`+page.ts`): every date is rendered and filtered in the browser's time zone.
+Load = all of the user's non-draft posts + presigned previews (`depends('app:posts')`); filtering
+is client side (`$lib/widgets/post-calendar/calendar.ts`, tested).
+- URL state: `view=table` (default month), `month=YYYY-MM`, `platform`, `status`, `from`, `to`
+  (inclusive local days). Changes use `goto(..., { replaceState })`.
+- Month view: Monday-first grid; per day a dot per post coloured by status (`statusDot` in
+  `entities/post`); click a day → popover list → details. A post sits on `posted_at ?? scheduled_at`.
+- Table view: `DataTable` with thumbnail, title, platform, date/time, status, "View details".
+- Details dialog: preview, title, full caption, tags, platform, time, status, error. Actions by
+  status (`canPost`): scheduled → edit caption, reschedule, cancel; failed → retry, reschedule,
+  cancel; cancelled → reschedule; posted → open on YouTube; publishing → none.
+- Page actions `reschedule | edit | cancel | retry` update with a status filter
+  (`.in('status', allowed)`) so they can't race the worker's claim; rescheduling a
+  failed/cancelled post checks there's no other live post for the clip. Reschedule and retry reset
+  `attempts` and `error`.
 
 ## Checkpoints
 At 48h, 7d, 14d, 30d after `posted_at`: fetch stats → insert `post_metrics`

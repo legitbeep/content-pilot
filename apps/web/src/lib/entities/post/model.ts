@@ -48,3 +48,13 @@ const allowed: Record<PostAction, PostStatus[]> = {
 
 /** Which detail actions a post in `status` offers. `publishing` is locked by the worker. */
 export const canPost = (status: PostStatus, action: PostAction) => allowed[action].includes(status);
+
+/** Calendar dot colour per status (tokens only). */
+export const statusDot: Record<PostStatus, string> = {
+	draft: 'bg-muted-foreground',
+	scheduled: 'bg-foreground',
+	publishing: 'bg-info',
+	posted: 'bg-success',
+	failed: 'bg-danger',
+	cancelled: 'bg-muted-foreground/50'
+};
