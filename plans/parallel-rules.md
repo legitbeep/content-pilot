@@ -62,7 +62,7 @@ additive changes (see rules 2 and 3).
 8. **Dev login:** with `DEV_LOGIN=true` in your worktree's apps/web/.env and the dev
    server running, sign in as the test user via the dev login (docs/auth-and-keys.md)
    to check signed-in pages. Never use it in production code paths.
-9. **Dev server port:** use the port given in your plan (`pnpm dev -- --port <n>`).
+9. **Dev server port:** use the port given in your plan (`pnpm --filter web dev --port <n>`; `pnpm dev -- --port` does not forward the flag).
 10. **Finish with a handoff note** at `plans/handoff-<plan>.md`: what was built,
    contracts added or changed, migrations, shared files touched, seed commands,
    known gaps. Commit on your branch. Do not merge; the human merges.

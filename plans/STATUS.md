@@ -9,9 +9,9 @@ Parallelism cap: 3 subagents (Opus).
 |---|---|---|---|---|---|
 | prep | 0 | main | - | merged | committed 87c6da8 (check+test pass) |
 | llm | 0 | feat/llm-adapter | .worktrees/llm | merged | d400a60; main check+test pass; worktree removed; awaiting user db push |
-| 4 | 1 | feat/brand | .worktrees/brand | ready-to-merge | 88033e7; check+test pass (orch verified, web 69) |
-| 6 | 1 | feat/editor | .worktrees/editor | ready-to-merge | 3e1cf47; check+test pass (orch verified, schema 11, web 79, worker 91) |
-| 8 | 1 | feat/publish | .worktrees/publish | ready-to-merge | 0385bab; check+test pass (orch verified, web 72, worker 84) |
+| 4 | 1 | feat/brand | .worktrees/brand | merged | tests on main pending (option 2) |
+| 6 | 1 | feat/editor | .worktrees/editor | merged | tests on main pending (option 2) |
+| 8 | 1 | feat/publish | .worktrees/publish | merged | tests on main pending (option 2) |
 | 5 | 2 | feat/clips | .worktrees/clips | todo | |
 | 7 | 2 | feat/agent | .worktrees/agent | todo | |
 | 9 | 2 | feat/performance | .worktrees/performance | todo | |
@@ -58,3 +58,5 @@ Parallelism cap: 3 subagents (Opus).
 - Plan 8 done (0385bab). Added nullable clips.render_path/render_status(text)/description on shared DB; told plan 6 subagent to reconcile render_status type. Worker YOUTUBE_CLIENT_ID/SECRET got invalid_client (user to check). Upload code only fake-tested.
 - Plan 6 done (3e1cf47). Timeline v2 (plan 5 must write v2). render_status text+CHECK, matches plan 8. Untracked apps/web/.vitest/ -> gitignore at merge. Port flag: use `pnpm --filter web dev --port N` (fix parallel-rules rule 9 at merge). Docker DNS broken (workaround --dns 1.1.1.1 / compose dns).
 - Checkpoint B issued to user (A2 a-d, brand, publish, editor items). Waiting.
+- User chose option 2: merge Wave 1 now, run checkpoint B tests on main in parallel with Wave 2. YouTube OAuth client created; env files + Vercel vars set.
+- Merged 4 (c849313), 6 (68efb7b, r2.ts+data-model conflicts resolved by orch), 8 (e799ee7, 10-file conflict resolved by subagent). Main: check pass, web 90, schema 11, worker 98. Waiting on user db push (p4, p6, p8 migrations).
