@@ -30,6 +30,7 @@ Set in the Vercel project (Production; Preview too if you use previews). Meaning
 | `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET` | secret; same OAuth client as the worker |
 | `YOUTUBE_REDIRECT_URI` | `https://clip-studio-pi.vercel.app/settings/youtube/callback` |
 | `DEMO_ALLOWED_EMAILS` | optional; empty disables the demo keys (ADR 0008) |
+| `ACCESS_CODES` | secret; optional judge codes (`docs/auth-and-keys.md`). Judge accounts use the demo keys, so set `GEMINI_API_KEY` / `GROQ_API_KEY` too |
 | `DEMO_DAILY_JOB_LIMIT` | optional; default 10 |
 | `GEMINI_API_KEY`, `GROQ_API_KEY` | secret; shared demo keys, only needed with `DEMO_ALLOWED_EMAILS` |
 

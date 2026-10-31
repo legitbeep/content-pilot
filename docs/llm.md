@@ -94,7 +94,9 @@ BYOK only, with one demo exception. Same logic in `$lib/server/llm/keys.ts` and
    unverified keys count). LLM: task override → default provider → first usable of
    anthropic, gemini, groq. Transcription: chosen provider → deepgram → groq.
 2. **Demo keys**, only if (1) found nothing AND the user's **verified** email is in
-   `DEMO_ALLOWED_EMAILS`: `GEMINI_API_KEY` for LLM, `GROQ_API_KEY` for transcription. The email is
+   `DEMO_ALLOWED_EMAILS` **or** is a judge access-code account (`judge-<n>@clip-studio.test`,
+   `isAccessCodeEmail` / `JUDGE_EMAIL`; `.test` is reserved, so only our admin API creates them):
+   `GEMINI_API_KEY` for LLM, `GROQ_API_KEY` for transcription. The email is
    read server side only: web from the verified session (`locals.user`, `isDemoUser`) or the admin
    API by user id; worker from `auth.users` by user id. Never from the client.
    Cap: `DEMO_DAILY_JOB_LIMIT` (default 10) jobs per UTC day (`requireDemoJobQuota`, 429). It counts

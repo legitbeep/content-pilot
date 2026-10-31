@@ -150,6 +150,14 @@ describe('generateText / generateJSON', () => {
 		expect(state.inserts[0]).toMatchObject({ table: 'llm_calls', key_source: 'demo', ok: true });
 	});
 
+	it('judge access-code accounts get the demo key; look-alike emails do not', async () => {
+		state.user = { email: 'judge-3@clip-studio.test', email_confirmed_at: '2026-11-01' };
+		fetchMock.mockResolvedValueOnce(reply(200, responses.cases[7].body));
+		expect((await generateText(opts)).provider).toBe('gemini');
+		state.user = { email: 'judge-3@clip-studio.test.evil.com', email_confirmed_at: '2026-11-01' };
+		await expect(generateText(opts)).rejects.toMatchObject({ kind: 'missing_key' });
+	});
+
 	it('allowlisted user with their own key uses their own key', async () => {
 		state.user = { email: 'demo@example.com', email_confirmed_at: '2026-10-31' };
 		await ownKey('anthropic', 'own-anthropic');

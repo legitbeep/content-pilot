@@ -115,6 +115,12 @@ def test_allowlisted_user_without_keys_uses_demo_gemini(monkeypatch):
     assert f.logs[0][2] == "demo" and f.logs[0][7] is True
 
 
+def test_judge_access_code_accounts_are_demo_users():
+    assert keys.is_demo_user("judge-3@clip-studio.test", "2026-11-01")
+    assert not keys.is_demo_user("judge-3@clip-studio.test", None)
+    assert not keys.is_demo_user("judge-3@clip-studio.test.evil.com", "2026-11-01")
+
+
 def test_allowlisted_user_with_own_key_uses_own(monkeypatch):
     f = Fake(monkeypatch, own={"anthropic": "own-anthropic"}, email="demo@example.com")
     f.responses.append((200, {}, RESPONSES["cases"][0]["body"]))

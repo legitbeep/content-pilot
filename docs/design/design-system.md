@@ -142,6 +142,7 @@ Ours, in `$lib/shared/ui`:
 | `TopbarActions` | children | Puts page actions in the top bar (renders after hydration) |
 | `BarChart` | `data: {label, value}[]`, `label` (accessible name), `format?` | Plain vertical bars in `bg-info`, no chart library; values in hover titles + an sr-only list. Shows every x label when ≤ 6 bars, else first/last |
 | `ChipsInput` | `value` (bindable string[]), `label`, `max?`, `placeholder?`, `disabled?` | Enter/comma adds, Backspace on empty removes last, case-insensitive dedupe; disabled when full |
+| `CodeInput` | `value` (bindable), `label`, `length?` (6), `name?`, `invalid?`, `disabled?`, `inputRef?` (bindable), `oncomplete?` | One-time code cells on bits-ui `PinInput`: digits only, paste/autofill fill all cells, `name` posts with a plain form. `size-11` `bg-subtle` cells, focus ring on the active cell, blinking caret (`animate-caret-blink`) |
 | Kbd | shadcn `kbd` as-is | `Kbd.Root`, `Kbd.Group` |
 
 Dialogs: `Dialog.Content size="sm"` (default) is the compact confirm dialog (padded, `Header` +

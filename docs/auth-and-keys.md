@@ -18,12 +18,12 @@ last_updated: 2026-11-01
 # Auth and keys
 
 ## Login
-Supabase Auth, Google provider only (configured in the Supabase dashboard). Web uses `@supabase/ssr`
+Supabase Auth, Google provider (configured in the Supabase dashboard), plus judge access codes (below). Web uses `@supabase/ssr`
 with `PUBLIC_SUPABASE_URL` / `PUBLIC_SUPABASE_PUBLISHABLE_KEY`; RLS does the rest. A `profiles`
 row is created by the `on_auth_user_created` trigger on signup.
 
 Flow:
-1. `/login` (`routes/login`): one "Continue with Google" form. Its action calls
+1. `/login` (`routes/login`): one "Continue with Google" form. Its `google` action calls
    `signInWithOAuth({ provider: 'google', redirectTo: <origin>/auth/callback })` and redirects to Google.
 2. Google → Supabase → `/auth/callback?code=…` (`routes/auth/callback/+server.ts`):
    `exchangeCodeForSession(code)` (PKCE) sets the session cookie, then redirects to `/`. On failure
@@ -65,6 +65,23 @@ exists via the secret-key admin API (`createUser`, email pre-confirmed; existing
 - Needs email/password sign-in enabled in Supabase Auth (on by default). If the user already exists
   with another password, sign-in fails with a 500 — fix the password or delete the user.
 - Test: `routes/auth/dev-login/dev-login.test.ts` (404 when the flag is off and when not in dev).
+
+**Judge access codes** (works in production): `$lib/server/access-codes.ts`, the `code` action in
+`routes/login/+page.server.ts`, and the "Enter with code" dialog on `/login` (`CodeInput`, 6 digit
+cells; auto-submits when full, paste works). Off (button hidden) unless `ACCESS_CODES` holds at
+least one 6-digit code.
+- Code n (1-based, in `ACCESS_CODES` order) owns `judge-n@clip-studio.test`, so each judge has a
+  persistent workspace: the same code later signs back into the same data. Reordering codes swaps
+  workspaces.
+- Sign-in is passwordless: admin `createUser` (email pre-confirmed; existing is fine) → admin
+  `generateLink({ type: 'magiclink' })` → `verifyOtp({ token_hash, type: 'email' })` on
+  `locals.supabase`, which sets the normal session cookies. No email is sent.
+- Not onboarded on login: a new judge goes through `/onboarding` like a real user.
+- Judge accounts get the demo AI keys (`docs/llm.md`), so they work without BYOK; the
+  `DEMO_DAILY_JOB_LIMIT` cap applies.
+- Guards: codes compared with `timingSafeEqual` against every code; 10 attempts per client IP per
+  15 min (in-memory, so per serverless instance). Wrong code → "That code didn't work".
+- Test: `$lib/server/access-codes.test.ts`.
 
 YouTube connect is a **separate** OAuth flow: `docs/publishing.md`.
 

@@ -1,6 +1,6 @@
 // Docs: docs/llm.md
 // Which key pays for an AI call. Order: the user's own stored key → the shared demo key, only for
-// allowlisted verified emails (DEMO_ALLOWED_EMAILS) → missing_key. ADR 0008. Mirrored in
+// allowlisted verified emails (DEMO_ALLOWED_EMAILS) and judge access-code accounts → missing_key. ADR 0008. Mirrored in
 // apps/worker/worker/llm/keys.py; both run fixtures/key-resolution.json.
 // Server keys never leave this module: not sent to the browser, logged, or shown.
 import { error } from '@sveltejs/kit';
@@ -13,6 +13,7 @@ import {
 	type TranscriptionProvider
 } from '@clip-studio/llm-registry';
 import { aiCapabilities, MISSING_KEY_MESSAGE, type Provider } from '$lib/entities/api-key';
+import { isAccessCodeEmail } from '../access-codes';
 import { decrypt, fromBytea } from '../crypto';
 import { supabaseAdmin } from '../supabase-admin';
 import { AIError } from './errors';
@@ -37,7 +38,7 @@ const DEMO_LLM: LLMProvider = 'gemini';
 const DEMO_TRANSCRIPTION: TranscriptionProvider = 'groq';
 const DEMO_ENV: Record<string, string> = { gemini: 'GEMINI_API_KEY', groq: 'GROQ_API_KEY' };
 
-/** True only for a confirmed email on DEMO_ALLOWED_EMAILS. Pass a user from the verified session
+/** True only for a confirmed email on DEMO_ALLOWED_EMAILS or a judge access-code account. Pass a user from the verified session
  * (locals.user) or the admin API, never an email the client sent. */
 export function isDemoUser(
 	user: { email?: string | null; email_confirmed_at?: string | null } | null
@@ -46,7 +47,10 @@ export function isDemoUser(
 		.split(',')
 		.map((e) => e.trim().toLowerCase())
 		.filter(Boolean);
-	return !!user?.email && !!user.email_confirmed_at && allowed.includes(user.email.toLowerCase());
+	const email = user?.email?.toLowerCase();
+	return (
+		!!email && !!user?.email_confirmed_at && (allowed.includes(email) || isAccessCodeEmail(email))
+	);
 }
 
 export async function loadUserAI(userId: string): Promise<UserAI> {
@@ -54,7 +58,7 @@ export async function loadUserAI(userId: string): Promise<UserAI> {
 	const [keys, settings, user] = await Promise.all([
 		db.from('user_keys').select('provider, invalid_at').eq('user_id', userId),
 		db.from('ai_settings').select('*').eq('user_id', userId).maybeSingle(),
-		env.DEMO_ALLOWED_EMAILS ? db.auth.admin.getUserById(userId) : null
+		db.auth.admin.getUserById(userId)
 	]);
 	if (keys.error) throw new Error(`user_keys read failed: ${keys.error.message}`);
 	return {

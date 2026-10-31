@@ -22,7 +22,7 @@ Route → purpose / data / actions.
 | `/brand` | Brand Memory | See/curate rules | `brand_rules`, `brand_profile` | Rules by scope (filter scope/source, pin/edit/archive/restore, add manual), edit profile sections, regenerate rules from profile → accept/reject diff, learned (candidate) list (`docs/brand-memory.md`) |
 | `/settings` | Settings | AI providers + platforms | `user_keys_public`, `ai_settings`, `llm_calls`, `platform_connections_public` | AI providers: Groq, Claude, Gemini, Deepgram, Wispr keys ("Only have one key? A Groq key covers everything."); save = validate → encrypt → store; status valid/unverified/invalid, last 4, validated date, Replace/Remove. Default AI provider + transcription provider pickers, Advanced per-task overrides, 7-day usage per provider. Demo accounts see "Using shared demo keys" (`docs/llm.md`). Connected platforms: connect/disconnect YouTube; Instagram, LinkedIn, X coming soon (`docs/publishing.md`) |
 
-Non-product routes: `/login` (Continue with Google), `/auth/callback` (code → session),
+Non-product routes: `/login` (Continue with Google; "Enter with code" dialog when `ACCESS_CODES` is set), `/auth/callback` (code → session),
 `/auth/signout` (POST), `/dev/ui` (dev-only design system review, `docs/design/design-system.md`).
 Errors (any route): `routes/+error.svelte`: "Error <status>" + an `EmptyState` with the thrown
 message (404 → "This page doesn't exist, or it isn't yours."; unexpected → a generic line) and

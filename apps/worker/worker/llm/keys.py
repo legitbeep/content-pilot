@@ -1,10 +1,11 @@
 # Docs: docs/llm.md
 """Which key pays for an AI call. Order: the user's own stored key -> the shared demo key, only
-for allowlisted verified emails (DEMO_ALLOWED_EMAILS) -> missing_key. ADR 0008. Mirror of
-apps/web/src/lib/server/llm/keys.ts; both run fixtures/key-resolution.json.
+for allowlisted verified emails (DEMO_ALLOWED_EMAILS) and judge accounts -> missing_key.
+ADR 0008. Mirror of apps/web/src/lib/server/llm/keys.ts; both run fixtures/key-resolution.json.
 Server keys never leave this module: not logged, stored or shown."""
 
 import os
+import re
 from dataclasses import dataclass, field
 
 from worker import db, keys
@@ -15,6 +16,8 @@ from .registry import LLM_PROVIDERS, TRANSCRIPTION_PROVIDERS
 DEMO_LLM = "gemini"  # demo defaults: Gemini for LLM, Groq for transcription
 DEMO_TRANSCRIPTION = "groq"
 DEMO_ENV = {"gemini": "GEMINI_API_KEY", "groq": "GROQ_API_KEY"}
+# Judge access-code accounts (web $lib/server/access-codes.ts) also get the demo keys.
+JUDGE_EMAIL = re.compile(r"^judge-\d+@clip-studio\.test$")
 
 
 @dataclass
@@ -30,7 +33,8 @@ def is_demo_user(email: str | None, confirmed: object) -> bool:
     allowed = {
         e.strip().lower() for e in os.environ.get("DEMO_ALLOWED_EMAILS", "").split(",") if e.strip()
     }
-    return bool(email and confirmed and email.lower() in allowed)
+    e = (email or "").lower()
+    return bool(e and confirmed and (e in allowed or JUDGE_EMAIL.match(e)))
 
 
 def load_user_ai(user_id: str) -> UserAI:
@@ -46,13 +50,9 @@ def load_user_ai(user_id: str) -> UserAI:
             "from ai_settings where user_id = %s",
             (user_id,),
         ).fetchone()
-        user = (
-            c.execute(
-                "select email, email_confirmed_at from auth.users where id = %s", (user_id,)
-            ).fetchone()
-            if os.environ.get("DEMO_ALLOWED_EMAILS")
-            else None
-        )
+        user = c.execute(
+            "select email, email_confirmed_at from auth.users where id = %s", (user_id,)
+        ).fetchone()
     return UserAI(
         usable=[r["provider"] for r in rows if not r["invalid_at"]],
         settings=dict(settings or {}),

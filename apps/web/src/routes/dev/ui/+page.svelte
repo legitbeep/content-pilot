@@ -34,6 +34,7 @@
 	import * as Avatar from '$lib/shared/ui/avatar';
 	import * as Command from '$lib/shared/ui/command';
 	import { ChipsInput } from '$lib/shared/ui/chips-input';
+	import { CodeInput } from '$lib/shared/ui/code-input';
 	import { Card } from '$lib/shared/ui/card';
 	import { CopyButton } from '$lib/shared/ui/copy-button';
 	import { Stat } from '$lib/shared/ui/stat';
@@ -42,6 +43,7 @@
 
 	let chips = $state(['javascript', 'careers']);
 	let chipsFull = $state(['one', 'two', 'three']);
+	let otp = $state('');
 
 	const tokens = [
 		['--bg-canvas', 'App background'],
@@ -434,6 +436,14 @@
 		<ChipsInput value={[]} label="Empty" placeholder="Empty: type and press Enter" />
 		<ChipsInput bind:value={chipsFull} max={3} label="Full" />
 		<ChipsInput value={['locked']} label="Disabled" disabled />
+	</div>
+
+	{@render section('Code input')}
+	<div class="flex flex-col items-start gap-4">
+		<CodeInput bind:value={otp} label="Empty" />
+		<CodeInput value="4821" label="Partly filled" />
+		<CodeInput value="000000" label="Invalid" invalid />
+		<CodeInput value="482913" label="Disabled" disabled />
 	</div>
 
 	{@render section('Conflict card (entities/brand)')}

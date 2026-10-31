@@ -34,6 +34,7 @@ allowlisted accounts (`docs/llm.md`). `ANTHROPIC_API_KEY`, `CLAUDE_OAUTH_TOKEN` 
 | `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET` | server | YouTube connect OAuth |
 | `YOUTUBE_REDIRECT_URI` | server | YouTube OAuth callback URL |
 | `YOUTUBE_FAKE` | server, **dev only** | `true` = Home recommendations read YouTube search from a recorded fixture (`docs/performance.md`). Ignored outside `vite dev` (`dev &&` guard), so a production build can't use it |
+| `ACCESS_CODES` | **server only** | Comma-separated 6-digit judge codes for "Enter with code" on `/login`; code n → `judge-n@clip-studio.test`. Order must stay stable. Empty = off. `docs/auth-and-keys.md` |
 | `DEV_LOGIN` | server, **dev only** | `true` enables `/auth/dev-login` (test-user sign-in for agents) under `vite dev`. Ignored in production builds |
 | `DEV_LOGIN_EMAIL`, `DEV_LOGIN_PASSWORD` | server, dev only | Test user credentials. Defaults `dev@clip-studio.test` / `dev-login-password`. See `docs/auth-and-keys.md` |
 
