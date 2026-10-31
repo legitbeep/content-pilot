@@ -1,6 +1,13 @@
 import { fail } from '@sveltejs/kit';
 import { platforms, type Platform } from '$lib/entities/post';
 import { templateCaptions, type Caption } from '$lib/server/publishing/captions';
+import {
+	generateCaptions,
+	logCaptionEdit,
+	type CaptionText
+} from '$lib/server/publishing/llm-captions';
+import { aiFail, loadBrand } from '$lib/server/brand';
+import { requireAIKeys } from '$lib/server/llm';
 import { presignGet } from '$lib/server/r2';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -11,9 +18,9 @@ type ClipRow = {
 	render_path: string;
 };
 
-export const load: PageServerLoad = async ({ locals: { supabase } }) => {
+export const load: PageServerLoad = async ({ locals: { supabase, user } }) => {
 	// RLS scopes everything to the user. "Not yet posted" = no live YouTube post for the clip.
-	const [clips, live, conn] = await Promise.all([
+	const [clips, live, conn, brand] = await Promise.all([
 		supabase
 			.from('clips')
 			.select('id, description, reason, render_path, created_at')
@@ -28,8 +35,14 @@ export const load: PageServerLoad = async ({ locals: { supabase } }) => {
 			.from('platform_connections_public')
 			.select('account_name')
 			.eq('platform', 'youtube')
-			.maybeSingle()
+			.maybeSingle(),
+		loadBrand(supabase, user!.id)
 	]);
+	// Instant prefill from brand defaults; "Generate captions" swaps in LLM copy (docs/performance.md).
+	const defaults = {
+		cta: brand.profile.default_cta || undefined,
+		hashtags: brand.profile.default_hashtags
+	};
 	if (clips.error) console.error('clips', clips.error);
 	const taken = new Set((live.data ?? []).map((p) => p.clip_id));
 	const rows = ((clips.data ?? []) as ClipRow[]).filter((c) => !taken.has(c.id));
@@ -41,10 +54,9 @@ export const load: PageServerLoad = async ({ locals: { supabase } }) => {
 				id: c.id,
 				description: c.description ?? c.reason ?? '',
 				preview: await presignGet(c.render_path),
-				// ponytail: brand defaults (CTA, hashtags) come from brand memory once plan 4/9 land.
 				captions: Object.fromEntries(
 					await Promise.all(
-						platforms.map(async (p) => [p.id, await templateCaptions.generate(c, p.id, null)])
+						platforms.map(async (p) => [p.id, await templateCaptions.generate(c, p.id, defaults)])
 					)
 				) as Record<Platform, Caption>
 			}))
@@ -54,7 +66,44 @@ export const load: PageServerLoad = async ({ locals: { supabase } }) => {
 
 const MAX_FUTURE_MS = 180 * 864e5;
 
+/** JSON caption text posted by the form (`before` of an edit); null when absent or unreadable. */
+function parseText(v: FormDataEntryValue | null): CaptionText | null {
+	try {
+		const t = JSON.parse(String(v));
+		return t && typeof t.description === 'string' ? t : null;
+	} catch {
+		return null;
+	}
+}
+
 export const actions: Actions = {
+	/** LLM captions for every platform (task `captions`, brand memory scope copy). */
+	captions: async ({ request, locals: { supabase, user } }) => {
+		await requireAIKeys(user!.id, 'llm');
+		const clipId = String((await request.formData()).get('clip_id') ?? '');
+		const { data: clip } = await supabase
+			.from('clips')
+			.select('description, reason, words')
+			.eq('id', clipId)
+			.maybeSingle();
+		if (!clip) return fail(404, { message: 'Clip not found.' });
+		try {
+			return { captions: await generateCaptions(supabase, user!.id, clip) };
+		} catch (e) {
+			return aiFail(e);
+		}
+	},
+	/** Copy-only platforms: log an edited caption when it's copied. */
+	captionEdit: async ({ request, locals: { supabase, user } }) => {
+		const form = await request.formData();
+		const platform = String(form.get('platform')) as Platform;
+		const before = parseText(form.get('before'));
+		const after = parseText(form.get('after'));
+		if (!platforms.some((p) => p.id === platform) || !before || !after)
+			return fail(400, { message: 'Bad caption edit.' });
+		await logCaptionEdit(supabase, user!.id, String(form.get('clip_id')), platform, before, after);
+		return { logged: true };
+	},
 	/** Create a scheduled YouTube post. Empty `scheduled_at` = post now (worker picks it up <60s). */
 	schedule: async ({ request, locals: { supabase, user } }) => {
 		const form = await request.formData();
@@ -114,6 +163,13 @@ export const actions: Actions = {
 			console.error('posts insert', error);
 			return fail(500, { message: 'Could not schedule the post. Try again.' });
 		}
+		const before = parseText(form.get('before'));
+		if (before)
+			await logCaptionEdit(supabase, user!.id, clipId, 'youtube', before, {
+				title,
+				description: caption,
+				tags
+			});
 		return { scheduled: true, now: !at };
 	}
 };

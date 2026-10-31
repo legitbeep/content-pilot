@@ -5,7 +5,7 @@ import sys
 from collections.abc import Callable
 
 import main
-from loops import cleanup, publisher, render
+from loops import checkpoints, cleanup, publisher, render
 
 
 def run_job(job_id: str) -> str:
@@ -15,12 +15,14 @@ def run_job(job_id: str) -> str:
     return main.process(job)
 
 
-# One line per kind; later plans add checkpoint here.
+# One line per kind.
 HANDLERS: dict[str, Callable[[str], str]] = {
     "job": run_job,
     "render": render.run_once,
     "post": publisher.run_once,
     "cleanup": cleanup.run_once,
+    "checkpoint": checkpoints.run_once,  # id = post id: its next undone checkpoint, now
+    "baseline": checkpoints.seed_baselines,  # id = user id
 }
 
 

@@ -111,3 +111,11 @@ with `ConflictCard` (stated vs learned, "Keep mine" / "Update rule"). Never auto
 - `extract_clips`: `jobs.memory_snapshot` + `user_intent` guide clip choice and reasons.
 - Editor agent: rules in context; may only propose (`docs/agent.md`).
 - Clip selection: unselected `clips` rows are a negative signal for edit-pattern detection.
+
+### Performance candidates (plan 9)
+The checkpoints loop writes `brand_rules` with `source = performance`, `status = candidate`,
+`scope = clip_selection` when one feature (`topic:x`, `length:short`, `hook:question`) gets the
+same verdict (boost or downgrade) on 3+ posts. `evidence` items are
+`{kind: 'performance', post_id, feature, verdict}`; dedupe = an existing candidate with the same
+`evidence[0].feature` + verdict (new posts appended, `evidence_count` = items). Accepted, pinned or
+archived matches are never touched. It never sets `active`. Details: `docs/performance.md`.

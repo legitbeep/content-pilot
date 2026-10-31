@@ -1,0 +1,21 @@
+{
+ "kind": "youtube#channelListResponse",
+ "etag": "q1Vn0y0h7S9VhX1nWbE3QYk2p2s",
+ "pageInfo": {
+  "totalResults": 1,
+  "resultsPerPage": 5
+ },
+ "items": [
+  {
+   "kind": "youtube#channel",
+   "etag": "7b9Q3tVvN1kq0mB0k2a0nXyZ1aQ",
+   "id": "UCfakeChannel0000000000a",
+   "contentDetails": {
+    "relatedPlaylists": {
+     "likes": "",
+     "uploads": "UUfakeChannel0000000000a"
+    }
+   }
+  }
+ ]
+}

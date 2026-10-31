@@ -52,7 +52,7 @@ fails at token refresh (no real upload). Clean removes it.
 description (≤ 100 chars, `<`/`>` stripped since YouTube rejects them), description = clip
 description + CTA (default "Follow for more.") + hashtags (default `#shorts #creator`), tags =
 hashtags without `#`. X is cut to 280 chars. `brand` (`{cta?, hashtags?}`) is passed as null until
-brand memory feeds it. Plan 9 swaps in an LLM generator behind the same interface.
+brand memory feeds it. Plan 9: the publish page passes the brand's `default_cta` + `default_hashtags`, and "Generate captions" swaps in LLM copy for every platform (`docs/performance.md`).
 
 ## Publish page (`/publish`)
 - Lists clips with `render_path` and no YouTube post in `scheduled|publishing|posted` (RLS).
@@ -109,7 +109,7 @@ is client side (`$lib/widgets/post-calendar/calendar.ts`, tested).
 
 ## Checkpoints
 At 48h, 7d, 14d, 30d after `posted_at`: fetch stats → insert `post_metrics`
-(unique `(post_id, checkpoint)` makes it idempotent).
+(unique `(post_id, checkpoint)` makes it idempotent). Built in plan 9: `docs/performance.md`.
 
 ## Baseline and score
 - **Samples** per checkpoint = the creator's own `post_metrics` rows ∪ `baseline_seeds` rows at

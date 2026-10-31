@@ -8,7 +8,7 @@ import time
 import traceback
 from datetime import UTC, datetime
 
-from loops import cleanup, publisher
+from loops import checkpoints, cleanup, publisher
 from loops import render as render_loop
 from pipeline import NeedsInput, StepError, Stopped, run
 from worker import db
@@ -133,6 +133,7 @@ def main() -> None:
     threads.append(threading.Thread(target=render_loop.loop, name="render", daemon=True))
     threads.append(threading.Thread(target=publisher.loop, name="publisher", daemon=True))
     threads.append(threading.Thread(target=cleanup.loop, name="cleanup", daemon=True))
+    threads.append(threading.Thread(target=checkpoints.loop, name="checkpoints", daemon=True))
     for t in threads:
         t.start()
     for t in threads:

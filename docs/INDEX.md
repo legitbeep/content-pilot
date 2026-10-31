@@ -26,6 +26,7 @@ lists the code paths it describes; if you change one of those paths, update the 
 | A migration / table / RLS | `data-model.md` |
 | Env vars, Docker, local setup | `env.md`, `architecture.md` |
 | Deploying the web app (Vercel) | `deploy.md`, `env.md` |
+| Checkpoints, scores, feature weights, apply_weights, LLM captions, Home, recommendations | `performance.md`, `publishing.md` |
 | A big decision | `decisions/` (add one with the `new-adr` skill) |
 | Unsure what a term means | `glossary.md` |
 
@@ -43,6 +44,7 @@ lists the code paths it describes; if you change one of those paths, update the 
 - `publishing.md` — YouTube OAuth, scheduler, checkpoints, scoring.
 - `auth-and-keys.md` — Google login, BYOK encryption and validation.
 - `llm.md` — LLM + transcription adapters, model registry, key resolution, demo allowlist, AI gating.
+- `performance.md` — checkpoints, baselines, score/verdict, learned ranking, captions, Home.
 - `deploy.md` — Vercel deploy and its env vars.
 - `env.md` — every env var and where it's used.
 - `glossary.md` — domain terms.

@@ -48,14 +48,17 @@ orchestrator runs `npx supabase db push --include-all` on main after merging.
 | timelines | clip_id (unique), data jsonb, revision, rendered_key, rendered_revision | `data` validates against timeline-schema. Render needed when `rendered_revision < revision` |
 | edit_events | clip_id, op, args jsonb, summary, source (`manual`\|`agent`), created_at | One row per applied timeline op (and undo/redo). Own rows. `docs/timeline.md` |
 | posts | clip_id, platform, title, caption, tags text[], status, scheduled_at, posted_at, external_id, external_url, error, attempts, updated_at | One row per YouTube post (copy-only platforms get no row). `docs/publishing.md` |
-| post_metrics | post_id, checkpoint, views, likes, comments, score | unique (post_id, checkpoint). `docs/publishing.md` |
-| platform_connections | platform, refresh_token_ciphertext, iv, account_name, channel_id, avatar_url | unique (user_id, platform). `docs/publishing.md` |
+| post_metrics | post_id, checkpoint, views, likes, comments, score, avg_view_pct, verdict, rating, rating_note | unique (post_id, checkpoint). `docs/publishing.md` |
+| platform_connections | platform, refresh_token_ciphertext, iv, account_name, channel_id, avatar_url, baselines_seeded_at, baseline_method | unique (user_id, platform). `docs/publishing.md` |
 | ai_settings | user_id (pk), llm_provider, transcription_provider, task_overrides jsonb | AI provider choices; no row = defaults. Own rows. `docs/llm.md` |
 | llm_calls | provider, key_source (user\|demo), model, task, input_tokens, output_tokens, latency_ms, ok, error_kind | One row per adapter call. Owners read; server/worker write. `docs/llm.md` |
 | demo_usage | user_id, kind (`job`), created_at | Append-only log of demo-key jobs; the daily demo cap counts it. No FK to jobs (deleting a job never frees a slot). RLS on, no policies (server only). `docs/llm.md` |
 | baseline_seeds | platform, external_id, checkpoint, views, published_at | Pre-existing channel videos seeding the baseline. unique (user_id, platform, external_id, checkpoint). `docs/publishing.md` |
+| post_checkpoints | post_id, checkpoint, due_at, claimed_at, attempts, done_at, error | unique (post_id, checkpoint); trigger `posts_create_checkpoints` adds 48h/7d/14d/30d when a post is `posted`. Own rows. `docs/performance.md` |
+| feature_weights | (user_id, feature) pk, weight, samples, updated_at | Learned ranking weights. Own rows. `docs/performance.md` |
+| change_log | kind, feature, message, data jsonb, created_at | Learning events for Home insight cards. Own rows. `docs/performance.md` |
 
-Indexes: `brand_rules_user_status_idx`, `llm_calls_user_created_idx` (usage summary), `jobs_claim_idx` (pending by position), `jobs_user_processing_idx` (per-user processing count), `jobs_cleanup_idx` (done, source not yet deleted), `posts_due_idx` (scheduled by time), `clips_render_queue_idx` (queued renders), `edit_events_clip_idx`.
+Indexes: `brand_rules_user_status_idx`, `llm_calls_user_created_idx` (usage summary), `jobs_claim_idx` (pending by position), `jobs_user_processing_idx` (per-user processing count), `jobs_cleanup_idx` (done, source not yet deleted), `posts_due_idx` (scheduled by time), `post_checkpoints_due_idx` (open checkpoints by due time), `change_log_user_idx`, `clips_render_queue_idx` (queued renders), `edit_events_clip_idx`.
 
 R2 objects (not tables): `uploads/<user_id>/<upload_id>/<name>` source video,
 `brand/<user_id>/logo.<ext>` brand logo, `transcripts/<job_id>.json` (normalised; older jobs also have a raw `transcripts/<job_id>.deepgram.json`), `clips/<clip_id>/source.mp4`, `renders/<clip_id>.mp4` (rendered clip, `clips.render_path`).

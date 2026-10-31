@@ -32,3 +32,9 @@ def test_dispatches_post(monkeypatch, capsys):
     run_once.HANDLERS["post"] = run_once.publisher.run_once
     assert run_once.cli(["post", "p1"]) == 0
     assert "post p1: posted" in capsys.readouterr().out
+
+
+def test_dispatches_checkpoint(monkeypatch, capsys):
+    monkeypatch.setitem(run_once.HANDLERS, "checkpoint", lambda i: "7d views=10 insufficient_data")
+    assert run_once.cli(["checkpoint", "p1"]) == 0
+    assert "checkpoint p1: 7d views=10" in capsys.readouterr().out

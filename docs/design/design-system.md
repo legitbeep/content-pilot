@@ -76,6 +76,7 @@ Ours, in `$lib/shared/ui`:
 | `Timecode` / `formatTimecode` | `seconds` | `01:23.4`, `1:02:03.5`; mono, tabular numbers |
 | `DataTable` | `columns: Column<T>[]`, `rows`, `empty?` snippet, `onrowclick?` | Click header to sort asc → desc → none; hover row `bg-elevated` |
 | `TopbarActions` | children | Puts page actions in the top bar (renders after hydration) |
+| `BarChart` | `data: {label, value}[]`, `label` (accessible name), `format?` | Plain vertical bars in `bg-info`, no chart library; values in hover titles + an sr-only list. Shows every x label when ≤ 6 bars, else first/last |
 | `ChipsInput` | `value` (bindable string[]), `label`, `max?`, `placeholder?`, `disabled?` | Enter/comma adds, Backspace on empty removes last, case-insensitive dedupe; disabled when full |
 | Kbd | shadcn `kbd` as-is | `Kbd.Root`, `Kbd.Group` |
 

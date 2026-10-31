@@ -74,7 +74,8 @@ export async function connectYoutube(userId: string, code: string, origin: strin
 				account_name: item.snippet.title,
 				channel_id: item.id,
 				avatar_url: item.snippet.thumbnails?.default?.url ?? null,
-				connected_at: new Date().toISOString()
+				connected_at: new Date().toISOString(),
+				baselines_seeded_at: null // plan 9: the checkpoints loop (re)seeds baselines
 			},
 			{ onConflict: 'user_id,platform' }
 		);

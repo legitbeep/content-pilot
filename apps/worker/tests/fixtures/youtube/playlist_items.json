@@ -1,0 +1,191 @@
+{
+ "kind": "youtube#playlistItemListResponse",
+ "etag": "pl-etag",
+ "nextPageToken": "EAAaBlBUOkNCUQ",
+ "items": [
+  {
+   "kind": "youtube#playlistItem",
+   "etag": "etag0",
+   "id": "VVVmYWtl0000",
+   "contentDetails": {
+    "videoId": "fakeVid0000",
+    "videoPublishedAt": "2026-09-25T15:00:00Z"
+   }
+  },
+  {
+   "kind": "youtube#playlistItem",
+   "etag": "etag1",
+   "id": "VVVmYWtl0001",
+   "contentDetails": {
+    "videoId": "fakeVid0001",
+    "videoPublishedAt": "2026-09-19T15:00:00Z"
+   }
+  },
+  {
+   "kind": "youtube#playlistItem",
+   "etag": "etag2",
+   "id": "VVVmYWtl0002",
+   "contentDetails": {
+    "videoId": "fakeVid0002",
+    "videoPublishedAt": "2026-09-13T15:00:00Z"
+   }
+  },
+  {
+   "kind": "youtube#playlistItem",
+   "etag": "etag3",
+   "id": "VVVmYWtl0003",
+   "contentDetails": {
+    "videoId": "fakeVid0003",
+    "videoPublishedAt": "2026-09-07T15:00:00Z"
+   }
+  },
+  {
+   "kind": "youtube#playlistItem",
+   "etag": "etag4",
+   "id": "VVVmYWtl0004",
+   "contentDetails": {
+    "videoId": "fakeVid0004",
+    "videoPublishedAt": "2026-09-01T15:00:00Z"
+   }
+  },
+  {
+   "kind": "youtube#playlistItem",
+   "etag": "etag5",
+   "id": "VVVmYWtl0005",
+   "contentDetails": {
+    "videoId": "fakeVid0005",
+    "videoPublishedAt": "2026-08-26T15:00:00Z"
+   }
+  },
+  {
+   "kind": "youtube#playlistItem",
+   "etag": "etag6",
+   "id": "VVVmYWtl0006",
+   "contentDetails": {
+    "videoId": "fakeVid0006",
+    "videoPublishedAt": "2026-08-20T15:00:00Z"
+   }
+  },
+  {
+   "kind": "youtube#playlistItem",
+   "etag": "etag7",
+   "id": "VVVmYWtl0007",
+   "contentDetails": {
+    "videoId": "fakeVid0007",
+    "videoPublishedAt": "2026-08-14T15:00:00Z"
+   }
+  },
+  {
+   "kind": "youtube#playlistItem",
+   "etag": "etag8",
+   "id": "VVVmYWtl0008",
+   "contentDetails": {
+    "videoId": "fakeVid0008",
+    "videoPublishedAt": "2026-08-08T15:00:00Z"
+   }
+  },
+  {
+   "kind": "youtube#playlistItem",
+   "etag": "etag9",
+   "id": "VVVmYWtl0009",
+   "contentDetails": {
+    "videoId": "fakeVid0009",
+    "videoPublishedAt": "2026-08-02T15:00:00Z"
+   }
+  },
+  {
+   "kind": "youtube#playlistItem",
+   "etag": "etag10",
+   "id": "VVVmYWtl0010",
+   "contentDetails": {
+    "videoId": "fakeVid0010",
+    "videoPublishedAt": "2026-07-27T15:00:00Z"
+   }
+  },
+  {
+   "kind": "youtube#playlistItem",
+   "etag": "etag11",
+   "id": "VVVmYWtl0011",
+   "contentDetails": {
+    "videoId": "fakeVid0011",
+    "videoPublishedAt": "2026-07-21T15:00:00Z"
+   }
+  },
+  {
+   "kind": "youtube#playlistItem",
+   "etag": "etag12",
+   "id": "VVVmYWtl0012",
+   "contentDetails": {
+    "videoId": "fakeVid0012",
+    "videoPublishedAt": "2026-07-15T15:00:00Z"
+   }
+  },
+  {
+   "kind": "youtube#playlistItem",
+   "etag": "etag13",
+   "id": "VVVmYWtl0013",
+   "contentDetails": {
+    "videoId": "fakeVid0013",
+    "videoPublishedAt": "2026-07-09T15:00:00Z"
+   }
+  },
+  {
+   "kind": "youtube#playlistItem",
+   "etag": "etag14",
+   "id": "VVVmYWtl0014",
+   "contentDetails": {
+    "videoId": "fakeVid0014",
+    "videoPublishedAt": "2026-07-03T15:00:00Z"
+   }
+  },
+  {
+   "kind": "youtube#playlistItem",
+   "etag": "etag15",
+   "id": "VVVmYWtl0015",
+   "contentDetails": {
+    "videoId": "fakeVid0015",
+    "videoPublishedAt": "2026-06-27T15:00:00Z"
+   }
+  },
+  {
+   "kind": "youtube#playlistItem",
+   "etag": "etag16",
+   "id": "VVVmYWtl0016",
+   "contentDetails": {
+    "videoId": "fakeVid0016",
+    "videoPublishedAt": "2026-06-21T15:00:00Z"
+   }
+  },
+  {
+   "kind": "youtube#playlistItem",
+   "etag": "etag17",
+   "id": "VVVmYWtl0017",
+   "contentDetails": {
+    "videoId": "fakeVid0017",
+    "videoPublishedAt": "2026-06-15T15:00:00Z"
+   }
+  },
+  {
+   "kind": "youtube#playlistItem",
+   "etag": "etag18",
+   "id": "VVVmYWtl0018",
+   "contentDetails": {
+    "videoId": "fakeVid0018",
+    "videoPublishedAt": "2026-06-09T15:00:00Z"
+   }
+  },
+  {
+   "kind": "youtube#playlistItem",
+   "etag": "etag19",
+   "id": "VVVmYWtl0019",
+   "contentDetails": {
+    "videoId": "fakeVid0019",
+    "videoPublishedAt": "2026-06-03T15:00:00Z"
+   }
+  }
+ ],
+ "pageInfo": {
+  "totalResults": 57,
+  "resultsPerPage": 20
+ }
+}
