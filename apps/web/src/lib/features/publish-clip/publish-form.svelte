@@ -1,8 +1,11 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { toast } from 'svelte-sonner';
 	import CopyIcon from '@lucide/svelte/icons/copy';
+	import SparklesIcon from '@lucide/svelte/icons/sparkles';
+	import { RequiresAI } from '$lib/entities/api-key';
 	import { Button } from '$lib/shared/ui/button';
 	import { Input } from '$lib/shared/ui/input';
 	import { Label } from '$lib/shared/ui/label';
@@ -22,7 +25,16 @@
 	} = $props();
 
 	// Editable copies of the prefilled captions; the parent re-mounts this per clip ({#key}).
-	const yt = $derived(clip.captions.youtube);
+	// "Generate captions" replaces `captions` with LLM copy; edits against it are logged.
+	let captions = $state<Record<Platform, Caption>>(untrack(() => clip.captions));
+	const yt = $derived(captions.youtube);
+	let copyText = $state<Record<Platform, string>>({
+		youtube: '',
+		instagram: '',
+		linkedin: '',
+		x: ''
+	});
+	let generating = $state(false);
 	let title = $state('');
 	let description = $state('');
 	let tags = $state('');
@@ -39,7 +51,23 @@
 		title = yt.title;
 		description = yt.description;
 		tags = yt.tags.join(', ');
+		for (const p of platforms) copyText[p.id] = captions[p.id].description;
 	});
+
+	async function generate() {
+		generating = true;
+		try {
+			const r = await formAction<{ captions: Record<Platform, Caption> }>('captions', {
+				clip_id: clip.id
+			});
+			captions = r.captions;
+			toast.success('Captions written from your brand memory.');
+		} catch (e) {
+			toast.error(e instanceof Error ? e.message : 'Could not write captions.');
+		} finally {
+			generating = false;
+		}
+	}
 
 	const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -51,7 +79,8 @@
 				title,
 				caption: description,
 				tags,
-				scheduled_at: mode === 'now' ? '' : toUtcIso(at)
+				scheduled_at: mode === 'now' ? '' : toUtcIso(at),
+				before: JSON.stringify(yt)
 			});
 			toast.success(
 				mode === 'now' ? 'Posting to YouTube within a minute.' : 'Scheduled. See it in Calendar.'
@@ -64,13 +93,32 @@
 		}
 	}
 
-	async function copy(text: string, name: string) {
+	async function copy(platform: Platform, name: string) {
+		const text = copyText[platform];
 		await navigator.clipboard.writeText(text);
 		toast.success(`${name} caption copied.`);
+		const before = captions[platform].description;
+		if (text !== before)
+			formAction('captionEdit', {
+				clip_id: clip.id,
+				platform,
+				before: JSON.stringify({ description: before }),
+				after: JSON.stringify({ description: text })
+			}).catch(() => {}); // logging only; never bother the user
 	}
 </script>
 
 <div class="flex flex-col gap-4">
+	<div>
+		<RequiresAI need="llm">
+			{#snippet children({ disabled })}
+				<Button variant="outline" onclick={generate} disabled={disabled || generating}>
+					<SparklesIcon />
+					{generating ? 'Writing captions…' : 'Generate captions'}
+				</Button>
+			{/snippet}
+		</RequiresAI>
+	</div>
 	<div class="flex flex-wrap gap-4">
 		{#each platforms as p (p.id)}
 			<label class="flex items-center gap-2">
@@ -135,15 +183,22 @@
 	{/if}
 
 	{#each platforms.filter((p) => !p.autoPost && enabled[p.id]) as p (p.id)}
-		{@const text = clip.captions[p.id].description}
 		<div class="flex flex-col gap-2 rounded-lg border p-4">
 			<div class="flex items-center justify-between">
-				<span class="font-medium">{p.name}</span>
-				<Button variant="ghost" size="sm" onclick={() => copy(text, p.name)}>
+				<Label for="copy-{p.id}" class="font-medium">{p.name}</Label>
+				<Button variant="ghost" size="sm" onclick={() => copy(p.id, p.name)}>
 					<CopyIcon /> Copy
 				</Button>
 			</div>
-			<p class="whitespace-pre-wrap text-muted-foreground">{text}</p>
+			<Textarea
+				id="copy-{p.id}"
+				bind:value={copyText[p.id]}
+				rows={4}
+				maxlength={p.id === 'x' ? 280 : undefined}
+			/>
+			{#if p.id === 'x'}
+				<span class="text-xs text-muted-foreground">{copyText.x.length}/280</span>
+			{/if}
 		</div>
 	{/each}
 </div>

@@ -6,6 +6,7 @@ covers:
   - apps/worker/seeds/performance.py
   - apps/worker/tests/fixtures/youtube
   - supabase/migrations/20261101150000_p9_performance.sql
+  - apps/web/src/lib/server/publishing/llm-captions.ts
 last_updated: 2026-11-01
 ---
 # Performance loop, ranking, captions, Home
@@ -100,3 +101,21 @@ job `seed:performance` with 9 posted clips and metrics at every checkpoint (hygi
 1 post posted 8 days ago with open checkpoints; the command prints its `checkpoints:run-now` line.
 `pnpm seed:performance:clean` removes exactly that (plus the seed user's derived
 feature_weights/change_log).
+
+## LLM captions (`$lib/server/publishing/llm-captions.ts`)
+`generateCaptions(supabase, userId, clip)`: ONE `generateJSON` call (task `captions`, fast tier)
+with `buildMemoryContext(profile, rules, { scope: 'copy' })` (unchanged, plan 4's), the clip
+description and its words (≤ 4000 chars). Output `{youtube: {title, description, tags},
+instagram: {caption, hashtags}, linkedin: {text}, x: {text}}` → `toCaptions` enforces limits
+(YouTube title ≤ 100 and no `<>`, tags without `#`, Instagram ≤ 2200 with `#` hashtags, LinkedIn ≤
+3000, X ≤ 280) into the form's `{title, description, tags}` per platform.
+- Publish page: the template captions (now with the brand's default CTA + hashtags) stay as the
+  instant prefill; **Generate captions** (`<RequiresAI need="llm">`, action `captions` →
+  `requireAIKeys('llm')`) replaces them. AI errors show as a toast (`aiFail`).
+- Copy-only platforms (Instagram, LinkedIn, X) are now editable textareas (X shows n/280).
+- **Caption edits → `edit_events`** (contract in plans/STATUS.md): `op = 'caption_edit'`,
+  `source = 'manual'`, `clip_id`, `args = {platform, before, after}`, summary "Edited the
+  <platform> caption". YouTube: on Post/Schedule, `before` = the prefilled/generated
+  `{title, description, tags}`, `after` = what was submitted. Copy-only: on Copy, with
+  `{description}`. Nothing is logged when unchanged; a failed insert never blocks posting.
+  `edit_events.op` has no CHECK constraint, so no migration was needed.
