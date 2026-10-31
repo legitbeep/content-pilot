@@ -29,4 +29,9 @@ Sidebar: Home, Queue, Calendar, Brand Memory, Settings. Clip Picker, Editor and 
 reached from Queue (breadcrumb parent = Queue). Nav config: `$lib/shared/config/nav.ts`.
 
 Clip Picker: `/clips/<jobId>` (Queue `done` rows link here). Editor: `/editor/<clipId>`. The picker's
-keys are page-local (not in `shortcuts.ts`, which plan 7 owns during wave 2).
+keys are page-scoped entries in `shortcuts.ts` (`pickerKeys`), so the `?` sheet lists them.
+
+End-to-end flow: Queue `done` row → **Open clips** (picker) → **Proceed with editing** (editor) →
+Save / **Finish all clips** → **Go to publish** → Post now / Schedule (toast links to **Open
+calendar**) → Calendar. Home's **Generate clips** opens the Queue; onboarding's optional step 8
+connects YouTube for Publish.

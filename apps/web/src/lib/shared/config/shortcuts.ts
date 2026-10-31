@@ -12,9 +12,11 @@ export type Shortcut = {
 	/** Handled by that page itself (e.g. the queue list), listed here so the ? sheet shows it. */
 	| { page: '/queue'; action: QueueAction }
 	| { page: '/editor'; action: EditorAction }
+	| { page: '/clips'; action: PickerAction }
 );
 
 export type QueueAction = 'next' | 'prev' | 'open' | 'delete';
+export type PickerAction = 'next' | 'prev' | 'select';
 export type EditorAction =
 	| 'play'
 	| 'back'
@@ -41,6 +43,9 @@ export const shortcuts: Shortcut[] = [
 	{ keys: ['K'], label: 'Queue: previous job', page: '/queue', action: 'prev' },
 	{ keys: ['Enter'], label: 'Queue: open job details', page: '/queue', action: 'open' },
 	{ keys: ['Backspace'], label: 'Queue: delete job', page: '/queue', action: 'delete' },
+	{ keys: ['J'], label: 'Clip picker: next clip', page: '/clips', action: 'next' },
+	{ keys: ['K'], label: 'Clip picker: previous clip', page: '/clips', action: 'prev' },
+	{ keys: ['X'], label: 'Clip picker: select clip', page: '/clips', action: 'select' },
 	{ keys: ['Space'], label: 'Editor: play / pause', page: '/editor', action: 'play' },
 	{ keys: ['J'], label: 'Editor: back 5s', page: '/editor', action: 'back' },
 	{ keys: ['K'], label: 'Editor: pause', page: '/editor', action: 'pause' },
@@ -65,6 +70,13 @@ export const queueKeys = Object.fromEntries(
 		'page' in s && s.page === '/queue' ? [[s.keys[0].toLowerCase(), s.action]] : []
 	)
 ) as Record<string, QueueAction>;
+
+/** Key (as KeyboardEvent.key, lowercased) → clip picker action. */
+export const pickerKeys = Object.fromEntries(
+	shortcuts.flatMap((s) =>
+		'page' in s && s.page === '/clips' ? [[s.keys[0].toLowerCase(), s.action]] : []
+	)
+) as Record<string, PickerAction>;
 
 const combo = (keys: string[]) =>
 	keys.map((k) => (k === 'Space' ? ' ' : k.toLowerCase())).join('+');
