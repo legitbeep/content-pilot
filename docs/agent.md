@@ -15,7 +15,8 @@ them. All AI goes through `generateJSON` (`docs/llm.md`) on the user's own key (
 
 ## Flow
 1. `POST /api/editor/agent` `{ clipId, message, timeline }` (the editor's current, maybe unsaved,
-   timeline). `requireAIKeys('llm')` (409 before the stream starts). Context from
+   timeline). `requireAIKeys('llm')` (409 before the stream starts). Vercel limit 60 s
+   (`docs/deploy.md`); a stream that ends without a plan shows "The agent took too long…". Context from
    `loadSession` (`$lib/server/agent/session.ts`, RLS client): the open clip, the session's selected
    clips (ids, file keys, clip range in the file, reason), the user's uploaded media keys
    (`listKeys('uploads/<user_id>/')` in `$lib/server/r2.ts`) and
