@@ -31,9 +31,7 @@ Commits: `b20e606` LLM adapter + keys/demo · `c45200f` transcription adapter ·
   to `packages/llm-registry/registry.json`, run `pnpm gen:llm-registry`.
 - Gate every AI button with `<RequiresAI>` and every AI route with `requireAIKeys` (`docs/llm.md`,
   "Gating AI actions"). Plan 4 onboarding: treat `page.data.ai.demo` as "key step complete".
-- **Plan 5:** when LLM steps join `STEPS`, change `requireUploadKeys` in
-  `queue/+page.server.ts` from `'transcription'` to `'both'`. Steps can just raise/let `AIError`
-  propagate. Transcript `speaker` may be `null`.
+- **Plan 5:** steps can just raise/let `AIError` propagate. Transcript `speaker` may be `null`.
 - Plan 7 voice: Wispr, else Groq Whisper through a server route in `$lib/server/llm` (hook documented).
 - `formAction` now surfaces thrown `error(status, message)` messages.
 
@@ -64,7 +62,6 @@ enabled, presign 200. (A temporary `brand_profile` row for the dev user was adde
   `context_length_exceeded` are unconfirmed in current docs.
 - Groq JSON uses `json_schema` with `strict: false`; if a schema is rejected, switch that provider
   to schema-in-prompt only (`providers.ts` / `providers.py`).
-- Demo cap counts existing jobs created today; deleting jobs frees slots.
 - Transcription calls are not written to `llm_calls`.
 
 ## Needs human
@@ -87,3 +84,19 @@ enabled, presign 200. (A temporary `brand_profile` row for the dev user was adde
    with the server env keys set → still missing_key (UI + 409 + worker).
 5. Set the Vercel env vars in `docs/deploy.md` (no `DEV_LOGIN` there); update the main checkout's
    `.env` files as above.
+
+## Fix round (commits ef21124, 7169063, 1e05304)
+1. Upload, create, retry, requeue and answer now require `'both'` (LLM + transcription). The
+   Upload button uses `<RequiresAI need={['llm', 'transcription']}>`.
+2. The demo cap now counts the append-only `demo_usage` table (user_id, kind, created_at). It has
+   no FK to jobs and no client access. A row is written by `recordDemoJob` after a demo-keyed job
+   is created. Migration: `supabase/migrations/20261031190000_llm_demo_usage.sql`, applied with
+   psql. A test shows that deleting jobs doesn't free a slot.
+3. `pnpm llm:smoke <user_id>` runs one `generate_text` and one `generate_json` per provider and
+   tier through the real adapter path, and prints ok/FAIL for each. A unit test covers it, but it
+   was not run against real providers.
+4. Docs: applying migrations with psql is now the documented way (`docs/data-model.md`, the
+   add-migration skill, `supabase/CLAUDE.md`, parallel-rules). psycopg is documented as the fallback.
+5. The allowlisted account (DEMO_ALLOWED_EMAILS) has user_id `3af4ed6b-2029-4a50-8c74-1350dcdbd07f`.
+   Demo smoke run: `pnpm llm:smoke 3af4ed6b-2029-4a50-8c74-1350dcdbd07f`. It uses that user's own
+   keys if they have any, otherwise the demo Gemini key.
