@@ -50,8 +50,12 @@ def exists(key: str) -> bool:
         raise
 
 
-def upload_file(path: str, key: str, content_type: str) -> None:
+def upload_file(path: str, key: str, content_type: str = "video/mp4") -> None:
     _client().upload_file(path, _bucket(), key, ExtraArgs={"ContentType": content_type})
+
+
+def download_file(key: str, path: str) -> None:
+    _client().download_file(_bucket(), key, path)
 
 
 def delete(key: str) -> None:

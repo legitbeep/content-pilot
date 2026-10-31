@@ -16,6 +16,8 @@
 		"check:ai": "node scripts/check-ai-imports.ts",
 		"llm:smoke": "uv run --directory apps/worker --env-file .env python -m worker.llm.smoke",
 		"seed:editor": "uv run --directory apps/worker --env-file .env python -m seeds.editor",
-		"seed:editor:clean": "uv run --directory apps/worker --env-file .env python -m seeds.editor --clean"
+		"seed:editor:clean": "uv run --directory apps/worker --env-file .env python -m seeds.editor --clean",
+		"seed:publish": "uv run --directory apps/worker --env-file .env python seed_publish.py",
+		"seed:publish:clean": "uv run --directory apps/worker --env-file .env python seed_publish.py clean"
 	}
 }

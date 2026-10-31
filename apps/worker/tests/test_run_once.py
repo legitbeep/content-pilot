@@ -25,3 +25,10 @@ def test_dispatches_render(monkeypatch, capsys):
     monkeypatch.setitem(run_once.HANDLERS, "render", run_once.render.run_once)
     assert run_once.cli(["render", "c1"]) == 0
     assert "render c1: done" in capsys.readouterr().out
+
+
+def test_dispatches_post(monkeypatch, capsys):
+    monkeypatch.setattr(run_once.publisher, "run_once", lambda i: "posted")
+    run_once.HANDLERS["post"] = run_once.publisher.run_once
+    assert run_once.cli(["post", "p1"]) == 0
+    assert "post p1: posted" in capsys.readouterr().out

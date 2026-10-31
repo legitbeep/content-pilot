@@ -8,6 +8,7 @@ import time
 import traceback
 from datetime import UTC, datetime
 
+from loops import publisher
 from loops import render as render_loop
 from pipeline import NeedsInput, StepError, Stopped, run
 from worker import db
@@ -134,6 +135,7 @@ def main() -> None:
     log.info("worker up: concurrency=%d", n)
     threads = [threading.Thread(target=loop, name=f"w{i}", daemon=True) for i in range(n)]
     threads.append(threading.Thread(target=render_loop.loop, name="render", daemon=True))
+    threads.append(threading.Thread(target=publisher.loop, name="publisher", daemon=True))
     for t in threads:
         t.start()
     for t in threads:
