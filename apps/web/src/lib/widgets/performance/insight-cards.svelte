@@ -24,7 +24,9 @@
 					<span>
 						{e.message}
 						{#if e.kind === 'rule'}
-							<a href="{resolve('/brand')}?tab=learned" class="text-muted-foreground underline">Review</a>
+							<a href="{resolve('/brand')}?tab=learned" class="text-muted-foreground underline"
+								>Review</a
+							>
 						{/if}
 					</span>
 				</li>
