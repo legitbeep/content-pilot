@@ -7,6 +7,7 @@ covers:
   - apps/web/src/lib/features/upload-video
   - apps/web/src/lib/widgets/job-queue
   - apps/web/src/lib/server/r2.ts
+  - apps/web/src/lib/server/usage.ts
   - apps/web/src/lib/shared/lib/form-action.ts
   - apps/web/src/routes/(authed)/(shell)/queue
   - supabase/migrations
@@ -57,14 +58,16 @@ Video bytes never touch SvelteKit. Three steps, all from the browser:
    metadata; if the browser can't read it, the worker's probe enforces the limit). Limits:
    `UPLOAD_LIMITS` in `$lib/entities/job`.
 2. **`?/presign`** form action: re-checks type/size, calls `requireAIKeys(user, 'both')` (LLM + transcription key, own
-   or demo; 409 if missing) and, for demo users, `requireDemoJobQuota` (429 at the daily cap),
+   or demo; 409 if missing), `requireDailyJobQuota` (429 at 5 new jobs per UTC day, see "Usage caps")
+   and, for demo users, `requireDemoJobQuota` (429 at the daily demo cap),
    returns `{ uploadId, key, url }` with key `uploads/<user_id>/<uploadId>/<safe name>` and a
    presigned R2 PUT URL (`$lib/server/r2.ts`, `aws4fetch`, 1 h).
 3. Browser **PUTs** the file to R2 (XHR for the progress bar), then **`?/create`**: checks the key
    is under the user's prefix and the object exists (HEAD, size ≤ 2 GB), then inserts the job as
    `pending` at the end of the queue (`position = max + 1`) with `title`, `request`, `duration_s`
    and `memory_snapshot` (brand memory, scope clip_selection, `docs/pipeline.md`).
-   It repeats the key/quota check first and, for demo users, `recordDemoJob` after the insert.
+   It repeats the key/quota checks first, rejects a sent `duration` > 60 min (and deletes the
+   object), and after the insert calls `recordJob` (+ `recordDemoJob` for demo users).
    Answer and retry also call `requireAIKeys` (they re-run AI steps). Thrown errors reach the UI
    through `formAction`, which surfaces `error(...)` messages as-is; the upload button is gated by
    `<RequiresAI>` (`docs/llm.md`).
@@ -86,6 +89,14 @@ selection, `Enter` opens details, `Backspace` deletes (with a confirm dialog).
 **Live updates**: the page re-runs its load (`invalidate('app:jobs')`) every 3 s while any job is
 pending or processing. Polling instead of Supabase Realtime: it works with the existing RLS without
 adding `jobs` to the realtime publication; switch if it gets chatty.
+
+## Usage caps
+Numbers live in `UPLOAD_LIMITS` (`$lib/entities/job`); each message says what to do next.
+| Cap | Where | Message |
+|---|---|---|
+| Video ≤ 60 min | browser `checkFile`, `?/create` (sent duration), worker `probe` (authoritative) | "Videos must be 60 minutes or shorter." |
+| 5 new jobs per user per UTC day | `requireDailyJobQuota` in `$lib/server/usage.ts` on `?/presign` + `?/create`; counts `demo_usage` rows with kind `upload` (append-only, so deleting a job doesn't free a slot; retries don't count) | 429 "You can add 5 videos a day. Try again tomorrow…" |
+| 2 processing per user | worker claim query (below); `processingPerUser` mirrors it for the UI | pending rows show "Waits until one of your 2 processing videos finishes" |
 
 ## Claiming
 At most **2 `processing` jobs per user**, enforced in the claim query:

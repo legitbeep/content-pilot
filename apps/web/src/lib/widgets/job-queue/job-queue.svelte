@@ -12,7 +12,7 @@
 	import { formAction } from '$lib/shared/lib/form-action';
 	import { isTyping } from '$lib/shared/lib/is-typing';
 	import { cn } from '$lib/shared/lib/utils';
-	import { can, stepLabels, type Job } from '$lib/entities/job';
+	import { can, stepLabels, UPLOAD_LIMITS, type Job } from '$lib/entities/job';
 	import JobDetails from './job-details.svelte';
 	import { timeAgo } from './format';
 
@@ -24,6 +24,10 @@
 	let dragId = $state<string | null>(null);
 	let order = $state<string[] | null>(null); // optimistic pending order while dragging/saving
 
+	// Mirrors the worker's claim rule so pending rows say why they wait.
+	const processingFull = $derived(
+		jobs.filter((j) => j.status === 'processing').length >= UPLOAD_LIMITS.processingPerUser
+	);
 	const rows = $derived.by(() => {
 		if (!order) return jobs;
 		const byId = new Map(jobs.map((j) => [j.id, j]));
@@ -114,6 +118,11 @@
 					<span class="truncate text-muted-foreground">{job.request}</span>
 				{/if}
 			</div>
+			{#if pending && processingFull}
+				<span class="hidden shrink-0 text-xs text-muted-foreground sm:block">
+					Waits until one of your {UPLOAD_LIMITS.processingPerUser} processing videos finishes
+				</span>
+			{/if}
 			{#if job.status === 'processing'}
 				<span class="hidden shrink-0 items-center gap-2 text-xs text-muted-foreground sm:flex">
 					{job.stop_requested ? 'Stopping…' : (stepLabels[job.current_step ?? ''] ?? 'Starting')}

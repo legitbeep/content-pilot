@@ -54,8 +54,15 @@ export type Transcript = {
 	utterances: { speaker: number | null; start: number; end: number; text: string }[];
 };
 
-/** Upload limits, checked in the browser and again on the server. */
-export const UPLOAD_LIMITS = { maxBytes: 2 * 1024 ** 3, maxSeconds: 60 * 60 };
+/** Upload limits + usage caps (docs/queue.md "Usage caps"). Size/length are checked in the browser
+ * and again on the server/worker; jobsPerDay in `$lib/server/usage.ts`; processingPerUser mirrors
+ * the worker's claim query (MAX_PROCESSING_PER_USER in apps/worker/main.py). */
+export const UPLOAD_LIMITS = {
+	maxBytes: 2 * 1024 ** 3,
+	maxSeconds: 60 * 60,
+	jobsPerDay: 5,
+	processingPerUser: 2
+};
 
 export const stepLabels: Record<string, string> = {
 	probe: 'Checking video',
