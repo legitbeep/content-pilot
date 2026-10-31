@@ -8,7 +8,7 @@ Parallelism cap: 3 subagents (Opus).
 | plan | wave | branch | worktree | state | last note |
 |---|---|---|---|---|---|
 | prep | 0 | main | - | merged | committed 87c6da8 (check+test pass) |
-| llm | 0 | feat/llm-adapter | .worktrees/llm | running | subagent launched (port 5173) |
+| llm | 0 | feat/llm-adapter | .worktrees/llm | ready-to-merge | ec72f2f; check+test pass (orchestrator verified); awaiting checkpoint A2 |
 | 4 | 1 | feat/brand | .worktrees/brand | todo | |
 | 6 | 1 | feat/editor | .worktrees/editor | todo | |
 | 8 | 1 | feat/publish | .worktrees/publish | todo | |
@@ -36,3 +36,4 @@ Parallelism cap: 3 subagents (Opus).
 - User added 5 plan-llm requirements (missing_key error, BYOK-only no env fallback -> supersedes ADR 0007, requireAIKeys 409 guard, client capability helper + disabled AI actions, worker missing_key fail/retry). Included in subagent brief.
 - User: ADR 0007 replaced by user-keys + demo allowlist (DEMO_ALLOWED_EMAILS, DEMO_DAILY_JOB_LIMIT, key_source), docs/deploy.md Vercel env section. Sent to running subagent. Keep gitleaks allow.
 - Scanner test: staged fake postgres URL + api key -> 2 leaks, pnpm check exit 1; file removed.
+- plan-llm done (4 commits, ec72f2f). Orchestrator re-ran check+test in worktree: pass (web 63, schema 6, worker 76). Migration applied via psycopg (psql not installed). Risks: Groq JSON mode untested, plan 5 must switch upload guard to 'both', deleting jobs frees demo cap. Checkpoint A2 pending.
