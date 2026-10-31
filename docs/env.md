@@ -33,6 +33,7 @@ allowlisted accounts (`docs/llm.md`). `ANTHROPIC_API_KEY`, `CLAUDE_OAUTH_TOKEN` 
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | server | Presign browser uploads, HEAD/GET/DELETE objects. The bucket needs a CORS rule allowing `PUT` from the web origin(s) with any header |
 | `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET` | server | YouTube connect OAuth |
 | `YOUTUBE_REDIRECT_URI` | server | YouTube OAuth callback URL |
+| `YOUTUBE_FAKE` | server, **dev only** | `true` = Home recommendations read YouTube search/trending from recorded fixtures (`docs/performance.md`). Never set in production |
 | `SKIP_ONBOARDING` | server, **temporary** | `true` lets signed-in users past the shell's onboarding gate (`(authed)/(shell)/+layout.server.ts`); onboarding stays reachable. Works in production; auth and AI key checks unchanged. Unset/empty = normal gate. Removed in plan10 (grep `TEMP(onboarding-bypass)`) |
 | `DEV_LOGIN` | server, **dev only** | `true` enables `/auth/dev-login` (test-user sign-in for agents) under `vite dev`. Ignored in production builds |
 | `DEV_LOGIN_EMAIL`, `DEV_LOGIN_PASSWORD` | server, dev only | Test user credentials. Defaults `dev@clip-studio.test` / `dev-login-password`. See `docs/auth-and-keys.md` |

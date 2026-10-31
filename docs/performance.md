@@ -7,6 +7,9 @@ covers:
   - apps/worker/tests/fixtures/youtube
   - supabase/migrations/20261101150000_p9_performance.sql
   - apps/web/src/lib/server/publishing/llm-captions.ts
+  - apps/web/src/lib/server/recommendations.ts
+  - apps/web/src/lib/server/youtube-fixtures
+  - apps/web/src/lib/widgets/performance
 last_updated: 2026-11-01
 ---
 # Performance loop, ranking, captions, Home
@@ -119,3 +122,29 @@ instagram: {caption, hashtags}, linkedin: {text}, x: {text}}` → `toCaptions` e
   `{title, description, tags}`, `after` = what was submitted. Copy-only: on Copy, with
   `{description}`. Nothing is logged when unchanged; a failed insert never blocks posting.
   `edit_events.op` has no CHECK constraint, so no migration was needed.
+
+## Home (`routes/(authed)/(shell)/+page.*`, `$lib/widgets/performance`)
+- Header: **Generate clips** (the one primary button, → `/queue`) and **Recommended long-form
+  videos** (outline, opens a sheet).
+- Load (RLS): posted posts, all `post_metrics`, last 6 `change_log`, YouTube connected?
+  `homeStats` (pure, `stats.ts`, tested) uses each post's latest checkpoint: views per posting
+  week and posts per week (last 12 weeks, Monday UTC), top 5 clips by views, score distribution
+  (< 0.6, 0.6-1, 1-1.5, 1.5-3, > 3) + count of posts with "not enough data". No posts → empty state.
+- Charts are the shared `BarChart` (hand-built bars, no chart dependency; shadcn-svelte's chart
+  needs layerchart + d3, skipped).
+- "What we learned": `change_log` cards (rule entries link to /brand).
+- Rating nudge (`ratingNudges`): up to 2 posts whose **7d** score is > 1.5 or < 0.6 and unrated →
+  1-5 stars + optional note → action `rate` updates that `post_metrics` row (`rating`,
+  `rating_note`). Stored as extra evidence; learning doesn't weigh it yet.
+
+## Recommendations (`$lib/server/recommendations.ts`)
+Action `recommend` (`requireAIKeys('llm')`, button in `<RequiresAI need="llm">`), optional region
+(2-letter code). Needs a YouTube connection (its OAuth token; else "Connect YouTube in Settings").
+1. `search.list(part=snippet, type=video, videoLicense=creativeCommon, videoDuration=long,
+   maxResults=10, q=<core topic>, regionCode?)` for up to 3 core topics (niche when none), deduped.
+2. With a region: `videos.list(chart=mostPopular, regionCode)` titles as a trending signal.
+3. `generateJSON` task `recommendations` → `{picks: [{videoId, reason}]}` (≤ 4); ids not in the
+   candidates are dropped. UI: title, channel, licence (Creative Commons), reason, "Open on
+   YouTube". Nothing is downloaded; the user uploads the file in the Queue.
+`YOUTUBE_FAKE=true` (web `.env`, dev only) answers from `$lib/server/youtube-fixtures/` (shaped
+like `youtube#searchListResponse` / `youtube#videoListResponse`).

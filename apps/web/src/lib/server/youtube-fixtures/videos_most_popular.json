@@ -1,0 +1,53 @@
+{
+	"kind": "youtube#videoListResponse",
+	"etag": "p-etag",
+	"nextPageToken": "CAMQAA",
+	"items": [
+		{
+			"kind": "youtube#video",
+			"etag": "pe0",
+			"id": "tr1",
+			"snippet": {
+				"publishedAt": "2026-10-30T08:00:00Z",
+				"channelId": "UCpop0",
+				"title": "Monsoon skincare routine that actually works",
+				"description": "",
+				"channelTitle": "Glow Daily",
+				"categoryId": "26",
+				"liveBroadcastContent": "none"
+			}
+		},
+		{
+			"kind": "youtube#video",
+			"etag": "pe1",
+			"id": "tr2",
+			"snippet": {
+				"publishedAt": "2026-10-30T08:00:00Z",
+				"channelId": "UCpop1",
+				"title": "I tried living on \u20b9500 a week",
+				"description": "",
+				"channelTitle": "Budget Bros",
+				"categoryId": "26",
+				"liveBroadcastContent": "none"
+			}
+		},
+		{
+			"kind": "youtube#video",
+			"etag": "pe2",
+			"id": "tr3",
+			"snippet": {
+				"publishedAt": "2026-10-30T08:00:00Z",
+				"channelId": "UCpop2",
+				"title": "5 cleaning hacks your mom never told you",
+				"description": "",
+				"channelTitle": "Home Hacks",
+				"categoryId": "26",
+				"liveBroadcastContent": "none"
+			}
+		}
+	],
+	"pageInfo": {
+		"totalResults": 200,
+		"resultsPerPage": 3
+	}
+}

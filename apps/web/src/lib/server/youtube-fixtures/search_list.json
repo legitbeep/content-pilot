@@ -1,0 +1,186 @@
+{
+	"kind": "youtube#searchListResponse",
+	"etag": "s-etag",
+	"nextPageToken": "CAoQAA",
+	"regionCode": "IN",
+	"pageInfo": {
+		"totalResults": 1000000,
+		"resultsPerPage": 10
+	},
+	"items": [
+		{
+			"kind": "youtube#searchResult",
+			"etag": "e0",
+			"id": {
+				"kind": "youtube#video",
+				"videoId": "dQx1fake001"
+			},
+			"snippet": {
+				"publishedAt": "2025-03-14T16:00:00Z",
+				"channelId": "UCfake000000000000000000",
+				"title": "Complete Guide to Personal Hygiene for Teens (Full Lecture)",
+				"description": "A 48-minute lecture on daily hygiene routines, skin care and myths.",
+				"thumbnails": {
+					"default": {
+						"url": "https://i.ytimg.com/vi/dQx1fake001/default.jpg",
+						"width": 120,
+						"height": 90
+					},
+					"medium": {
+						"url": "https://i.ytimg.com/vi/dQx1fake001/mqdefault.jpg",
+						"width": 320,
+						"height": 180
+					}
+				},
+				"channelTitle": "Open Health Academy",
+				"liveBroadcastContent": "none",
+				"publishTime": "2025-03-14T16:00:00Z"
+			}
+		},
+		{
+			"kind": "youtube#searchResult",
+			"etag": "e1",
+			"id": {
+				"kind": "youtube#video",
+				"videoId": "dQx1fake002"
+			},
+			"snippet": {
+				"publishedAt": "2024-11-02T09:30:00Z",
+				"channelId": "UCfake000000000000000001",
+				"title": "The Science of Handwashing: Public Health Seminar",
+				"description": "University seminar on germ transmission and why handwashing works.",
+				"thumbnails": {
+					"default": {
+						"url": "https://i.ytimg.com/vi/dQx1fake002/default.jpg",
+						"width": 120,
+						"height": 90
+					},
+					"medium": {
+						"url": "https://i.ytimg.com/vi/dQx1fake002/mqdefault.jpg",
+						"width": 320,
+						"height": 180
+					}
+				},
+				"channelTitle": "CC Science Talks",
+				"liveBroadcastContent": "none",
+				"publishTime": "2024-11-02T09:30:00Z"
+			}
+		},
+		{
+			"kind": "youtube#searchResult",
+			"etag": "e2",
+			"id": {
+				"kind": "youtube#video",
+				"videoId": "dQx1fake003"
+			},
+			"snippet": {
+				"publishedAt": "2025-06-21T18:00:00Z",
+				"channelId": "UCfake000000000000000002",
+				"title": "Kitchen Cleanliness and Food Safety Workshop",
+				"description": "Hands-on workshop: cross-contamination, fridge rules, cleaning schedules.",
+				"thumbnails": {
+					"default": {
+						"url": "https://i.ytimg.com/vi/dQx1fake003/default.jpg",
+						"width": 120,
+						"height": 90
+					},
+					"medium": {
+						"url": "https://i.ytimg.com/vi/dQx1fake003/mqdefault.jpg",
+						"width": 320,
+						"height": 180
+					}
+				},
+				"channelTitle": "Community Kitchen Lab",
+				"liveBroadcastContent": "none",
+				"publishTime": "2025-06-21T18:00:00Z"
+			}
+		},
+		{
+			"kind": "youtube#searchResult",
+			"etag": "e3",
+			"id": {
+				"kind": "youtube#video",
+				"videoId": "dQx1fake004"
+			},
+			"snippet": {
+				"publishedAt": "2025-01-09T12:00:00Z",
+				"channelId": "UCfake000000000000000003",
+				"title": "Personal Finance Basics: 1 Hour Course",
+				"description": "Budgeting, saving and debt explained for beginners.",
+				"thumbnails": {
+					"default": {
+						"url": "https://i.ytimg.com/vi/dQx1fake004/default.jpg",
+						"width": 120,
+						"height": 90
+					},
+					"medium": {
+						"url": "https://i.ytimg.com/vi/dQx1fake004/mqdefault.jpg",
+						"width": 320,
+						"height": 180
+					}
+				},
+				"channelTitle": "Free Money School",
+				"liveBroadcastContent": "none",
+				"publishTime": "2025-01-09T12:00:00Z"
+			}
+		},
+		{
+			"kind": "youtube#searchResult",
+			"etag": "e4",
+			"id": {
+				"kind": "youtube#video",
+				"videoId": "dQx1fake005"
+			},
+			"snippet": {
+				"publishedAt": "2025-08-30T15:00:00Z",
+				"channelId": "UCfake000000000000000004",
+				"title": "Morning Routines That Stick: Habit Science Panel",
+				"description": "Panel discussion on habit formation research.",
+				"thumbnails": {
+					"default": {
+						"url": "https://i.ytimg.com/vi/dQx1fake005/default.jpg",
+						"width": 120,
+						"height": 90
+					},
+					"medium": {
+						"url": "https://i.ytimg.com/vi/dQx1fake005/mqdefault.jpg",
+						"width": 320,
+						"height": 180
+					}
+				},
+				"channelTitle": "Open Habits Forum",
+				"liveBroadcastContent": "none",
+				"publishTime": "2025-08-30T15:00:00Z"
+			}
+		},
+		{
+			"kind": "youtube#searchResult",
+			"etag": "e5",
+			"id": {
+				"kind": "youtube#video",
+				"videoId": "dQx1fake006"
+			},
+			"snippet": {
+				"publishedAt": "2025-05-05T10:00:00Z",
+				"channelId": "UCfake000000000000000005",
+				"title": "Dental Health Myths Debunked (Full Episode)",
+				"description": "A dentist answers 30 common questions about brushing and flossing.",
+				"thumbnails": {
+					"default": {
+						"url": "https://i.ytimg.com/vi/dQx1fake006/default.jpg",
+						"width": 120,
+						"height": 90
+					},
+					"medium": {
+						"url": "https://i.ytimg.com/vi/dQx1fake006/mqdefault.jpg",
+						"width": 320,
+						"height": 180
+					}
+				},
+				"channelTitle": "Smile Commons",
+				"liveBroadcastContent": "none",
+				"publishTime": "2025-05-05T10:00:00Z"
+			}
+		}
+	]
+}
