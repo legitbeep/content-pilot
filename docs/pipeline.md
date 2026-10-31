@@ -58,6 +58,10 @@ port `onnx-community/nsfw_image_detection-ONNX` (`onnx/model_quantized.onnx`, 83
 pinned to a commit, so the worker never downloads weights at runtime. Outside Docker:
 `pnpm nsfw:model` downloads the same file to `apps/worker/models/nsfw.onnx` (gitignored);
 `NSFW_MODEL_PATH` overrides the path. Missing model → the step fails with a clear message.
+The same module checks **editor uploads** (voiceover, music, extra videos) before each render:
+`check_upload(user_id, key, kind)`, explicit → upload deleted + render failed, verdict cached at
+`safety/<key>.json` (`docs/timeline.md` "Render"). Video uploads get the frame check only (no
+speech check, `ponytail:` note); audio gets transcript moderation.
 
 ## Transcripts
 - Provider calls (Deepgram, Groq Whisper) live in `worker/transcription` (`docs/llm.md`).

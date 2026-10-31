@@ -3,6 +3,7 @@ import { buildMemoryContext, profileFromRow, type MemoryRule } from '$lib/entiti
 import { can, UPLOAD_LIMITS, type Job, type JobAction } from '$lib/entities/job';
 import { recordDemoJob, requireAIKeys, requireDemoJobQuota } from '$lib/server/llm';
 import { deleteObject, headSize, presignPut } from '$lib/server/r2';
+import { recordJob, requireDailyJobQuota } from '$lib/server/usage';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals: { supabase }, depends }) => {
@@ -48,10 +49,11 @@ async function nextPosition({ locals: { supabase } }: Ctx) {
 	return (data?.position ?? 0) + 1;
 }
 
-/** A job needs an LLM and a transcription key (own or demo).
- * 409 missing_key / 429 demo cap, thrown so formAction shows the message. Returns `demo`. */
+/** A new job needs an LLM and a transcription key (own or demo) and a free daily slot.
+ * 409 missing_key / 429 daily or demo cap, thrown so formAction shows the message. Returns `demo`. */
 async function requireUploadKeys(userId: string) {
 	const { demo } = await requireAIKeys(userId, 'both');
+	await requireDailyJobQuota(userId);
 	if (demo) await requireDemoJobQuota(userId);
 	return demo;
 }
@@ -109,6 +111,10 @@ export const actions: Actions = {
 			return fail(400, { message: 'Videos must be 2 GB or smaller.' });
 		}
 		const duration = Number(form.get('duration'));
+		if (duration > UPLOAD_LIMITS.maxSeconds) {
+			await deleteObject(key);
+			return fail(400, { message: 'Videos must be 60 minutes or shorter.' });
+		}
 		const requestText = String(form.get('request') ?? '')
 			.trim()
 			.slice(0, 2000);
@@ -126,6 +132,7 @@ export const actions: Actions = {
 			console.error('jobs insert', error);
 			return fail(500, { message: 'Could not create the job.' });
 		}
+		await recordJob(locals.user!.id);
 		if (demo) await recordDemoJob(locals.user!.id);
 		return { created: true };
 	},

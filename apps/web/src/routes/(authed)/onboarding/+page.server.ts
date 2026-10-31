@@ -16,8 +16,13 @@ import type { Actions, PageServerLoad } from './$types';
 export const load: PageServerLoad = async ({ locals: { supabase, user } }) => {
 	const brand = await loadBrand(supabase, user!.id);
 	if (brand.completed) redirect(303, '/');
-	const [keys, drafts] = await Promise.all([
+	const [keys, yt, drafts] = await Promise.all([
 		supabase.from('user_keys_public').select('*'),
+		supabase
+			.from('platform_connections_public')
+			.select('account_name')
+			.eq('platform', 'youtube')
+			.maybeSingle(),
 		// Review step drafts survive a refresh as onboarding candidates.
 		supabase
 			.from('brand_rules')
@@ -30,6 +35,7 @@ export const load: PageServerLoad = async ({ locals: { supabase, user } }) => {
 	return {
 		...brand,
 		keys: k,
+		youtube: yt.data as { account_name: string | null } | null,
 		// Onboarding is outside the shell, so it provides page.data.ai for <RequiresAI> itself.
 		ai: aiCapabilities(k, isDemoUser(user)),
 		drafts: (drafts.data ?? []).map((r) => ({ text: r.rule as string, scope: r.scope as Scope }))

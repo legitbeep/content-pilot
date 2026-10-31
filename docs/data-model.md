@@ -53,7 +53,7 @@ orchestrator runs `npx supabase db push --include-all` on main after merging.
 | platform_connections | platform, refresh_token_ciphertext, iv, account_name, channel_id, avatar_url, baselines_seeded_at, baseline_method | unique (user_id, platform). `docs/publishing.md` |
 | ai_settings | user_id (pk), llm_provider, transcription_provider, task_overrides jsonb | AI provider choices; no row = defaults. Own rows. `docs/llm.md` |
 | llm_calls | provider, key_source (user\|demo), model, task, input_tokens, output_tokens, latency_ms, ok, error_kind | One row per adapter call. Owners read; server/worker write. `docs/llm.md` |
-| demo_usage | user_id, kind (`job`), created_at | Append-only log of demo-key jobs; the daily demo cap counts it. No FK to jobs (deleting a job never frees a slot). RLS on, no policies (server only). `docs/llm.md` |
+| demo_usage | user_id, kind (`job` = demo-keyed job, `upload` = any new job), created_at | Append-only usage log; the daily demo cap counts `job`, the 5-a-day cap counts `upload` (`docs/queue.md`). No FK to jobs (deleting a job never frees a slot). RLS on, no policies (server only). `docs/llm.md` |
 | baseline_seeds | platform, external_id, checkpoint, views, published_at | Pre-existing channel videos seeding the baseline. unique (user_id, platform, external_id, checkpoint). `docs/publishing.md` |
 | post_checkpoints | post_id, checkpoint, due_at, claimed_at, attempts, done_at, error | unique (post_id, checkpoint); trigger `posts_create_checkpoints` adds 48h/7d/14d/30d when a post is `posted`. Own rows. `docs/performance.md` |
 | feature_weights | (user_id, feature) pk, weight, samples, updated_at | Learned ranking weights. Own rows. `docs/performance.md` |

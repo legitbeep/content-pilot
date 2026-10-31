@@ -17,8 +17,8 @@
 {#if !clip}
 	<EmptyState
 		icon={SendIcon}
-		text="No rendered clips waiting. Render a clip in the editor to publish it."
-		action={{ label: 'Open calendar', href: resolve('/calendar') }}
+		text="No rendered clips waiting. Pick clips from a finished video in the queue, edit them, and press Finish all clips."
+		action={{ label: 'Open queue', href: resolve('/queue') }}
 	/>
 {:else}
 	<div class="grid gap-6 md:grid-cols-[260px_1fr]">

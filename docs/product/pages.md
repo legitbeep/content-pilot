@@ -12,7 +12,7 @@ Route → purpose / data / actions.
 
 | Route | Page | Purpose | Data (tables) | Actions |
 |---|---|---|---|---|
-| `/onboarding` | Onboarding | 8 steps: AI keys, basics, audience, content, voice, visual, publishing defaults, review | `brand_profile`, `brand_rules` (source=onboarding), `user_keys_public` | Save per step (refresh resumes), logo upload (R2), review + edit generated rules, "Looks right" → Home (`docs/brand-memory.md`) |
+| `/onboarding` | Onboarding | 9 steps: AI keys, basics, audience, content, voice, visual, publishing defaults, connect YouTube (optional), review | `brand_profile`, `brand_rules` (source=onboarding), `user_keys_public`, `platform_connections_public` | Save per step (refresh resumes), logo upload (R2), review + edit generated rules, "Looks right" → Home (`docs/brand-memory.md`) |
 | `/` | Home | Overview + next steps | `posts`, `post_metrics`, `change_log`, `platform_connections_public` | CTAs: **Generate clips** (→ `/queue`), **Recommended long-form videos** (sheet, region, LLM picks). Rating nudge for surprising 7d scores, "What we learned" cards, charts: views over time, posts per week, top clips, score distribution (`docs/performance.md`) |
 | `/queue` | Queue | Ingestion jobs | `jobs` | Upload (presigned R2) with optional request, Linear-style list, details sheet (steps, error, transcript), actions per state (`docs/queue.md`), J/K/Enter/Backspace, 3s polling |
 | `/clips/[jobId]` | Clip Picker | Review clips of a finished job, with reasons | `clips`, `clip_feedback`, `jobs` | Linear list best-ranked first (thumbnail, duration, hook, reasons, transcript excerpt, small muted score); the focused row plays in the preview from the clip start. each row shows "Score: N/100"; the preview has the clip's Summary. `J`/`K` move, `X` / ✓ toggle select (= approve), ✗ reject with a reason chip (Off-brand, Boring, Too long, Bad cut, Other); each approve/reject appends a `clip_feedback` row. **Proceed with editing** (`?/proceed`) sets `clips.selected`, `jobs.proceeded_at` (the worker's cleanup loop then deletes the source + unselected clip files; otherwise after 48h) and opens `/editor/<first selected clip>`. `/clips` alone redirects to the latest `done` job (empty state if none) |
@@ -24,9 +24,17 @@ Route → purpose / data / actions.
 
 Non-product routes: `/login` (Continue with Google), `/auth/callback` (code → session),
 `/auth/signout` (POST), `/dev/ui` (dev-only design system review, `docs/design/design-system.md`).
+Errors (any route): `routes/+error.svelte`: "Error <status>" + an `EmptyState` with the thrown
+message (404 → "This page doesn't exist, or it isn't yours."; unexpected → a generic line) and
+**Go home**.
 
 Sidebar: Home, Queue, Calendar, Brand Memory, Settings. Clip Picker, Editor and Publish are
 reached from Queue (breadcrumb parent = Queue). Nav config: `$lib/shared/config/nav.ts`.
 
 Clip Picker: `/clips/<jobId>` (Queue `done` rows link here). Editor: `/editor/<clipId>`. The picker's
-keys are page-local (not in `shortcuts.ts`, which plan 7 owns during wave 2).
+keys are page-scoped entries in `shortcuts.ts` (`pickerKeys`), so the `?` sheet lists them.
+
+End-to-end flow: Queue `done` row → **Open clips** (picker) → **Proceed with editing** (editor) →
+Save / **Finish all clips** → **Go to publish** → Post now / Schedule (toast links to **Open
+calendar**) → Calendar. Home's **Generate clips** opens the Queue; onboarding's optional step 8
+connects YouTube for Publish.

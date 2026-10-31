@@ -14,6 +14,7 @@
 	import * as Kbd from '$lib/shared/ui/kbd';
 	import { formAction } from '$lib/shared/lib/form-action';
 	import { isTyping } from '$lib/shared/lib/is-typing';
+	import { pickerKeys } from '$lib/shared/config';
 	import { cn } from '$lib/shared/lib/utils';
 	import { excerpt, REJECT_REASONS, type ClipCandidate } from '$lib/entities/clip';
 	import type { PageProps } from './$types';
@@ -89,16 +90,16 @@
 		}
 	}
 
-	// Page-scoped keys (not in shortcuts.ts, which plan 7 owns): J/K move, X select.
+	// Page-scoped keys from shortcuts.ts (`pickerKeys`): J/K move, X select.
 	function onkeydown(e: KeyboardEvent) {
 		if (e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target) || !data.clips.length) return;
 		const i = data.clips.findIndex((c) => c.id === focusId);
-		const key = e.key.toLowerCase();
-		if (key === 'j' || key === 'k') {
-			const next = Math.min(Math.max(i + (key === 'j' ? 1 : -1), 0), data.clips.length - 1);
+		const action = pickerKeys[e.key.toLowerCase()];
+		if (action === 'next' || action === 'prev') {
+			const next = Math.min(Math.max(i + (action === 'next' ? 1 : -1), 0), data.clips.length - 1);
 			focusId = data.clips[next].id;
 			document.getElementById(`clip-${focusId}`)?.scrollIntoView({ block: 'nearest' });
-		} else if (key === 'x' && focused) toggle(focused);
+		} else if (action === 'select' && focused) toggle(focused);
 		else return;
 		e.preventDefault();
 	}

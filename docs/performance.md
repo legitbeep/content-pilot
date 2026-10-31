@@ -132,7 +132,7 @@ instagram: {caption, hashtags}, linkedin: {text}, x: {text}}` → `toCaptions` e
   (< 0.6, 0.6-1, 1-1.5, 1.5-3, > 3) + count of posts with "not enough data". No posts → empty state.
 - Charts are the shared `BarChart` (hand-built bars, no chart dependency; shadcn-svelte's chart
   needs layerchart + d3, skipped).
-- "What we learned": `change_log` cards (rule entries link to /brand).
+- "What we learned": `change_log` cards (rule entries link to `/brand?tab=learned`, the review list).
 - Rating nudge (`ratingNudges`): up to 2 posts whose **7d** score is > 1.5 or < 0.6 and unrated →
   1-5 stars + optional note → action `rate` updates that `post_metrics` row (`rating`,
   `rating_note`). Stored as extra evidence; learning doesn't weigh it yet.

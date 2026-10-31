@@ -98,7 +98,11 @@ the user has a voice key; hold V to talk. -->
 					onEvent(t, event, data);
 				}
 			}
-			if (t.status === 'thinking') t.status = 'failed';
+			if (t.status === 'thinking') {
+				// Stream ended without a plan: usually the server's time limit (docs/deploy.md).
+				t.status = 'failed';
+				t.error ||= 'The agent took too long. Try again, or split the request into smaller ones.';
+			}
 		} catch (e) {
 			t.status = 'failed';
 			t.error = e instanceof Error ? e.message : 'The agent is unavailable. Try again.';

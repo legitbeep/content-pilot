@@ -25,7 +25,7 @@ lists the code paths it describes; if you change one of those paths, update the 
 | Any AI call (LLM, transcription), model registry, AI buttons/guards | `llm.md` |
 | A migration / table / RLS | `data-model.md` |
 | Env vars, Docker, local setup | `env.md`, `architecture.md` |
-| Deploying the web app (Vercel) | `deploy.md`, `env.md` |
+| Deploying (web on Vercel, worker on a Google Cloud VM) | `deploy.md`, `env.md` |
 | Checkpoints, scores, feature weights, apply_weights, LLM captions, Home, recommendations | `performance.md`, `publishing.md` |
 | A big decision | `decisions/` (add one with the `new-adr` skill) |
 | Unsure what a term means | `glossary.md` |
@@ -45,7 +45,7 @@ lists the code paths it describes; if you change one of those paths, update the 
 - `auth-and-keys.md` — Google login, BYOK encryption and validation.
 - `llm.md` — LLM + transcription adapters, model registry, key resolution, demo allowlist, AI gating.
 - `performance.md` — checkpoints, baselines, score/verdict, learned ranking, captions, Home.
-- `deploy.md` — Vercel deploy and its env vars.
+- `deploy.md` — Vercel web deploy, Google Cloud VM worker, production checklist.
 - `env.md` — every env var and where it's used.
 - `glossary.md` — domain terms.
 - `decisions/0001-monorepo.md` — pnpm monorepo + uv worker.

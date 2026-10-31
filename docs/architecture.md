@@ -31,6 +31,7 @@ flowchart LR
   validation, editor agent (server routes), enqueueing jobs/renders. Never touches video bytes.
 - **apps/worker** (Python, Docker, FFmpeg): one loop that claims queue jobs, runs the pipeline,
   renders timelines, publishes scheduled posts, cleans up sources after picking, collects metric checkpoints.
+  Production: the same image on a Google Cloud VM (`docs/deploy.md`, `scripts/deploy-worker.sh`).
 - **packages/timeline-schema**: the contract between editor and renderer.
 - **packages/llm-registry**: model registry + response fixtures shared by both LLM adapters
   (`docs/llm.md`).

@@ -5,18 +5,12 @@
 	import { Button, buttonVariants } from '$lib/shared/ui/button';
 	import * as Avatar from '$lib/shared/ui/avatar';
 	import { platforms } from '$lib/entities/post';
+	import { youtubeFlash as flash } from './flash';
 
 	type Connection = { platform: string; account_name: string | null; avatar_url: string | null };
 	let { connections, message }: { connections: Connection[]; message?: string } = $props();
 
 	const yt = $derived(connections.find((c) => c.platform === 'youtube'));
-	const flash: Record<string, string> = {
-		connected: 'YouTube connected.',
-		denied: 'YouTube connect was cancelled.',
-		missing_scopes: 'Allow every requested permission to connect YouTube, then try again.',
-		no_channel: 'This Google account has no YouTube channel.',
-		error: 'Could not connect YouTube. Try again.'
-	};
 	const result = $derived(page.url.searchParams.get('youtube'));
 	let busy = $state(false);
 </script>

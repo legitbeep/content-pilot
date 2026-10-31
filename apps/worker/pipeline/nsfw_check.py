@@ -3,6 +3,9 @@
 NSFW image model on CPU (onnxruntime). Text: LLM task `moderate_text` per transcript chunk.
 Clearly explicit -> failed (no override) and the source is deleted at once.
 Borderline -> NeedsInput with the flagged time ranges, options Continue / Cancel.
+Editor uploads (voiceover, music, extra video) go through `check_upload` before every render
+(loops/render.py): explicit -> the upload is deleted and the render fails; the verdict is cached
+in R2 at safety/<key>.json so each file is checked once.
 
 Model: Falconsai/nsfw_image_detection (ViT, Apache-2.0), ONNX int8 port
 onnx-community/nsfw_image_detection-ONNX, baked into the Docker image (Dockerfile)."""
@@ -18,6 +21,7 @@ from pydantic import BaseModel
 
 from worker import db, r2
 from worker.llm import generate_json, max_input_tokens
+from worker.transcription import transcribe
 
 from . import text
 from .errors import NeedsInput, StepError
@@ -130,13 +134,16 @@ def frame_scores(url: str) -> list[float]:
 
 def moderate(job: dict) -> tuple[list[str], list[dict]]:
     """LLM verdict per transcript chunk + flagged sentence time ranges."""
-    sents = text.sentences(text.load(job))
-    budget = text.budget(max_input_tokens(job["user_id"], "moderate_text"))
+    return moderate_sentences(job["user_id"], text.sentences(text.load(job)))
+
+
+def moderate_sentences(user_id: str, sents: list[text.Sentence]) -> tuple[list[str], list[dict]]:
+    budget = text.budget(max_input_tokens(user_id, "moderate_text"))
     verdicts: list[str] = []
     flagged: list[dict] = []
     for block in text.chunk([text.line(s) for s in sents], budget):
         m: Moderation = generate_json(
-            user_id=job["user_id"], task="moderate_text", schema=Moderation,
+            user_id=user_id, task="moderate_text", schema=Moderation,
             system=SYSTEM, prompt=f"Transcript:\n{block}",
         )["data"]  # fmt: skip
         verdicts.append(m.verdict)
@@ -171,3 +178,30 @@ def run(job: dict) -> None:
         },
         "brand_fit",
     )
+
+
+def safety_key(key: str) -> str:
+    """Where an upload's verdict is cached. Outside uploads/, so the browser can't write it."""
+    return f"safety/{key}.json"
+
+
+def check_upload(user_id: str, key: str, kind: Literal["audio", "video"]) -> str:
+    """Editor upload check: video -> image model on 1 fps frames; audio -> transcript through
+    moderate_text (user's keys). Returns decide()'s verdict; explicit deletes the upload.
+    Borderline is allowed (the user added the file themselves; the ingest path asks instead)."""
+    # ponytail: video uploads skip the speech check (frames only); add transcript moderation
+    # if extra clips with explicit speech become a problem.
+    marker = safety_key(key)
+    if r2.exists(marker):
+        return "pass"
+    url = r2.presigned_get(key)
+    if kind == "video":
+        verdict = decide(frame_scores(url), [])
+    else:
+        verdicts, _ = moderate_sentences(user_id, text.sentences(transcribe(user_id, url)))
+        verdict = decide([], verdicts)
+    if verdict == "explicit":
+        r2.delete(key)
+    else:
+        r2.put_json(marker, {"verdict": verdict, "checked_at": datetime.now(UTC).isoformat()})
+    return verdict

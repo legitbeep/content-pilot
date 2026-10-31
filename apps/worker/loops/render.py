@@ -7,10 +7,14 @@ import tempfile
 import time
 import traceback
 from pathlib import Path
+from typing import Literal
 
 from pydantic import ValidationError
 
+from pipeline import nsfw_check
+from pipeline.errors import StepError
 from worker import db, r2
+from worker.llm.errors import AIError
 from worker.render import RenderError, render
 from worker.timeline import Timeline
 
@@ -61,6 +65,28 @@ def _inputs(user_id: str, t: Timeline) -> dict[str, list[dict]]:
     return words
 
 
+def _check_uploads(user_id: str, t: Timeline) -> None:
+    """NSFW check of the user's own uploads in the timeline (docs/pipeline.md "nsfw_check")."""
+    prefix = f"uploads/{user_id}/"
+    kinds: list[tuple[str, Literal["audio", "video"]]] = [
+        *((t.segment_key(s), "video") for s in t.segments),
+        *((a.key, "audio") for a in t.audio),
+    ]
+    used = sorted(set(kinds))
+    for key, kind in used:
+        if not key.startswith(prefix):
+            continue  # clip files were checked when the long video was ingested
+        name = key.rsplit("/", 1)[-1]
+        try:
+            verdict = nsfw_check.check_upload(user_id, key, kind)
+        except (StepError, AIError) as e:
+            raise RenderError(f"Couldn't safety-check {name}: {e.message}") from e
+        if verdict == "explicit":
+            raise RenderError(
+                f"{name} contains explicit content and can't be used. Remove it from this clip."
+            )
+
+
 def process(clip: dict) -> str:
     """Render one claimed clip; returns 'done' or 'failed: <message>'."""
     cid, uid = str(clip["id"]), str(clip["user_id"])
@@ -78,6 +104,7 @@ def process(clip: dict) -> str:
         except ValidationError as e:
             raise RenderError("This clip's edit is invalid. Make a change and save again.") from e
         words = _inputs(uid, t)
+        _check_uploads(uid, t)
         key = f"renders/{cid}.mp4"
         with tempfile.TemporaryDirectory() as tmp:
             out = str(Path(tmp) / "render.mp4")

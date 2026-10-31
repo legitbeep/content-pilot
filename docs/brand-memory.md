@@ -31,7 +31,7 @@ Read with `profileFromRow(row)`, write with `profileToRow(profile)`.
 | colors (max 5, `#rrggbb`), caption_font (curated `CAPTION_FONTS`), default_cta | |
 | posting_goal | posts per week, or null |
 
-Columns: `onboarding_step` (1-8, where a refresh resumes), `onboarding_completed_at` (the gate).
+Columns: `onboarding_step` (1-9, where a refresh resumes), `onboarding_completed_at` (the gate).
 
 ## Rules (`brand_rules`)
 Text is in the `rule` column. `scope`: clip_selection | copy | captions | editing | all.
@@ -49,22 +49,22 @@ archived (hidden, restorable). The legacy enum values `stated`, `learned`, `prop
 from the first migration are no longer written.
 
 ## Onboarding (`routes/(authed)/onboarding`)
-Full-screen, 8 steps with a progress bar: 1 AI providers (`ApiKeyRow` from Settings; Continue needs
+Full-screen, 9 steps with a progress bar: 1 AI providers (`ApiKeyRow` from Settings; Continue needs
 an LLM + transcription capability, or demo; the server re-checks with `requireAIKeys('both')`) ·
 2 Basics (name required) · 3 Audience · 4 Content · 5 Voice · 6 Visual · 7 Publishing defaults ·
-8 Review. Steps 3, 6, 7 have "Skip for now". Each Continue posts `?/profile` (`step` + JSON
+8 Connect YouTube (optional: the Settings connect route with `?next=/onboarding`, so Google's
+callback returns here; `docs/publishing.md`) · 9 Review. Steps 3, 6, 7, 8 have "Skip for now". Each Continue posts `?/profile` (`step` + JSON
 `patch` of that section's fields, `sectionFields` in `features/brand-profile`) and saves
 `onboarding_step = step + 1`, so a refresh resumes there. Back only moves locally.
 - Logo: `?/logo` presigns a PUT to `brand/{user_id}/logo.{png,jpg,webp}` (≤2 MB); the browser PUTs
   to R2 and the step saves `logo_path`. Shown back through a presigned GET (`presignGet`).
-- Review: entering step 8 calls `?/generate` (task `stated_rules`, `generateStatedRules` in
+- Review: entering step 9 calls `?/generate` (task `stated_rules`, `generateStatedRules` in
   `$lib/server/brand.ts`); drafts are saved as `candidate` + `onboarding` rows so a refresh keeps
   them. Editable list (text, scope, delete, add; `DraftRuleList`). "Looks right" (`?/finish`)
   replaces the candidates with `active` rules, sets `onboarding_completed_at` (+
   `profiles.onboarded_at`) and redirects to Home. AI errors show their message inline.
 - Gate: the shell layout sends users without `onboarding_completed_at` to `/onboarding`;
-  onboarding sends completed users to `/`. Dev login sets it for its test user. TEMP:
-  `SKIP_ONBOARDING=true` skips the gate (`docs/env.md`), removed in plan10.
+  onboarding sends completed users to `/`. Dev login sets it for its test user.
 
 ## Brand Memory page (`routes/(authed)/(shell)/brand`)
 Tabs: **Rules** (grouped by scope; filter by scope and source, "Show archived"; per rule
