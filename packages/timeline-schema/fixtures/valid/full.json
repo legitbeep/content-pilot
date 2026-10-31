@@ -1,14 +1,35 @@
 {
 	"version": 1,
-	"sourceKey": "uploads/u1/podcast.mp4",
+	"sourceKey": "clips/5d2c1e7a-8b4f-4c39-a6e2-9f0b7d1c3e55/source.mp4",
 	"aspect": "1:1",
 	"segments": [
-		{ "start": 120, "end": 135.2 },
-		{ "start": 140, "end": 158 }
+		{
+			"start": 5,
+			"end": 20.2
+		},
+		{
+			"start": 25,
+			"end": 43
+		}
 	],
 	"captions": [
-		{ "start": 0, "end": 2.4, "text": "Here's the thing nobody tells you" },
-		{ "start": 2.4, "end": 5, "text": "about pricing." }
+		{
+			"start": 0,
+			"end": 2.4,
+			"text": "Here's the thing nobody tells you"
+		},
+		{
+			"start": 2.4,
+			"end": 5,
+			"text": "about pricing."
+		}
 	],
-	"textOverlays": [{ "start": 0, "end": 3, "text": "Pricing myth #1", "position": "top" }]
+	"textOverlays": [
+		{
+			"start": 0,
+			"end": 3,
+			"text": "Pricing myth #1",
+			"position": "top"
+		}
+	]
 }

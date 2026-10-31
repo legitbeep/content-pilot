@@ -24,7 +24,21 @@ Providers: `anthropic`, `deepgram` | `assemblyai` | `groq` (transcription), `wis
   ciphertext never reach the browser.
 - **Validate on save** (cheap authenticated call; reject the save on 401/403):
   anthropic `GET /v1/models` · deepgram `GET /v1/projects` · assemblyai `GET /v2/transcript?limit=1`
-  · groq `GET /openai/v1/models` · wispr: TBD (check their API).
+  · groq `GET /openai/v1/models` · wispr: see below. Set `validated_at` on success.
+- **Unverified** = `validated_at is null`: saved but not confirmed (network error, provider 5xx,
+  timeout). Validated on first use; set `validated_at` then, or surface the error at that point.
+
+### Wispr (optional, never blocks the user)
+Voice is optional and typing always works, so a Wispr problem never blocks onboarding or saving.
+- Validate with `POST https://platform-api.wisprflow.ai/api/v1/dash/generate_access_token`,
+  `Authorization: Bearer <org key fl-…>`, body `{ "client_id": "<user id>", "duration_secs": 60 }`.
+  No audio, so nothing is transcribed. `200` → set `validated_at`; `401` → tell the user the key
+  was rejected (they can retry or skip voice); anything else → save as unverified.
+- Fallback if that endpoint ever stops fitting: transcribe 1s of silent 16 kHz WAV via
+  `POST /api/v1/dash/api`; if still unclear, save unverified.
+- Browser voice uses the same endpoint: the editor's server route mints a short-lived client
+  JWT for the user so the org key never reaches the browser.
+- Source: api-docs.wisprflow.ai (`generate_access_token.md`, `rest_api_transcribe.md`), checked 2026-10-31.
 - OAuth refresh tokens (`platform_connections`) use the same scheme.
 
 Rotating `APP_ENCRYPTION_KEY` invalidates every stored key/token (users re-enter). Fine for a hackathon.

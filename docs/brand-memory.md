@@ -30,3 +30,5 @@ shown to the user with both rules side by side. Never auto-override; the user pi
 - `brand_fit` step: active rules + profile → pass or `NeedsInput` question.
 - `extract_clips`: rules guide clip choice and reasons.
 - Editor agent: active rules in context; may only propose (`docs/agent.md`).
+- Clip selection: unselected `clips` rows (kept after their files are deleted) are a negative
+  signal for edit-pattern detection.

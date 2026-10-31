@@ -1,5 +1,6 @@
 # Docs: docs/pipeline.md
-"""Delete the source video from R2 once clips exist."""
+"""Not a pipeline step: run by the cleanup sweep after "Proceed with editing" or 48h.
+Deletes the source video and every unselected candidate clip file; sets source_deleted_at."""
 
 
 def run(job: dict) -> None:

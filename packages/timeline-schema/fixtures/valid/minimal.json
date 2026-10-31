@@ -1,8 +1,13 @@
 {
 	"version": 1,
-	"sourceKey": "uploads/u1/video.mp4",
+	"sourceKey": "clips/0b8f6a52-1c3e-4d6e-9a51-2f7d3c9e8a10/source.mp4",
 	"aspect": "9:16",
-	"segments": [{ "start": 12.5, "end": 41 }],
+	"segments": [
+		{
+			"start": 5,
+			"end": 33.5
+		}
+	],
 	"captions": [],
 	"textOverlays": []
 }

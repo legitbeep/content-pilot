@@ -22,14 +22,18 @@ the worker renders it with FFmpeg on save. Web never touches video bytes.
 ```json
 {
   "version": 1,
-  "sourceKey": "uploads/u1/podcast.mp4",
+  "sourceKey": "clips/5d2c…/source.mp4",
   "aspect": "9:16",
-  "segments": [{ "start": 120, "end": 135.2 }, { "start": 140, "end": 158 }],
+  "segments": [{ "start": 5, "end": 20.2 }, { "start": 25, "end": 43 }],
   "captions": [{ "start": 0, "end": 2.4, "text": "Here's the thing" }],
   "textOverlays": [{ "start": 0, "end": 3, "text": "Pricing myth #1", "position": "top" }]
 }
 ```
-- `segments`: kept ranges of the **source**, in output order (cuts, reorders).
+- `sourceKey`: the **clip file** (`clips.file_key`), cut by `extract_clips` with 5s handles
+  before and after. Not the original upload — that is deleted at cleanup.
+- `segments`: kept ranges **of the clip file** (seconds from its start), in output order
+  (cuts, reorders). The initial segment is `[5, 5 + clip length]` (or less if the handle was
+  clamped at the source start); trims may extend into the handles (`0 … file duration`).
 - `captions`, `textOverlays`: times on the **output** timeline.
 - `aspect`: `9:16` | `1:1` | `16:9`.
 
@@ -37,9 +41,10 @@ the worker renders it with FFmpeg on save. Web never touches video bytes.
 `timelines.data` (jsonb), `revision` bumps on every save. Render needed when
 `rendered_revision < revision`; worker writes `rendered_key` + `rendered_revision`.
 
-Note: `cleanup_source` deletes the source after clip extraction, so renders need their own copy.
-Open question: keep a trimmed per-clip source (e.g. `clips/<id>/source.mp4` written by
-`extract_clips`) and point `sourceKey` at it. Decide before building the renderer.
+Renders read only the clip file. Unselected clip files are deleted at cleanup
+(`docs/pipeline.md`), so only selected clips can be rendered. Caption text comes from
+`clips.words` (same time base as the clip file); output-timeline caption times are derived by
+mapping word times through the kept segments.
 
 ## FFmpeg mapping (planned)
 | Timeline | FFmpeg |

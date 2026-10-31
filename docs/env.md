@@ -18,7 +18,7 @@ vars (BYOK, `docs/auth-and-keys.md`).
 | `DATABASE_URL` | worker | Direct Postgres for `FOR UPDATE SKIP LOCKED` claims |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | web server, worker | Presign uploads (web); read/write video (worker) |
 | `APP_ENCRYPTION_KEY` | web server, worker | AES-GCM key for BYOK keys + OAuth refresh tokens |
-| `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET` | web server, worker | YouTube OAuth (connect + token refresh) |
+| `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET` | web server, worker | YouTube OAuth (connect + token refresh; Data + Analytics APIs) |
 | `YOUTUBE_REDIRECT_URI` | web server | OAuth callback URL |
 
 Adding a var: add it to `.env.example` (placeholder + comment) and this table in the same change.

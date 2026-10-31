@@ -32,6 +32,8 @@ def main() -> None:
             # TODO: Stopped -> status='stopped'; NeedsInput -> status='needs_input' +
             # input_request + resume_from_step (releases the slot); other errors -> 'failed'.
             run(job, should_stop=partial(stop_requested, job))
+        # TODO: cleanup sweep: done jobs with source_deleted_at null and
+        # (proceeded_at set or finished_at < now() - 48h) -> pipeline.cleanup_source.run(job).
         time.sleep(POLL_SECONDS)
 
 

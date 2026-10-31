@@ -19,7 +19,7 @@ pending ──claim──▶ processing ──▶ done
 |---|---|---|---|
 | pending | processing | worker | claim query below |
 | pending | stopped | web | user cancels; set directly |
-| processing | done / failed | worker | after last step / on exception (`error` set) |
+| processing | done / failed | worker | after last step (`finished_at` set; cleanup sweep follows, `docs/pipeline.md`) / on exception (`error` set) |
 | processing | stopped | worker | `stop_requested = true` seen before next step (`pipeline.Stopped`) |
 | processing | needs_input | worker | step raises `pipeline.NeedsInput`; sets `input_request`, `resume_from_step`; slot released |
 | needs_input | pending | web | user answers; store answer, clear `input_request` |

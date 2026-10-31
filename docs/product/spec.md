@@ -18,7 +18,8 @@ Details per page: `docs/product/pages.md`.
   Pending jobs can be reordered; processing jobs can be stopped; the worker checks for stop
   between steps. → `docs/queue.md`
 - **Pipeline**: transcribe → NSFW check (hard block) → brand-fit check (soft; may pause the job
-  as `needs_input`) → clip extraction with reasons → source video deleted. → `docs/pipeline.md`
+  as `needs_input`) → clip extraction with reasons (each clip its own file with 5s handles).
+  Source + unselected clips are deleted on "Proceed with editing" or after 48h. → `docs/pipeline.md`
 - **Editor**: every edit (manual UI or agent) mutates a **timeline JSON**. Video is only rendered
   by the worker with FFmpeg on save. → `docs/timeline.md`
 - **Editor agent**: runs in SvelteKit server routes, plans multi-step requests as a todo list,
@@ -29,8 +30,8 @@ Details per page: `docs/product/pages.md`.
 - **Publishing**: YouTube only (posted *private* while the Google app is unverified). Captions
   generated for youtube/instagram/linkedin/x; only YouTube auto-posts, others are copy-only.
 - **Scheduler + checkpoints** at 48h, 7d, 14d, 30d run as a loop in the worker.
-  Score = views / creator's median views at the same checkpoint. Repeated patterns → proposed
-  rules. → `docs/publishing.md`
+  Score = views / creator's median views at the same checkpoint (needs 5+ samples; seeded from
+  the channel's last 20 videos on connect). Repeated patterns → proposed rules. → `docs/publishing.md`
 - **Export ratios**: 9:16 (Shorts, Reels, TikTok), 1:1 (Instagram feed, LinkedIn, X),
   16:9 (YouTube, LinkedIn, X).
 - **BYOK**: users supply Anthropic, transcription (Deepgram/AssemblyAI/Groq) and optional Wispr

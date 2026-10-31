@@ -3,9 +3,10 @@
 
 from collections.abc import Callable
 
-from . import brand_fit, cleanup_source, extract_clips, nsfw_check, transcribe
+from . import brand_fit, extract_clips, nsfw_check, transcribe
 
-STEPS = [transcribe, nsfw_check, brand_fit, extract_clips, cleanup_source]
+# cleanup_source is NOT a step: it runs later from the cleanup sweep (docs/pipeline.md).
+STEPS = [transcribe, nsfw_check, brand_fit, extract_clips]
 
 
 def step_name(step) -> str:

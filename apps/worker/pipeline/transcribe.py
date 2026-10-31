@@ -1,5 +1,5 @@
 # Docs: docs/pipeline.md
-"""Transcribe source audio with the user's BYOK provider (Deepgram/AssemblyAI/Groq)."""
+"""Transcribe source audio (BYOK) -> R2 transcripts/<job_id>.json + jobs.transcript_path."""
 
 
 def run(job: dict) -> None:

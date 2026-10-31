@@ -8,7 +8,7 @@
 	"required": ["version", "sourceKey", "aspect", "segments", "captions", "textOverlays"],
 	"properties": {
 		"version": { "const": 1 },
-		"sourceKey": { "type": "string", "minLength": 1, "description": "R2 object key of the source video" },
+		"sourceKey": { "type": "string", "minLength": 1, "description": "R2 key of the clip file (cut with 5s handles); all times are relative to it" },
 		"aspect": { "enum": ["9:16", "1:1", "16:9"] },
 		"segments": {
 			"description": "Kept ranges of the source, in output order (seconds)",
