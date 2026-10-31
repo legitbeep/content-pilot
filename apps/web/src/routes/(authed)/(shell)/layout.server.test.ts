@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- fake Supabase + load event */
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('$lib/server/llm', () => ({ isDemoUser: () => false }));
@@ -7,7 +8,6 @@ const { load } = await import('./+layout.server');
 const run = (completed: string | null) => {
 	const supabase = {
 		from: (table: string) => {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			const q: any = {
 				select: () => (table === 'brand_profile' ? q : Promise.resolve({ data: [] })),
 				eq: () => q,
@@ -16,7 +16,6 @@ const run = (completed: string | null) => {
 			return q;
 		}
 	};
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	return load({
 		locals: { supabase, user: { id: 'u1' } },
 		cookies: { get: () => undefined }
