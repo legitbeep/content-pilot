@@ -1,23 +1,33 @@
 # Build status (orchestrator memory)
 
 Start state (2026-10-31): Prompt 3 committed on main (02df6c2). plan-llm and plan 4 not built.
-Plan files present: plan-llm, 4, 5, 7, 9. **Missing: plan6.md, plan8.md, plan10.md** (Wave 1 needs 6 and 8).
+Plan files present: plan-llm, 4-10 (6, 8, 10 committed in acb5347).
 Worktrees: manual `git worktree add .worktrees/<plan>` (not built-in isolation).
 Parallelism cap: 3 subagents (Opus).
 
 | plan | wave | branch | worktree | state | last note |
 |---|---|---|---|---|---|
-| prep | 0 | main | - | running | ignores + run_once done; dev login running |
-| llm | 0 | feat/llm-adapter | .worktrees/llm | todo | after prep commit |
+| prep | 0 | main | - | merged | committed 87c6da8 (check+test pass) |
+| llm | 0 | feat/llm-adapter | .worktrees/llm | todo | worktree ready (no commits yet); waiting on settings.json OK |
 | 4 | 1 | feat/brand | .worktrees/brand | todo | |
-| 6 | 1 | feat/editor | .worktrees/editor | blocked | plan6.md missing |
-| 8 | 1 | feat/publish | .worktrees/publish | blocked | plan8.md missing |
+| 6 | 1 | feat/editor | .worktrees/editor | todo | |
+| 8 | 1 | feat/publish | .worktrees/publish | todo | |
 | 5 | 2 | feat/clips | .worktrees/clips | todo | |
 | 7 | 2 | feat/agent | .worktrees/agent | todo | |
 | 9 | 2 | feat/performance | .worktrees/performance | todo | |
-| 10 | 3 | feat/integration | - | blocked | plan10.md missing |
+| 10 | 3 | feat/integration | - | todo | |
+
+## Decisions (2026-10-31, from user)
+1. Permissions: allow pnpm, uv, docker compose, ffmpeg/ffprobe, psql, git add/commit/status/diff/log/worktree. Blocked: git push, supabase db push, git reset --hard, git clean, rm outside repo.
+2. `npx supabase db push` stays blocked for agents. After each wave merge: stop, ask user to run `npx supabase db push --include-all`, continue on confirm.
+3. DB password rotated; local .env updated. Add secret scanner (gitleaks) to `pnpm check`, scan full history once, report findings (no values).
+4. Prod web: https://clip-studio-pi.vercel.app. Google login works there + locally. Supabase redirects: Vercel URL + localhost 5173/5174/5175.
+5. plan6/8/10 committed in plans/.
+6. Order: plan-llm (Wave 0 alone) -> Wave 1 (4, 6, 8) -> Wave 2 (5, 7, 9) -> Wave 3 (10). Plan 4 was NOT started before plan-llm, so no adapter move needed.
 
 ## Log
 - Step 0 done. Step 1 prep launched.
 - Checkpoint A (permissions diff) pending user OK.
 - Note: .claude/settings.json denies `npx supabase db push`; orchestrator's post-merge push needs human or deny removal.
+- Prep committed 87c6da8. Leaked DB password found in worker .env.example (history, commit 6dbaf5e) -> placeholder; user must rotate.
+- llm worktree created + deps installed. Subagent launch denied by auto-mode classifier; waiting on user.
