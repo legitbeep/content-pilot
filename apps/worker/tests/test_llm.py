@@ -167,3 +167,16 @@ def test_rejected_own_key_marked_invalid(monkeypatch):
     with pytest.raises(errors.AIError, match="Groq key was rejected"):
         gen()
     assert ("x", "groq") in f.calls
+
+
+def test_smoke_runs_text_and_json_per_provider(monkeypatch, capsys):
+    from worker.llm import smoke
+
+    f = Fake(monkeypatch, own={"groq": "own-groq"}, email="x@example.com")
+    monkeypatch.setattr(smoke, "load_user_ai", f.load_user_ai)
+    ok = '{"ok": true, "word": "hello"}'
+    f.responses += [groq_ok("ok"), groq_ok(ok), groq_ok("ok"), groq_ok(ok)]
+    assert smoke.main(["u1"]) == 0
+    out = capsys.readouterr().out
+    assert out.count("groq (user)") == 4 and " json: ok" in out and " text: ok" in out
+    assert f.calls[1][2]["response_format"]["type"] == "json_schema"

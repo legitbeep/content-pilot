@@ -63,8 +63,15 @@ def max_input_tokens(user_id: str, task: str) -> int:
     return model_for(r["provider"], task)["max_input_tokens"]
 
 
-def _run(user_id: str, task: str, system: str, prompt: str, schema: type[BaseModel] | None):
-    resolved = resolve_llm(load_user_ai(user_id), task)
+def _run(
+    user_id: str,
+    task: str,
+    system: str,
+    prompt: str,
+    schema: type[BaseModel] | None,
+    resolved: dict | None = None,  # forced {provider, source}: only `pnpm llm:smoke` passes it
+):
+    resolved = resolved or resolve_llm(load_user_ai(user_id), task)
     if not resolved:
         raise AIError("missing_key")
     provider = resolved["provider"]

@@ -1,22 +1,23 @@
 # Docs: docs/llm.md
-"""Manual check only (spends a few tokens): one short JSON call per saved LLM key, both tiers.
-    pnpm llm:smoke <user_id>   # the user's own keys (or the demo key if allowlisted and keyless)
-Prints provider, model, status, tokens and latency per call; never prints keys."""
+"""Manual check only (spends a few tokens). For each LLM key the user has (or the demo key when
+allowlisted and keyless), on both tiers: one generate_text call and one generate_json call (small
+schema, exercises the provider's JSON mode + validation). Reports ok/fail per provider + mode.
+    pnpm llm:smoke <user_id>
+Calls are logged to llm_calls like any other; keys are never printed."""
 
 import sys
-import time
 
 from pydantic import BaseModel
 
-from . import _send, parse_json
+from . import _run
 from .errors import AIError
-from .keys import key_for, load_user_ai
-from .providers import CallRequest
+from .keys import load_user_ai
 from .registry import LLM_PROVIDERS, model_for
 
 
 class Ok(BaseModel):
     ok: bool
+    word: str
 
 
 def main(argv: list[str]) -> int:
@@ -33,23 +34,19 @@ def main(argv: list[str]) -> int:
         return 1
     failed = 0
     for r in targets:
-        p = r["provider"]
         for task in ("captions", "extract_clips"):  # fast + smart tier
-            tier = model_for(p, task)
-            schema = Ok.model_json_schema()
-            system = f'Reply with only this JSON: {{"ok": true}}. JSON Schema: {schema}'
-            req = CallRequest(key=key_for(user_id, r), tier=tier, system=system, prompt="Go.")
-            req.schema = schema
-            usage = {"input_tokens": 0, "output_tokens": 0}
-            started = time.monotonic()
-            try:
-                _, err = parse_json(_send(p, req, usage), Ok)
-                status = f"bad JSON: {err}" if err else "ok"
-            except AIError as e:
-                status = f"{e.kind}: {e.message} ({e.detail[:200]})"
-            failed += status != "ok"
-            ms = round((time.monotonic() - started) * 1000)
-            print(f"{p} ({r['source']}) {tier['model']}: {status} · {usage} · {ms}ms")
+            model = model_for(r["provider"], task)["model"]
+            for mode, schema, prompt in (
+                ("text", None, "Reply with the single word: ok"),
+                ("json", Ok, 'Return ok = true and word = "hello".'),
+            ):
+                try:
+                    res = _run(user_id, task, "You are a test.", prompt, schema, resolved=r)
+                    status = f"ok · {res['usage']} · {res['latency_ms']}ms"
+                except AIError as e:
+                    failed += 1
+                    status = f"FAIL {e.kind}: {e.message} ({e.detail[:200]})"
+                print(f"{r['provider']} ({r['source']}) {model} {mode}: {status}")
     return 1 if failed else 0
 
 

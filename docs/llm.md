@@ -133,8 +133,10 @@ saved to `ai_settings` (`?/prefs`, RLS). Usage: calls + tokens per provider and 
 `llm_calls`, last 7 days. Demo accounts see "Using shared demo keys". Switching the default
 provider changes `llm_calls.provider` from the next call.
 
-`pnpm llm:smoke <user_id>` (`worker/llm/smoke.py`, manual only, spends a few tokens): one tiny
-JSON call per saved LLM key on both tiers; prints status, tokens, latency, never keys.
+`pnpm llm:smoke <user_id>` (`worker/llm/smoke.py`, manual only, spends a few tokens): for each
+saved LLM key (or the demo key for a keyless allowlisted user), on both tiers, one `generate_text`
+and one `generate_json` (small schema, so each provider's JSON mode gets a real call). Prints
+ok/FAIL per provider + tier + mode with tokens and latency, never keys; calls land in `llm_calls`.
 
 ## Gating AI actions (every plan uses these)
 - **Server:** every route that starts AI work calls
