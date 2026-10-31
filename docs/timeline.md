@@ -4,6 +4,8 @@ covers:
   - apps/worker/worker/timeline.py
   - apps/web/src/lib/entities/timeline
   - apps/worker/seeds/editor.py
+  - apps/web/src/lib/widgets/editor
+  - apps/web/src/routes/(authed)/(shell)/editor
 last_updated: 2026-11-01
 ---
 # Timeline
@@ -98,6 +100,20 @@ Renders read only clip files and the user's uploads. Unselected clip files are d
 (`docs/pipeline.md`), so only selected clips can be rendered or merged. Every key a timeline
 references must be one of the user's clip files or under `uploads/<user_id>/` (checked on save
 and again by the worker).
+
+## Editor (`$lib/widgets/editor`, route `/editor/[clipId]`)
+- `EditorState` (`editor-state.svelte.ts`): history (`$state.raw`), playhead, selection, marks,
+  `urls` (R2 key → presigned GET), `durations`. `apply(op, args, source)` runs `applyOp`, pushes
+  history, queues an edit event and autosaves after 800ms (`flush()`; one save at a time).
+  Plan 7 applies agent ops with `apply(op, args, 'agent')`.
+- Actions (`+page.server.ts`): `save` {revision, timeline, events, render?} — zod-validates, checks
+  key ownership, `update … where revision = expected` (409 = changed elsewhere), inserts
+  `edit_events`, optionally queues the render; `renderAll` queues every session clip (creates
+  missing timelines); `presignUpload` → `uploads/<user_id>/<uuid>/<name>` PUT + GET URLs.
+  `GET /editor/[clipId]/renders` → session render status + presigned render URLs (polled by the
+  finish dialog). First open of a clip without a timeline creates `newTimeline(...)`.
+- Preview is approximate (CSS crop via `object-position`, ducking = music at 35%, volume capped at
+  100%); the render is the truth.
 
 ## Seed data
 `pnpm seed:editor` (`apps/worker/seeds/editor.py`): for the dev-login user (or `SEED_EMAIL`), one

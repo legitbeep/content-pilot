@@ -123,7 +123,9 @@
 	</Sidebar.Root>
 	<Sidebar.Inset class="min-w-0 bg-background">
 		<Topbar topbar={slot} onpalette={() => (paletteOpen = true)} />
-		<main class="mx-auto w-full max-w-5xl flex-1 px-6 py-8">
+		<main
+			class="mx-auto w-full max-w-5xl flex-1 px-6 py-8 has-[[data-full-width]]:max-w-none has-[[data-full-width]]:py-4"
+		>
 			{@render children()}
 		</main>
 	</Sidebar.Inset>

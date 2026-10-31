@@ -6,7 +6,7 @@ covers:
   - apps/web/src/lib/widgets/app-shell
   - apps/web/src/routes/dev
   - apps/web/components.json
-last_updated: 2026-10-31
+last_updated: 2026-11-01
 ---
 # Design system
 
@@ -85,12 +85,13 @@ Toasts: `toast()` from `svelte-sonner`; `<Toaster />` is mounted in the root lay
   the server so there's no flash). Items come from `$lib/shared/config/nav.ts` (`sidebar: true`).
   The active item gets `bg-elevated` + a 2px yellow left bar. Clip picker/Editor/Publish highlight
   Queue. Footer: avatar menu (Account, Sign out).
+- Main is `max-w-5xl`; a page that puts `data-full-width` on its root (the editor) gets full width.
 - Top bar: breadcrumbs (`crumbsFor()` in `nav.ts`), `TopbarActions` slot, search button (⌘K).
 - Command palette (⌘/Ctrl+K): every nav route, "New job", "Open settings".
 - Shortcuts, defined only in `$lib/shared/config/shortcuts.ts`: ⌘K palette · ⌘B sidebar ·
   `?` shortcut sheet · `G` then `H/Q/C/B/S` → Home/Queue/Calendar/Brand memory/Settings.
   Page-scoped entries (`page: '/queue'`) are handled by that page but listed here so the sheet
-  shows them: Queue `J`/`K`/`Enter`/`Backspace` (`queueKeys`). All ignored while typing
+  shows them: Queue `J`/`K`/`Enter`/`Backspace` (`queueKeys`); Editor `Space`, `J`/`K`/`L`, `S` split, `I`/`O` marks, `Backspace` delete, ⌘Z / ⇧⌘Z (`editorKeys` + `comboOf`). All ignored while typing
   (`isTyping` in `$lib/shared/lib/is-typing.ts`).
 
 ## Do / don't

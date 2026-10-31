@@ -34,6 +34,14 @@ export async function presignPut(key: string, expires = 3600): Promise<string> {
 	return signed.url;
 }
 
+/** Presigned GET URL (editor preview, rendered clips), valid for `expires` seconds. */
+export async function presignGet(key: string, expires = 6 * 3600): Promise<string> {
+	const url = new URL(objectUrl(key));
+	url.searchParams.set('X-Amz-Expires', String(expires));
+	const signed = await r2().sign(new Request(url), { aws: { signQuery: true } });
+	return signed.url;
+}
+
 /** Object size in bytes, or null if it doesn't exist. */
 export async function headSize(key: string): Promise<number | null> {
 	const res = await r2().fetch(objectUrl(key), { method: 'HEAD' });

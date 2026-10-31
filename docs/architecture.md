@@ -56,6 +56,8 @@ Today's slices:
   `features/api-keys`: Settings key row, provider select, AI preferences.
 - `entities/job`: job/transcript types, upload limits, transitions. `features/upload-video`:
   dropzone + presigned upload. `widgets/job-queue`: queue list + details sheet (`docs/queue.md`).
+- `entities/timeline`: timeline ops catalog, history, editor types. `widgets/editor`: the editor
+  (`docs/timeline.md`).
 - `shared/lib/form-action.ts` (`formAction()`: call a page's form action from JS).
 
 Routes: `(authed)/(shell)/*` render inside `AppShell`; `(authed)/onboarding` is protected but

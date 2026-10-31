@@ -7,6 +7,8 @@ export type EditorClip = {
 	id: string;
 	job_id: string;
 	reason: string;
+	start_s: number;
+	end_s: number;
 	file_key: string | null;
 	file_start_s: number | null;
 	file_end_s: number | null;
