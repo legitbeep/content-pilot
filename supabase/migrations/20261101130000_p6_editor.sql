@@ -30,3 +30,8 @@ alter table edit_events enable row level security;
 drop policy if exists own_rows on edit_events;
 create policy own_rows on edit_events for all
   using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
+
+-- render_status stays text (plan 8 created it as text); values are checked here.
+alter table clips drop constraint if exists clips_render_status_check;
+alter table clips add constraint clips_render_status_check
+  check (render_status in ('queued', 'rendering', 'done', 'failed'));

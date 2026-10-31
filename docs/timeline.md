@@ -4,6 +4,8 @@ covers:
   - apps/worker/worker/timeline.py
   - apps/web/src/lib/entities/timeline
   - apps/worker/seeds/editor.py
+  - apps/worker/worker/render.py
+  - apps/worker/loops/render.py
   - apps/web/src/lib/widgets/editor
   - apps/web/src/routes/(authed)/(shell)/editor
 last_updated: 2026-11-01
@@ -123,12 +125,33 @@ testsrc2 440 Hz, horizontal smptebars 660 Hz, horizontal hue-shifted testsrc2 33
 {voiceover,music}.m4a`. Ids are uuid5 of the user, so re-running resets the same rows.
 `pnpm seed:editor:clean` deletes exactly those rows (cascade) and R2 objects.
 
-## FFmpeg mapping (planned)
+## Render (`apps/worker/loops/render.py`, `apps/worker/worker/render.py`)
+- **Queue**: Save (or Finish all clips) sets `clips.render_status = 'queued'`,
+  `render_requested_at = now()`. The render loop (its own thread, registered in `main.py`) claims
+  one clip with `FOR UPDATE SKIP LOCKED` → `rendering`, renders, uploads `renders/<clip_id>.mp4`,
+  sets `render_path`, `rendered_at`, `render_status = 'done'` and `timelines.rendered_key /
+  rendered_revision`. Failure → `failed` + user-readable `render_error`. Finishing only overwrites
+  `rendering`, so a Save during a render re-queues and wins. On loop start, `rendering` rows go back
+  to `queued` (assumes one worker process). Debug: `python -m worker.run_once render <clip_id>`.
+- **Statuses** (`clips.render_status`, text + CHECK): null (never) · queued · rendering · done · failed.
+- The worker refuses any key that isn't one of the user's clip files or under `uploads/<user_id>/`.
+- Inputs are presigned GET URLs read by ffmpeg directly; `ffprobe` decides per source whether it
+  has audio (silence is generated if not).
+- **Captions/text need libass** (`subtitles` filter): present in the Docker image (Debian ffmpeg),
+  missing in Homebrew ffmpeg; without it a render with captions/text fails with a clear message.
+
+## FFmpeg mapping
+Output: H.264 (`veryfast`, CRF 20, yuv420p) + AAC 160k, `+faststart`, 30 fps, `-t` = sum of segments.
 | Timeline | FFmpeg |
 |---|---|
-| `segments` | `trim`/`atrim` per segment + `setpts`/`asetpts`, then `concat=n=N:v=1:a=1` |
-| `aspect` 9:16 | `crop=ih*9/16:ih,scale=1080:1920` (center crop) |
-| `aspect` 1:1 | `crop=ih:ih,scale=1080:1080` |
-| `aspect` 16:9 | `scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2` |
-| `captions` | write `.ass` file → `subtitles=` filter (burned in) |
-| `textOverlays` | `drawtext=text=...:enable='between(t,start,end)'`, y by `position` |
+| `segments` | one input per segment: `-ss start -t len -i <url>`; per segment crop/scale/`fps=30`/`trim`, audio `aformat` 48k stereo + `apad,atrim` (or `anullsrc` if the source has no audio); `concat=n=N:v=1:a=1` |
+| `aspect` + `cropX` | cover crop `crop=w='min(iw,ih*R)':h='min(ih,iw/R)':x='(iw-ow)*cropX':y='(ih-oh)/2'`, then `scale` to 9:16 1080x1920 · 1:1 1080x1080 · 16:9 1920x1080 |
+| `blurRegions` | per region `split` → `crop` → `boxblur` → `overlay=…:enable='between(t,s,e)'` (pixels from fractions of the output) |
+| `captions` + `textOverlays` | one `.ass` file (`build_ass`) → `subtitles=` (burned in). Captions: `captionChunks`, style font/colour/size (4.5/6/7.5% of height)/position (ASS alignment 2/5/8); overlays: white, 5% of height |
+| `originalAudio` | `volume` on the concatenated audio (0 when muted) |
+| `audio` | per unmuted track `-i <url>`, `volume`, `adelay=start_ms:all=1`; voiceovers mix with the original (`amix duration=first normalize=0`) |
+| `ducking` | music bus → `sidechaincompress` keyed by the speech bus (threshold 0.02, ratio 8), then mixed |
+
+Golden tests (`apps/worker/tests/test_render.py`) render every valid fixture from generated media
+and assert duration, resolution and an audio stream with ffprobe (captions stripped when the local
+ffmpeg has no libass).

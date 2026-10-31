@@ -41,9 +41,11 @@
 		<Dialog.Header>
 			<Dialog.Title>Finish all clips</Dialog.Title>
 			<Dialog.Description>
-				{busy
-					? `Rendering… ${done} of ${renders.length} done. You can keep editing; this updates on its own.`
-					: `${done} of ${renders.length} clips rendered.`}
+				{!renders.length
+					? 'Loading renders…'
+					: busy
+						? `Rendering… ${done} of ${renders.length} done. You can keep editing; this updates on its own.`
+						: `${done} of ${renders.length} clips rendered.`}
 			</Dialog.Description>
 		</Dialog.Header>
 		<ul class="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -73,7 +75,11 @@
 		</ul>
 		<Dialog.Footer>
 			<Button variant="outline" onclick={() => (open = false)}>Keep editing</Button>
-			<Button href={resolve('/publish')} disabled={!done}>Go to publish</Button>
+			{#if done}
+				<Button href={resolve('/publish')}>Go to publish</Button>
+			{:else}
+				<Button disabled>Go to publish</Button>
+			{/if}
 		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>

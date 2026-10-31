@@ -98,7 +98,8 @@ export const ops = [
 			const seg = t.segments[index];
 			if (source - seg.start < 0.1 || seg.end - source < 0.1)
 				fail('Move the playhead inside a segment to split it.');
-			t.segments.splice(index, 1, { ...seg, end: source }, { ...seg, start: source });
+			const cut = Math.round(source * 1000) / 1000;
+			t.segments.splice(index, 1, { ...seg, end: cut }, { ...seg, start: cut });
 			return { timeline: t, summary: `Split at ${s(a.at)}` };
 		}
 	),

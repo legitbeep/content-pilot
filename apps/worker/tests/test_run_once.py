@@ -18,3 +18,10 @@ def test_dispatches_job_and_exit_codes(monkeypatch, capsys):
 def test_bad_args():
     assert run_once.cli(["nope", "abc"]) == 2
     assert run_once.cli(["job"]) == 2
+
+
+def test_dispatches_render(monkeypatch, capsys):
+    monkeypatch.setattr(run_once.render, "run_once", lambda i: "done")
+    monkeypatch.setitem(run_once.HANDLERS, "render", run_once.render.run_once)
+    assert run_once.cli(["render", "c1"]) == 0
+    assert "render c1: done" in capsys.readouterr().out
