@@ -68,3 +68,4 @@ Parallelism cap: 3 subagents (Opus).
 - Job c0325709 (demo user) failed at transcribe: Groq 403 'error code: 1010' = Cloudflare blocking urllib default UA (verified: custom UA -> 200). Fix subagent running (UA header + don't map CF 403 to bad key). Then restart worker, user retries. Seed post 4f609355 failed invalid_grant (fake seed token, expected).
 - UA fix bfabc02 (check+test pass). Worker restarted with fix. Web redeploy for fix denied by auto-mode (prod deploy) -> user to run it.
 - Docker DNS fixed (dns 1.1.1.1/8.8.8.8 in compose); worker now runs in Docker (docker compose up -d worker), libass available. Deferred by user: publish/YouTube test and editor audio upload (need clips from plan 5); groq-only accepted as enough for now.
+- Web redeployed with UA fix (prod = main incl. bfabc02 + DNS commit).
