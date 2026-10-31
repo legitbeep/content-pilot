@@ -3,6 +3,7 @@
 // topics, the region's trending titles as a signal, then the LLM (task `recommendations`) picks
 // 3-4 with a reason. Never downloads anything. YOUTUBE_FAKE=true reads recorded responses.
 import { z } from 'zod';
+import { dev } from '$app/environment';
 import { env } from '$env/dynamic/private';
 import { generateJSON } from './llm';
 import { decrypt, fromBytea } from './crypto';
@@ -30,7 +31,8 @@ export const Picks = z.object({
 	picks: z.array(z.object({ videoId: z.string(), reason: z.string() })).max(4)
 });
 
-const fake = () => env.YOUTUBE_FAKE === 'true';
+// Production builds have dev=false, so YOUTUBE_FAKE can never switch on there.
+const fake = () => dev && env.YOUTUBE_FAKE === 'true';
 
 async function get(url: string, token: string): Promise<unknown> {
 	if (fake()) return new URL(url).pathname.endsWith('/search') ? searchFixture : popularFixture;

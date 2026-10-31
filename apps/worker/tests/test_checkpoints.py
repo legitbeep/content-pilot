@@ -86,3 +86,10 @@ def test_process_reconnect_needed_retries(monkeypatch, fake):
         {"id": "c1", "user_id": "u1", "post_id": "p1", "checkpoint": "48h", "attempts": 1}
     )
     assert "Reconnect" in out
+
+
+def test_youtube_fake_is_ignored_inside_docker(monkeypatch):
+    monkeypatch.setenv("YOUTUBE_FAKE", "true")
+    assert yt_stats.fake() is True  # local uv run (no /.dockerenv here)
+    monkeypatch.setattr(yt_stats, "Path", lambda p: type("P", (), {"exists": lambda s: True})())
+    assert yt_stats.fake() is False  # production worker image

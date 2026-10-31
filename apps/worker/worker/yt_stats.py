@@ -24,6 +24,9 @@ FIXTURES = Path(__file__).parent.parent / "tests" / "fixtures" / "youtube"
 
 
 def fake() -> bool:
+    # Never inside the Docker image (the production worker): fixtures are for local uv runs only.
+    if Path("/.dockerenv").exists():
+        return False
     return os.environ.get("YOUTUBE_FAKE", "").lower() == "true"
 
 

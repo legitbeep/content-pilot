@@ -2,11 +2,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const state = vi.hoisted(() => ({
 	env: { YOUTUBE_FAKE: 'true' } as Record<string, string>,
+	dev: true,
 	connected: true,
 	prompts: [] as string[],
 	picks: [] as { videoId: string; reason: string }[]
 }));
 vi.mock('$env/dynamic/private', () => ({ env: state.env }));
+vi.mock('$app/environment', () => ({
+	get dev() {
+		return state.dev;
+	}
+}));
 vi.mock('./supabase-admin', () => ({
 	supabaseAdmin: () => ({
 		from: () => ({
@@ -91,5 +97,21 @@ describe('recommend', () => {
 		expect(search.searchParams.get('videoDuration')).toBe('long');
 		expect(search.searchParams.get('type')).toBe('video');
 		expect(new URL(urls[1]).searchParams.get('chart')).toBe('mostPopular');
+	});
+
+	it('ignores YOUTUBE_FAKE in a production build (dev=false)', async () => {
+		state.dev = false;
+		const urls: string[] = [];
+		vi.stubGlobal('fetch', async (u: string) => {
+			urls.push(u);
+			return new Response(JSON.stringify({ items: [] }));
+		});
+		try {
+			await searchCandidates('tok', ['hygiene'], 'IN');
+		} finally {
+			vi.unstubAllGlobals();
+			state.dev = true;
+		}
+		expect(urls[0]).toContain('/youtube/v3/search');
 	});
 });
