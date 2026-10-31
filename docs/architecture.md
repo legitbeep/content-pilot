@@ -5,7 +5,7 @@ covers:
   - apps/web/svelte.config.js
   - apps/worker/main.py
   - docker-compose.yml
-last_updated: 2026-10-31
+last_updated: 2026-11-01
 ---
 # Architecture
 
@@ -41,12 +41,12 @@ flowchart LR
 Layers (import only downward): `widgets → features → entities → shared`. Routes (`src/routes`)
 compose widgets/features. `src/lib/server` is SvelteKit's server-only folder (`$lib/server`),
 outside FSD layering: secrets, Supabase service client (`supabase-admin.ts`), crypto, keys,
-R2 presign, dev login, and `llm/` (the web LLM adapter, key resolution, AI guards; `docs/llm.md`).
+R2 presign, dev login, `brand.ts` (profile save, logo presign, stated_rules), and `llm/` (the web LLM adapter, key resolution, AI guards; `docs/llm.md`).
 Each layer has an `index.ts` with a `// Docs:` header; slices go in `src/lib/<layer>/<slice>/`.
 
 Today's slices:
 - `shared/ui/*`: shadcn-svelte components (generated, aliases in `components.json`) plus ours
-  (page-header, empty-state, status-badge, timecode, data-table, topbar-actions). See
+  (page-header, empty-state, status-badge, timecode, data-table, topbar-actions, chips-input). See
   `docs/design/design-system.md`.
 - `shared/lib/utils.ts` (`cn` + shadcn prop types), `shared/lib/is-typing.ts`, `shared/lib/hooks/`.
 - `shared/config/`: `nav.ts` (one route list for sidebar, palette, breadcrumbs) and
@@ -54,6 +54,9 @@ Today's slices:
 - `widgets/app-shell`: sidebar, top bar, command palette, shortcut sheet, key handler.
 - `entities/api-key`: BYOK provider list, key status, `aiCapabilities`, `<RequiresAI>` gate.
   `features/api-keys`: Settings key row, provider select, AI preferences.
+- `entities/brand`: brand profile zod, rule types, `buildMemoryContext`, `ConflictCard`.
+  `features/brand-profile`: profile sections (onboarding + /brand). `features/brand-rules`: rule
+  row, draft list, scope select (`docs/brand-memory.md`).
 - `entities/job`: job/transcript types, upload limits, transitions. `features/upload-video`:
   dropzone + presigned upload. `widgets/job-queue`: queue list + details sheet (`docs/queue.md`).
 - `shared/lib/form-action.ts` (`formAction()`: call a page's form action from JS).

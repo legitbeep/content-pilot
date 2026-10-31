@@ -24,15 +24,17 @@ const objectUrl = (key: string) =>
 		.map(encodeURIComponent)
 		.join('/')}`;
 
-/** Presigned PUT URL, valid for `expires` seconds. */
-export async function presignPut(key: string, expires = 3600): Promise<string> {
+async function presign(method: 'PUT' | 'GET', key: string, expires: number): Promise<string> {
 	const url = new URL(objectUrl(key));
 	url.searchParams.set('X-Amz-Expires', String(expires));
-	const signed = await r2().sign(new Request(url, { method: 'PUT' }), {
-		aws: { signQuery: true }
-	});
+	const signed = await r2().sign(new Request(url, { method }), { aws: { signQuery: true } });
 	return signed.url;
 }
+
+/** Presigned PUT URL, valid for `expires` seconds. */
+export const presignPut = (key: string, expires = 3600) => presign('PUT', key, expires);
+/** Presigned GET URL (e.g. to show the brand logo), valid for `expires` seconds. */
+export const presignGet = (key: string, expires = 3600) => presign('GET', key, expires);
 
 /** Object size in bytes, or null if it doesn't exist. */
 export async function headSize(key: string): Promise<number | null> {

@@ -6,7 +6,7 @@ covers:
   - apps/web/src/lib/widgets/app-shell
   - apps/web/src/routes/dev
   - apps/web/components.json
-last_updated: 2026-10-31
+last_updated: 2026-11-01
 ---
 # Design system
 
@@ -76,6 +76,7 @@ Ours, in `$lib/shared/ui`:
 | `Timecode` / `formatTimecode` | `seconds` | `01:23.4`, `1:02:03.5`; mono, tabular numbers |
 | `DataTable` | `columns: Column<T>[]`, `rows`, `empty?` snippet, `onrowclick?` | Click header to sort asc → desc → none; hover row `bg-elevated` |
 | `TopbarActions` | children | Puts page actions in the top bar (renders after hydration) |
+| `ChipsInput` | `value` (bindable string[]), `label`, `max?`, `placeholder?`, `disabled?` | Enter/comma adds, Backspace on empty removes last, case-insensitive dedupe; disabled when full |
 | Kbd | shadcn `kbd` as-is | `Kbd.Root`, `Kbd.Group` |
 
 Toasts: `toast()` from `svelte-sonner`; `<Toaster />` is mounted in the root layout.

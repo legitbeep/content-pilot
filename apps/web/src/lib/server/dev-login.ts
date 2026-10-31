@@ -26,10 +26,12 @@ export async function devLogin(supabase: SupabaseClient): Promise<string | null>
 	return completeOnboarding(data.user.id);
 }
 
-/** The shell gate ((authed)/(shell)/+layout.server.ts) needs a brand_profile row. Idempotent:
- * never overwrites a profile the test user already has (e.g. one made by real onboarding). */
+/** The shell gate ((authed)/(shell)/+layout.server.ts) needs brand_profile.onboarding_completed_at.
+ * Idempotent: never overwrites a profile the test user already has (e.g. one made by real
+ * onboarding); only fills the completion timestamps when they're missing. */
 async function completeOnboarding(userId: string): Promise<string | null> {
 	const admin = supabaseAdmin();
+	const now = new Date().toISOString();
 	const profile = await admin
 		.from('brand_profile')
 		.upsert(
@@ -37,9 +39,15 @@ async function completeOnboarding(userId: string): Promise<string | null> {
 			{ onConflict: 'user_id', ignoreDuplicates: true }
 		);
 	if (profile.error) return profile.error.message;
+	const completed = await admin
+		.from('brand_profile')
+		.update({ onboarding_completed_at: now })
+		.eq('user_id', userId)
+		.is('onboarding_completed_at', null);
+	if (completed.error) return completed.error.message;
 	const onboarded = await admin
 		.from('profiles')
-		.update({ onboarded_at: new Date().toISOString() })
+		.update({ onboarded_at: now })
 		.eq('id', userId)
 		.is('onboarded_at', null);
 	return onboarded.error?.message ?? null;

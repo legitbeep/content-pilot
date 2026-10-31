@@ -1,7 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { LLM_PROVIDERS, TASKS, TRANSCRIPTION_PROVIDERS } from '@clip-studio/llm-registry';
-import { providers, type ApiKey, type Provider } from '$lib/entities/api-key';
-import { removeKey, saveKey } from '$lib/server/keys';
+import type { ApiKey } from '$lib/entities/api-key';
+import { keyActions } from '$lib/server/keys';
 import type { Actions, PageServerLoad } from './$types';
 
 export type Usage = { provider: string; source: string; calls: number; tokens: number }[];
@@ -39,38 +39,12 @@ export const load: PageServerLoad = async ({ locals: { supabase } }) => {
 	};
 };
 
-const isProvider = (v: unknown): v is Provider => providers.some((p) => p.id === v);
 /** 'auto' (or anything unknown) → null = let resolution decide (docs/llm.md). */
 const pick = (v: FormDataEntryValue | null, allowed: string[]) =>
 	typeof v === 'string' && allowed.includes(v) ? v : null;
 
 export const actions: Actions = {
-	save: async ({ request, locals: { user } }) => {
-		const form = await request.formData();
-		const provider = form.get('provider');
-		const key = String(form.get('key') ?? '').trim();
-		if (!isProvider(provider)) return fail(400, { provider, message: 'Unknown provider.' });
-		if (key.length < 8 || key.length > 500)
-			return fail(400, { provider, message: 'That does not look like an API key.' });
-
-		const result = await saveKey(user!.id, provider, key);
-		const name = providers.find((p) => p.id === provider)!.name;
-		if (result === 'invalid')
-			return fail(400, {
-				provider,
-				message:
-					provider === 'wispr'
-						? 'Wispr rejected this key. Try another, or skip voice input.'
-						: `${name} rejected this key. Check it and try again.`
-			});
-		return { provider, result };
-	},
-	remove: async ({ request, locals: { user } }) => {
-		const provider = (await request.formData()).get('provider');
-		if (!isProvider(provider)) return fail(400, { provider, message: 'Unknown provider.' });
-		await removeKey(user!.id, provider);
-		return { provider, result: 'removed' as const };
-	},
+	...keyActions,
 	/** Default LLM provider, transcription provider and per-task overrides (ai_settings, RLS). */
 	prefs: async ({ request, locals: { supabase, user } }) => {
 		const form = await request.formData();

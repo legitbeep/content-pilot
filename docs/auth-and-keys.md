@@ -13,7 +13,7 @@ covers:
   - apps/worker/worker/keys.py
   - fixtures/crypto.json
   - supabase/migrations
-last_updated: 2026-10-31
+last_updated: 2026-11-01
 ---
 # Auth and keys
 
@@ -35,8 +35,9 @@ Flow:
 4. `routes/(authed)/+layout.server.ts|+layout.ts|+layout.svelte`: the Supabase SvelteKit
    pattern. It passes session + cookies down, builds a browser/server client in `+layout.ts`
    (`depends('supabase:auth')`), and `onAuthStateChange` → `invalidate('supabase:auth')`.
-5. First login: `routes/(authed)/(shell)/+layout.server.ts` looks up the user's `brand_profile`
-   row. If there is none → 303 `/onboarding` (outside the shell, still protected).
+5. First login: `routes/(authed)/(shell)/+layout.server.ts` reads the user's
+   `brand_profile.onboarding_completed_at`. Missing (no row or null) → 303 `/onboarding` (outside the
+   shell, still protected); onboarding sends completed users to `/` (`docs/brand-memory.md`).
 6. Sign out: the avatar menu POSTs to `/auth/signout` → `signOut()` → `/login`.
 
 Route groups: `(authed)` = signed-in area (Supabase layouts). `(authed)/(shell)` = pages inside
@@ -55,11 +56,10 @@ exists via the secret-key admin API (`createUser`, email pre-confirmed; existing
 `signInWithPassword` on `locals.supabase`, which sets the normal session cookies.
 - **Onboarded on login:** after sign-in it marks the test user onboarded, idempotently, so it
   lands on signed-in pages: inserts a `brand_profile` row (`answers = {"dev_login": true}`, upsert
-  with `ignoreDuplicates`, so an existing profile is never overwritten) and sets
-  `profiles.onboarded_at` if null. Same `devLoginEnabled()` guard; `devLogin()` refuses and writes
-  nothing when it's off (tested). **Plan 4:** the shell gate today checks for a `brand_profile`
-  row. If real onboarding changes what the gate reads, update `completeOnboarding` in
-  `$lib/server/dev-login.ts` in the same change so dev login keeps landing on signed-in pages.
+  with `ignoreDuplicates`, so an existing profile is never overwritten), then sets
+  `brand_profile.onboarding_completed_at` (what the shell gate reads) and `profiles.onboarded_at`
+  where null. Same `devLoginEnabled()` guard; `devLogin()` refuses and writes nothing when it's off
+  (tested). If the gate ever reads something else, update `completeOnboarding` in the same change.
 - Agents: `GET /auth/dev-login?next=/queue` signs in and 303s to `next` (relative paths only,
   default `/`). `POST` does the same; the login page's "Dev login (test user)" button uses it.
 - Needs email/password sign-in enabled in Supabase Auth (on by default). If the user already exists
@@ -88,7 +88,7 @@ Uploading needs an LLM key and a transcription key (one Groq key is both); see "
   Worker: `worker/crypto.py`. Cross-language test: `fixtures/crypto.json` holds one value
   encrypted by each side; `crypto.test.ts` (vitest) and `tests/test_crypto.py` (pytest) each
   decrypt the other's.
-- **Save** (`settings/+page.server.ts` → `saveKey` in `$lib/server/keys.ts`): validate with one
+- **Save** (`keyActions.save` in `$lib/server/keys.ts`, spread into Settings and onboarding step 1 → `saveKey`): validate with one
   cheap authenticated call (`$lib/server/llm/validate.ts`) → encrypt → upsert with the secret-key client
   (`$lib/server/supabase-admin.ts`; the table has no RLS policies). Saving clears `invalid_at`.
 - **Validate** (checked 2026-10-31, no tokens used): anthropic `GET /v1/models?limit=1`

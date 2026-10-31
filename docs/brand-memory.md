@@ -2,6 +2,11 @@
 covers:
   - apps/worker/pipeline/brand_fit.py
   - apps/web/src/lib/entities/brand
+  - apps/web/src/lib/features/brand-profile
+  - apps/web/src/lib/features/brand-rules
+  - apps/web/src/lib/server/brand.ts
+  - apps/web/src/routes/(authed)/onboarding
+  - apps/web/src/routes/(authed)/(shell)/brand
   - supabase/migrations
 last_updated: 2026-11-01
 ---
@@ -40,6 +45,34 @@ Text is in the `rule` column. `scope`: clip_selection | copy | captions | editin
 `status`: candidate (proposed, never used in prompts) → active → pinned (always in prompts) /
 archived (hidden, restorable). The legacy enum values `stated`, `learned`, `proposed`, `rejected`
 from the first migration are no longer written.
+
+## Onboarding (`routes/(authed)/onboarding`)
+Full-screen, 8 steps with a progress bar: 1 AI providers (`ApiKeyRow` from Settings; Continue needs
+an LLM + transcription capability, or demo; the server re-checks with `requireAIKeys('both')`) ·
+2 Basics (name required) · 3 Audience · 4 Content · 5 Voice · 6 Visual · 7 Publishing defaults ·
+8 Review. Steps 3, 6, 7 have "Skip for now". Each Continue posts `?/profile` (`step` + JSON
+`patch` of that section's fields, `sectionFields` in `features/brand-profile`) and saves
+`onboarding_step = step + 1`, so a refresh resumes there. Back only moves locally.
+- Logo: `?/logo` presigns a PUT to `brand/{user_id}/logo.{png,jpg,webp}` (≤2 MB); the browser PUTs
+  to R2 and the step saves `logo_path`. Shown back through a presigned GET (`presignGet`).
+- Review: entering step 8 calls `?/generate` (task `stated_rules`, `generateStatedRules` in
+  `$lib/server/brand.ts`); drafts are saved as `candidate` + `onboarding` rows so a refresh keeps
+  them. Editable list (text, scope, delete, add; `DraftRuleList`). "Looks right" (`?/finish`)
+  replaces the candidates with `active` rules, sets `onboarding_completed_at` (+
+  `profiles.onboarded_at`) and redirects to Home. AI errors show their message inline.
+- Gate: the shell layout sends users without `onboarding_completed_at` to `/onboarding`;
+  onboarding sends completed users to `/`. Dev login sets it for its test user.
+
+## Brand Memory page (`routes/(authed)/(shell)/brand`)
+Tabs: **Rules** (grouped by scope; filter by scope and source, "Show archived"; per rule
+pin/unpin, edit text + scope, archive/restore via `?/rule`; add a manual rule), **You told us**
+(the same `ProfileSection`s as onboarding, each saved with `?/profile`; saving never touches
+rules), **Learned from you** (candidates; empty state "Rules appear here as you edit clips and
+posts perform.").
+"Regenerate rules from profile" (`<RequiresAI need="llm">`, `?/regenerate`) runs `stated_rules`
+and returns a diff without saving: rules to add (text not already present) and `onboarding`
+`active` rules to archive (not in the new set; pinned and manual rules are never proposed). Adds
+are ticked by default, archives not; `?/applyRegenerate` applies only the ticked ones.
 
 ## buildMemoryContext (`$lib/entities/brand/memory.ts`)
 `buildMemoryContext(profile, rules, { scope, topics?, maxTokens? })` → text block for prompts.
