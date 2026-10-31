@@ -5,6 +5,7 @@ covers:
   - apps/worker/worker/llm
   - apps/worker/worker/transcription
   - apps/web/src/lib/entities/api-key
+  - apps/web/src/lib/features/api-keys
   - fixtures/key-resolution.json
   - scripts/check-ai-imports.ts
 last_updated: 2026-10-31
@@ -121,6 +122,17 @@ and keeps the provider response in `jobs.error_detail`.
 error_kind, created_at): one row per `generate*` call (repair and retries summed), written with
 the secret key / `DATABASE_URL`; RLS lets owners read their own rows. A failed insert never fails
 the call.
+
+## Settings → AI providers
+`routes/(authed)/(shell)/settings`: key rows for groq, anthropic, gemini, deepgram, wispr
+(`$lib/features/api-keys`), then `AiPreferences`: default AI provider and transcription provider
+(only providers with a usable key; "Automatic" = resolution order), Advanced per-task overrides,
+saved to `ai_settings` (`?/prefs`, RLS). Usage: calls + tokens per provider and key source from
+`llm_calls`, last 7 days. Demo accounts see "Using shared demo keys". Switching the default
+provider changes `llm_calls.provider` from the next call.
+
+`pnpm llm:smoke <user_id>` (`worker/llm/smoke.py`, manual only, spends a few tokens): one tiny
+JSON call per saved LLM key on both tiers; prints status, tokens, latency, never keys.
 
 ## Gating AI actions (every plan uses these)
 - **Server:** every route that starts AI work calls

@@ -1,7 +1,12 @@
 # Work plan: LLM + transcription adapters (plan-llm + user additions)
 
-Branch `feat/llm-adapter`, port 5173. User additions win: BYOK only (no env AI keys at all),
-`missing_key` error kind, `requireAIKeys` guard, client capability helper, worker missing_key test.
+Branch `feat/llm-adapter`, port 5173. User additions win: BYOK only, `missing_key` error kind,
+`requireAIKeys` guard, client capability helper, worker missing_key test.
+Update (mid-task): ONE exception to BYOK, the demo allowlist: own key → server key
+(`GEMINI_API_KEY` LLM / `GROQ_API_KEY` transcription) if the verified email is in
+`DEMO_ALLOWED_EMAILS` → missing_key. `DEMO_DAILY_JOB_LIMIT` jobs/day, `llm_calls.key_source`,
+"Using shared demo keys" in Settings, `aiCapabilities().demo`, shared fixtures in
+`fixtures/key-resolution.json`, docs/deploy.md with Vercel env vars. ADR 0008 supersedes 0007.
 
 ## Decisions
 - Raw HTTP (fetch / urllib) for every provider, no SDKs. Remove `@anthropic-ai/sdk`,
@@ -20,7 +25,8 @@ Branch `feat/llm-adapter`, port 5173. User additions win: BYOK only (no env AI k
   unknown. Same message templates in both languages (fixture-checked). 2 retries with backoff
   for rate_limited/overloaded; JSON validation failure → 1 repair retry → `unknown`.
 - `pnpm check:ai` (scripts/check-ai-imports.ts): fails on provider SDK imports anywhere, provider
-  API hosts outside the adapter folders, and AI key env var names in app code.
+  API hosts outside the adapter folders, banned AI env vars anywhere, demo key vars outside the
+  demo-key modules.
 
 ## Phase 1 — LLM adapter
 1. packages/llm-registry (registry.json, src/index.ts, fixtures), gen script + equality test.
@@ -47,7 +53,7 @@ Branch `feat/llm-adapter`, port 5173. User additions win: BYOK only (no env AI k
    `<NeedsKey>`-style wrapper disables the upload with tooltip + "Add a key in Settings".
 4. Settings → AI providers: keys, default LLM + transcription pickers, Advanced per-task
    overrides, 7-day usage from llm_calls. "Only have one key? A Groq key covers everything."
-5. `pnpm llm:smoke` (manual). Voice fallback to Groq Whisper: documented hook only.
+5. `pnpm llm:smoke <user_id>` (Python, manual). Voice fallback to Groq Whisper: documented hook only.
 
 ## Phase 4 — handoff
 plans/handoff-llm.md with Needs human steps.
