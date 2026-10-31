@@ -62,3 +62,5 @@ Parallelism cap: 3 subagents (Opus).
 - Merged 4 (c849313), 6 (68efb7b, r2.ts+data-model conflicts resolved by orch), 8 (e799ee7, 10-file conflict resolved by subagent). Main: check pass, web 90, schema 11, worker 98. Waiting on user db push (p4, p6, p8 migrations).
 - User ran db push for wave 1. User browser-testing main before Wave 2: HOLD Wave 2 launch until user says go. Seed cleanup/worktree removal deferred (seeds useful for testing).
 - Gemini demo: only 3 llm_calls ever, all stated_rules on gemini-4-argon (high tier), all rate_limited on first try -> quota issue on the key/model tier, not overuse.
+- User wants to test on Vercel prod + temporary onboarding bypass (SKIP_ONBOARDING, removal item added to plan10). Bypass subagent running. Prod deploy (CLI only, no git remote) is ~2h old = pre-Wave-1. Vercel env: YOUTUBE_REDIRECT_URI missing, CLAUDE_OAUTH_TOKEN obsolete.
+- Bypass committed 94b6128 (check+test pass). Waiting on user yes for prod deploy.
