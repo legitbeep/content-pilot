@@ -107,8 +107,7 @@ one job; acceptable for now.
 ## Running a job (worker)
 Per step: `current_step`, `progress` (step index / step count) and a `steps` entry
 (`running` → `done`/`failed`/`stopped`) are written before and after. Then:
-- all steps ok → `done`, `progress = 100`, `finished_at`, `note = "Clip extraction not built yet"`
-  (while only probe + transcribe exist).
+- all steps ok → `done`, `progress = 100`, `finished_at`.
 - `Stopped` → `stopped` (`current_step` = the step that would have run next).
 - `NeedsInput` → `needs_input`, `input_request`, `resume_from_step`.
 - `StepError(message)` → `failed`, `error = message` (user-readable, e.g. "Deepgram rejected the API

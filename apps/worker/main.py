@@ -15,7 +15,6 @@ from worker import db
 
 POLL_SECONDS = 5
 MAX_PROCESSING_PER_USER = 2
-DONE_NOTE = "Clip extraction not built yet"
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(threadName)s %(message)s")
 log = logging.getLogger("worker")
@@ -108,7 +107,6 @@ def process(job: dict) -> str:
             progress=100,
             finished_at=datetime.now(UTC),
             resume_from_step=None,
-            note=DONE_NOTE,
         )
 
 

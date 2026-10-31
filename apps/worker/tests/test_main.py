@@ -26,12 +26,11 @@ def fake_run(exc=None):
     return run
 
 
-def test_done_records_note_and_progress(monkeypatch, writes):
+def test_done_records_progress(monkeypatch, writes):
     monkeypatch.setattr(main, "run", fake_run())
     main.process(job())
     final = writes[-1]
     assert final["status"] == "done" and final["progress"] == 100
-    assert final["note"] == main.DONE_NOTE
     assert [s["status"] for s in final["steps"].obj] == ["done", "done"]
     assert writes[1]["current_step"] == "transcribe" and writes[1]["progress"] == 50
 
