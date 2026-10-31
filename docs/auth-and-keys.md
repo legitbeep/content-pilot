@@ -53,6 +53,13 @@ otherwise the route 404s and the login page hides the button (production builds 
 so it can't be switched on there). It ensures the test user `DEV_LOGIN_EMAIL` / `DEV_LOGIN_PASSWORD`
 exists via the secret-key admin API (`createUser`, email pre-confirmed; existing user is fine), then
 `signInWithPassword` on `locals.supabase`, which sets the normal session cookies.
+- **Onboarded on login:** after sign-in it marks the test user onboarded, idempotently, so it
+  lands on signed-in pages: inserts a `brand_profile` row (`answers = {"dev_login": true}`, upsert
+  with `ignoreDuplicates`, so an existing profile is never overwritten) and sets
+  `profiles.onboarded_at` if null. Same `devLoginEnabled()` guard; `devLogin()` refuses and writes
+  nothing when it's off (tested). **Plan 4:** the shell gate today checks for a `brand_profile`
+  row. If real onboarding changes what the gate reads, update `completeOnboarding` in
+  `$lib/server/dev-login.ts` in the same change so dev login keeps landing on signed-in pages.
 - Agents: `GET /auth/dev-login?next=/queue` signs in and 303s to `next` (relative paths only,
   default `/`). `POST` does the same; the login page's "Dev login (test user)" button uses it.
 - Needs email/password sign-in enabled in Supabase Auth (on by default). If the user already exists

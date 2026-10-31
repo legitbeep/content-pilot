@@ -100,3 +100,9 @@ enabled, presign 200. (A temporary `brand_profile` row for the dev user was adde
 5. The allowlisted account (DEMO_ALLOWED_EMAILS) has user_id `3af4ed6b-2029-4a50-8c74-1350dcdbd07f`.
    Demo smoke run: `pnpm llm:smoke 3af4ed6b-2029-4a50-8c74-1350dcdbd07f`. It uses that user's own
    keys if they have any, otherwise the demo Gemini key.
+6. Dev login now marks its test user as onboarded, idempotently. It inserts a `brand_profile`
+   row (`{"dev_login": true}`) without overwriting an existing one, and sets
+   `profiles.onboarded_at` if it is null. It sits behind the same guard as the rest of dev login.
+   When dev login is off, `devLogin()` writes nothing; the existing test now checks this.
+   Verified: dev login now lands on `/queue` (200) instead of `/onboarding`. **Plan 4** must keep
+   `completeOnboarding` in sync with its real onboarding gate (see docs/auth-and-keys.md).
