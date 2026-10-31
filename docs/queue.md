@@ -36,7 +36,7 @@ queue form action loads the job and checks `can(status, action)` first, then wri
 | processing | done / failed | worker | after last step (`finished_at`, `progress = 100`) / on exception (`error`, `error_detail`) |
 | processing | stopped | worker | `stop_requested = true` seen before next step (`pipeline.Stopped`) |
 | processing | needs_input | worker | step raises `pipeline.NeedsInput`; sets `input_request`, `resume_from_step`; slot released |
-| needs_input | pending | web | **answer**: `input_request.answer` stored, back to the end of the queue |
+| needs_input | pending | web | **answer**: `input_request.answer` stored (a `brand_fit` answer also → `jobs.user_intent`), back to the end of the queue |
 | failed / stopped | pending | web | **retry** / **re-queue**: `resume_from_step = current_step`, errors cleared, end of queue |
 
 ## Actions by state (Queue page)
@@ -44,7 +44,7 @@ queue form action loads the job and checks `can(status, action)` first, then wri
 |---|---|
 | pending | drag to reorder, edit request (details sheet), delete |
 | processing | stop |
-| needs_input | open question (details sheet) and answer |
+| needs_input | open question (details sheet): one-click options from `input_request.options`, free text when `allow_text`, flagged time ranges (nsfw); "Cancel" deletes the job; delete |
 | done | open clips (`/clips?job=<id>`, placeholder) |
 | stopped | re-queue, delete |
 | failed | retry, delete, error shown in the details sheet (user message + "Show details") |
@@ -62,7 +62,8 @@ Video bytes never touch SvelteKit. Three steps, all from the browser:
    presigned R2 PUT URL (`$lib/server/r2.ts`, `aws4fetch`, 1 h).
 3. Browser **PUTs** the file to R2 (XHR for the progress bar), then **`?/create`**: checks the key
    is under the user's prefix and the object exists (HEAD, size ≤ 2 GB), then inserts the job as
-   `pending` at the end of the queue (`position = max + 1`) with `title`, `request`, `duration_s`.
+   `pending` at the end of the queue (`position = max + 1`) with `title`, `request`, `duration_s`
+   and `memory_snapshot` (brand memory, scope clip_selection, `docs/pipeline.md`).
    It repeats the key/quota check first and, for demo users, `recordDemoJob` after the insert.
    Answer and retry also call `requireAIKeys` (they re-run AI steps). Thrown errors reach the UI
    through `formAction`, which surfaces `error(...)` messages as-is; the upload button is gated by

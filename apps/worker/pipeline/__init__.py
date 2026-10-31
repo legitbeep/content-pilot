@@ -5,15 +5,14 @@ from collections.abc import Callable
 
 from worker.llm.errors import AIError
 
-from . import probe, transcribe
+from . import brand_fit, nsfw_check, probe, transcribe
 from .errors import NeedsInput, StepError, Stopped
 
 __all__ = ["STEPS", "NeedsInput", "StepError", "Stopped", "run", "step_name"]
 
-# Built so far. nsfw_check, brand_fit and extract_clips are stubs and join STEPS when built;
-# until then a job is `done` after transcription (note: "Clip extraction not built yet").
-# cleanup_source is NOT a step: it runs later from the cleanup sweep (docs/pipeline.md).
-STEPS = [probe, transcribe]
+# extract_clips joins STEPS when built. cleanup_source is NOT a step: it runs later from the
+# cleanup sweep (docs/pipeline.md).
+STEPS = [probe, transcribe, nsfw_check, brand_fit]
 
 
 def step_name(step) -> str:

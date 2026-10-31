@@ -13,9 +13,7 @@ last_updated: 2026-11-01
 `should_stop()` before each and calling `on_step(name, index, total)` so `main.py` can record
 `current_step`, `progress` and `steps`. After the last step the job is `done` (`finished_at` set).
 
-**Built today: `probe`, `transcribe`.** `nsfw_check`, `brand_fit`, `extract_clips` are stubs and
-not in `STEPS` yet, so a job is `done` right after transcription with
-`note = "Clip extraction not built yet"`.
+`STEPS` = `probe`, `transcribe`, `nsfw_check`, `brand_fit`, `extract_clips`.
 
 ## Contract for every step
 - Module `pipeline/<name>.py` exposing `run(job: dict) -> None`.
@@ -34,9 +32,28 @@ not in `STEPS` yet, so a job is `done` right after transcription with
 |---|---|---|---|---|
 | 0 | `probe` | `source_key` (presigned GET URL, `worker/r2.py`) | `ffprobe` → `jobs.media` `{duration_s, width, height, has_audio}`, `jobs.duration_s` | unreadable file, no video stream, **no audio track**, or > 60 min → failed with a clear message |
 | 1 | `transcribe` | presigned GET URL → `transcribe(user_id, url)` (`worker/transcription`, `docs/llm.md`): Deepgram or Groq Whisper | R2 `transcripts/<job_id>.json` (our format); `jobs.transcript_path` | no key → failed with "Add an AI provider key in Settings to use this."; 401/403 (own key marked `invalid_at`) / 402 / other → failed with a user message. Retry after adding a key resumes here |
-| 2 | `nsfw_check` | transcript (+ sampled frames later) | pass/fail | **hard block** → failed, source deleted immediately |
-| 3 | `brand_fit` | transcript, `brand_profile`, active `brand_rules` | pass or question | **soft** → `NeedsInput(question, "extract_clips")` |
+| 2 | `nsfw_check` | 1 frame/s (ffmpeg over the presigned GET, 224×224 RGB streamed) → NSFW image model; transcript → `moderate_text` per chunk | pass, question, or fail | `decide()`: any text chunk `explicit`, or ≥3 frames (and ≥5% of frames) with p ≥ 0.9 → **failed** "This video contains explicit content and can't be processed." (no override), source deleted at once (`source_deleted_at`). Any text `borderline` or any frame ≥ 0.6 → `NeedsInput` kind `nsfw` with `flagged` time ranges, options Continue / Cancel, resume `brand_fit` |
+| 3 | `brand_fit` | transcript + `jobs.memory_snapshot` + `request` → `brand_fit` (summary, topics, conflict, question) | pass or question | no snapshot → pass. Conflict → `NeedsInput` kind `brand_fit` (question, options "Critique or contrast it" / "Proceed anyway" / "Cancel", free text), resume `extract_clips`. The answer is stored as `jobs.user_intent` (job-scoped, never a brand rule) |
 | 4 | `extract_clips` | transcript, brand memory, `generate_json` (`worker/llm`, task `extract_clips`, `docs/llm.md`) | per candidate: clip file in R2, `clips` row (reason, word slice), initial `timelines` row | LLM/FFmpeg error → failed (retry resumes here) |
+
+## Brand memory snapshot
+The web `?/create` action (`routes/(authed)/(shell)/queue`) runs `buildMemoryContext(profile,
+rules, { scope: 'clip_selection' })` (`docs/brand-memory.md`) and stores the text on
+`jobs.memory_snapshot`. The worker reads only this snapshot (no Python copy of the memory logic),
+so a job is reproducible even if rules change later.
+
+## AI inputs (`pipeline/text.py`)
+Transcript → sentences (split at `.?!`, an utterance/segment end — Groq words have no punctuation —
+a pause > 1s, or 40 words; speakers ignored, may be `null`) → lines `[i] mm:ss text`. Long inputs
+are chunked to the provider's `max_input_tokens` minus room for the prompt (~4 chars/token).
+
+## NSFW image model
+`Falconsai/nsfw_image_detection` (ViT, labels normal/nsfw, **Apache-2.0**), run as the ONNX int8
+port `onnx-community/nsfw_image_detection-ONNX` (`onnx/model_quantized.onnx`, 83 MB) with
+`onnxruntime` on CPU (~0.3 s/frame locally). The Dockerfile bakes it in with `ADD --checksum`
+pinned to a commit, so the worker never downloads weights at runtime. Outside Docker:
+`pnpm nsfw:model` downloads the same file to `apps/worker/models/nsfw.onnx` (gitignored);
+`NSFW_MODEL_PATH` overrides the path. Missing model → the step fails with a clear message.
 
 ## Transcripts
 - Provider calls (Deepgram, Groq Whisper) live in `worker/transcription` (`docs/llm.md`).

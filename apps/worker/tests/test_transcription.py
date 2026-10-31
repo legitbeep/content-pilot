@@ -42,6 +42,8 @@ def world(monkeypatch):
     monkeypatch.setattr(main.db, "update_job", lambda job_id, **f: state["writes"].append(f))
     monkeypatch.setattr(main, "stop_requested", lambda job: False)
     monkeypatch.setattr("pipeline.probe.run", lambda job: None)
+    for later in ("nsfw_check", "brand_fit", "extract_clips"):  # tested in their own files
+        monkeypatch.setattr(f"pipeline.{later}.run", lambda job: None)
     monkeypatch.setattr("pipeline.transcribe.r2.presigned_get", lambda key: "https://r2/src")
     monkeypatch.setattr("pipeline.transcribe.r2.put_json", lambda key, data: None)
     monkeypatch.setattr("pipeline.transcribe.r2.exists", lambda key: False)

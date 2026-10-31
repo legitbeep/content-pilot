@@ -18,6 +18,7 @@
 		"seed:editor": "uv run --directory apps/worker --env-file .env python -m seeds.editor",
 		"seed:editor:clean": "uv run --directory apps/worker --env-file .env python -m seeds.editor --clean",
 		"seed:publish": "uv run --directory apps/worker --env-file .env python seed_publish.py",
-		"seed:publish:clean": "uv run --directory apps/worker --env-file .env python seed_publish.py clean"
+		"seed:publish:clean": "uv run --directory apps/worker --env-file .env python seed_publish.py clean",
+		"nsfw:model": "mkdir -p apps/worker/models && curl -fL -o apps/worker/models/nsfw.onnx https://huggingface.co/onnx-community/nsfw_image_detection-ONNX/resolve/1ceb3c7fe1e9f3f2507e6df577437f23a9149fd5/onnx/model_quantized.onnx && echo 'd9afb1e057104e6cc8616d174f0f6a8b8b0389c839eea7d5efa4bdf1a77efd27  apps/worker/models/nsfw.onnx' | shasum -a 256 -c"
 	}
 }

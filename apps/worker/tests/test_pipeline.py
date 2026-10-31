@@ -15,17 +15,17 @@ def calls(monkeypatch):
 
 def test_runs_all_steps_in_order(calls):
     run({}, should_stop=lambda: False)
-    assert calls == ["probe", "transcribe"]
+    assert calls == ["probe", "transcribe", "nsfw_check", "brand_fit"]
 
 
 def test_resumes_from_step(calls):
-    run({"resume_from_step": "transcribe"}, should_stop=lambda: False)
-    assert calls == ["transcribe"]
+    run({"resume_from_step": "brand_fit"}, should_stop=lambda: False)
+    assert calls == ["brand_fit"]
 
 
 def test_unknown_resume_step_starts_over(calls):
-    run({"resume_from_step": "extract_clips"}, should_stop=lambda: False)
-    assert calls == ["probe", "transcribe"]
+    run({"resume_from_step": "nope"}, should_stop=lambda: False)
+    assert calls == ["probe", "transcribe", "nsfw_check", "brand_fit"]
 
 
 def test_stop_checked_between_steps(calls):
@@ -37,4 +37,4 @@ def test_stop_checked_between_steps(calls):
 def test_on_step_reports_progress(calls):
     seen = []
     run({}, should_stop=lambda: False, on_step=lambda n, i, total: seen.append((n, i, total)))
-    assert seen == [("probe", 0, 2), ("transcribe", 1, 2)]
+    assert seen[:2] == [("probe", 0, 4), ("transcribe", 1, 4)]

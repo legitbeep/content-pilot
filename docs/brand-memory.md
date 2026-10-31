@@ -92,8 +92,8 @@ Pure; extraction, copy, captions and the editor agent all call it.
 | editing | brand, tone, caption font, colors, has-logo |
 | all | everything (incl. posting goal) |
 
-No worker (Python) mirror yet; a worker step that needs it should port `memory.ts` and reuse
-`memory.test.ts`'s cases.
+No worker (Python) mirror: the web stores the clip_selection text on `jobs.memory_snapshot` when
+a job is created and the worker reads only that (`docs/pipeline.md`).
 
 ## Learned rules
 Same kind of edit made 3+ times across clips (e.g. always removing the first 2s) → a `candidate`
@@ -106,7 +106,8 @@ A candidate that contradicts an active rule gets `conflicts_with = <other rule i
 with `ConflictCard` (stated vs learned, "Keep mine" / "Update rule"). Never auto-override.
 
 ## Who reads it
-- `brand_fit` step: profile + rules → pass or `NeedsInput` question.
-- `extract_clips`: rules guide clip choice and reasons (scope clip_selection).
+- `brand_fit` step: `jobs.memory_snapshot` → pass or `NeedsInput` question; the answer is
+  `jobs.user_intent` (job-scoped, never a rule).
+- `extract_clips`: `jobs.memory_snapshot` + `user_intent` guide clip choice and reasons.
 - Editor agent: rules in context; may only propose (`docs/agent.md`).
 - Clip selection: unselected `clips` rows are a negative signal for edit-pattern detection.
