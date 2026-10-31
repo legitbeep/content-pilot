@@ -48,6 +48,18 @@ the app shell. `onboarding` sits in `(authed)` but outside the shell.
 `no-restricted-imports` in `apps/web/eslint.config.js` fail `pnpm check` otherwise. SvelteKit's
 own build-time check on `$env/*/private` is a second layer.
 
+**Dev login** (for agents/automated checks, never in production): `$lib/server/dev-login.ts` +
+`routes/auth/dev-login/+server.ts`. Enabled only when `dev` (`vite dev`) **and** `DEV_LOGIN=true`;
+otherwise the route 404s and the login page hides the button (production builds have `dev=false`,
+so it can't be switched on there). It ensures the test user `DEV_LOGIN_EMAIL` / `DEV_LOGIN_PASSWORD`
+exists via the secret-key admin API (`createUser`, email pre-confirmed; existing user is fine), then
+`signInWithPassword` on `locals.supabase`, which sets the normal session cookies.
+- Agents: `GET /auth/dev-login?next=/queue` signs in and 303s to `next` (relative paths only,
+  default `/`). `POST` does the same; the login page's "Dev login (test user)" button uses it.
+- Needs email/password sign-in enabled in Supabase Auth (on by default). If the user already exists
+  with another password, sign-in fails with a 500 — fix the password or delete the user.
+- Test: `routes/auth/dev-login/dev-login.test.ts` (404 when the flag is off and when not in dev).
+
 YouTube connect is a **separate** OAuth flow: `docs/publishing.md`.
 
 ## Claude (server-wide, not BYOK)

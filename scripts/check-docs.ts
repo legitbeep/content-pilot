@@ -5,7 +5,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 const root = join(import.meta.dirname, '..');
-const SKIP = new Set(['node_modules', '.svelte-kit', '.venv', '__pycache__', '.git', '.pytest_cache', '.ruff_cache', 'build', '.vercel']);
+const SKIP = new Set(['node_modules', '.svelte-kit', '.venv', '__pycache__', '.git', '.pytest_cache', '.ruff_cache', 'build', '.vercel', '.worktrees']);
 const SOURCE = /\.(ts|js|svelte|py|sql|json)$/;
 const DOCS_REF = /Docs: (docs\/[\w./-]+\.md)/g;
 const errors: string[] = [];

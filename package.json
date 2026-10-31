@@ -9,6 +9,7 @@
 		"check:worker": "uv run --directory apps/worker ruff check . && uv run --directory apps/worker ruff format --check . && uv run --directory apps/worker pyright",
 		"test": "pnpm -r --if-present test && uv run --directory apps/worker pytest -q",
 		"worker": "docker compose up --build worker",
+		"worker:once": "uv run --directory apps/worker python -m worker.run_once",
 		"check:docs": "node scripts/check-docs.ts"
 	}
 }

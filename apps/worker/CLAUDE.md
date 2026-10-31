@@ -5,7 +5,7 @@ timelines, publish scheduled posts, collect metric checkpoints. Read `docs/queue
 `docs/pipeline.md` first.
 
 ## Layout
-- `main.py` — loop + job claiming (`docs/queue.md`).
+- `main.py` — loop + job claiming (`docs/queue.md`); `worker/run_once.py` runs one item and exits.
 - `pipeline/` — one module per step, ordered in `pipeline/__init__.py` `STEPS` (`docs/pipeline.md`).
 - `worker/` — shared helpers: `db.py` (Postgres), `r2.py`, `crypto.py` + `keys.py` (BYOK),
   `transcript.py` (our transcript format), `claude.py`, `timeline.py` (pydantic timeline mirror).

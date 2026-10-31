@@ -3,7 +3,7 @@
 	import { Button } from '$lib/shared/ui/button';
 	import type { PageProps } from './$types';
 
-	let { form }: PageProps = $props();
+	let { data, form }: PageProps = $props();
 	const message = $derived(
 		form?.message ??
 			(page.url.searchParams.has('error') ? 'Sign-in did not complete. Try again.' : null)
@@ -20,5 +20,10 @@
 		</div>
 		<Button type="submit" class="w-full">Continue with Google</Button>
 		{#if message}<p class="text-xs text-danger" role="alert">{message}</p>{/if}
+		{#if data.devLogin}
+			<Button type="submit" formaction="/auth/dev-login" variant="outline" class="w-full">
+				Dev login (test user)
+			</Button>
+		{/if}
 	</form>
 </main>

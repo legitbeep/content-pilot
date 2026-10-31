@@ -2,6 +2,7 @@
 covers:
   - apps/worker/main.py
   - apps/worker/worker/db.py
+  - apps/worker/worker/run_once.py
   - apps/web/src/lib/entities/job
   - apps/web/src/lib/features/upload-video
   - apps/web/src/lib/widgets/job-queue
@@ -110,6 +111,15 @@ Per step: `current_step`, `progress` (step index / step count) and a `steps` ent
   the details."`, `error_detail` = traceback.
 
 Retry re-runs from `current_step` (steps are idempotent).
+
+## Run once (debugging)
+`python -m worker.run_once <kind> <id>` (from `apps/worker`, or `pnpm worker:once job <id>` from the
+root) processes one item and exits. Needs `DATABASE_URL` etc. in the environment
+(e.g. `set -a; . ./.env; set +a`). Kind `job` claims that id with the loop's claim query
+(`claim_job(job_id)`: still must be `pending` and under the per-user limit), runs `process`, prints
+`job <id>: <status>`, and exits 1 if the job failed or could not be claimed, 2 on bad arguments.
+Later kinds (render, post, checkpoint) add one entry to `HANDLERS` in `worker/run_once.py`.
+Like every worker module, it starts with `# Docs: docs/queue.md`.
 
 ## Stop
 Web sets `stop_requested = true`. `pipeline.run` calls `should_stop()` before every step, so a

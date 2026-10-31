@@ -23,6 +23,7 @@ update jobs set status = 'processing', claimed_at = now(), attempts = attempts +
        stop_requested = false, error = null, error_detail = null, note = null, updated_at = now()
 where id = (select j.id from jobs j
             where j.status = 'pending'
+              and (%(id)s::uuid is null or j.id = %(id)s::uuid)
               and (select count(*) from jobs p
                    where p.user_id = j.user_id and p.status = 'processing') < %(limit)s
             order by j.position, j.created_at
@@ -31,9 +32,10 @@ returning *
 """
 
 
-def claim_job() -> dict | None:
+def claim_job(job_id: str | None = None) -> dict | None:
+    """Claim the next pending job, or only `job_id` when given (run-once mode)."""
     with db.connect() as c:
-        return c.execute(CLAIM_SQL, {"limit": MAX_PROCESSING_PER_USER}).fetchone()
+        return c.execute(CLAIM_SQL, {"limit": MAX_PROCESSING_PER_USER, "id": job_id}).fetchone()
 
 
 def stop_requested(job: dict) -> bool:
@@ -49,8 +51,8 @@ def now() -> str:
     return datetime.now(UTC).isoformat()
 
 
-def process(job: dict) -> None:
-    """Run one claimed job and record the outcome."""
+def process(job: dict) -> str:
+    """Run one claimed job, record the outcome and return the final status."""
     steps: list[dict] = list(job.get("steps") or [])
 
     def finish_step(status: str) -> None:
@@ -65,18 +67,19 @@ def process(job: dict) -> None:
             job["id"], current_step=name, progress=round(100 * i / n), steps=db.Jsonb(steps)
         )
 
-    def finish(status: str, step_status: str, **fields) -> None:
+    def finish(status: str, step_status: str, **fields) -> str:
         finish_step(step_status)
         db.update_job(job["id"], status=status, steps=db.Jsonb(steps), **fields)
+        return status
 
     log.info("job %s: start (resume_from=%s)", job["id"], job.get("resume_from_step"))
     try:
         run(job, should_stop=lambda: stop_requested(job), on_step=on_step)
     except Stopped as e:
         log.info("job %s: stopped before %s", job["id"], e.step)
-        finish("stopped", "stopped", current_step=e.step, stop_requested=False)
+        return finish("stopped", "stopped", current_step=e.step, stop_requested=False)
     except NeedsInput as e:
-        finish(
+        return finish(
             "needs_input",
             "done",
             input_request=db.Jsonb(e.request),
@@ -84,12 +87,12 @@ def process(job: dict) -> None:
         )
     except StepError as e:
         log.warning("job %s: %s failed: %s %s", job["id"], job["current_step"], e.message, e.detail)
-        finish("failed", "failed", error=e.message, error_detail=e.detail or None)
+        return finish("failed", "failed", error=e.message, error_detail=e.detail or None)
     except Exception:
         detail = traceback.format_exc()
         log.error("job %s: %s crashed\n%s", job["id"], job.get("current_step"), detail)
         step = (job.get("current_step") or "processing").replace("_", " ")
-        finish(
+        return finish(
             "failed",
             "failed",
             error=f"Something went wrong while running {step}. Retry, or check the details.",
@@ -97,7 +100,7 @@ def process(job: dict) -> None:
         )
     else:
         log.info("job %s: done", job["id"])
-        finish(
+        return finish(
             "done",
             "done",
             progress=100,

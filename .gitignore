@@ -23,3 +23,6 @@ supabase/.temp/
 # Misc
 tmp/
 .DS_Store
+
+# Git worktrees
+.worktrees/

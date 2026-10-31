@@ -25,6 +25,8 @@ vars (BYOK, `docs/auth-and-keys.md`); Claude is the one server-wide AI credentia
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | server | Presign browser uploads, HEAD/GET/DELETE objects. The bucket needs a CORS rule allowing `PUT` from the web origin(s) with any header |
 | `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET` | server | YouTube connect OAuth |
 | `YOUTUBE_REDIRECT_URI` | server | YouTube OAuth callback URL |
+| `DEV_LOGIN` | server, **dev only** | `true` enables `/auth/dev-login` (test-user sign-in for agents) under `vite dev`. Ignored in production builds |
+| `DEV_LOGIN_EMAIL`, `DEV_LOGIN_PASSWORD` | server, dev only | Test user credentials. Defaults `dev@clip-studio.test` / `dev-login-password`. See `docs/auth-and-keys.md` |
 
 Web code reads public vars through `$env/dynamic/public` (so a missing `.env` doesn't break
 `pnpm check`) and private vars only from `$lib/server` / `*.server.ts` / `+server.ts`.
