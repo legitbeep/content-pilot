@@ -5,4 +5,8 @@ services:
     env_file:
       - path: apps/worker/.env
         required: false
+    # Docker Desktop's default resolver fails on some Macs; use public DNS.
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     restart: unless-stopped

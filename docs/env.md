@@ -12,7 +12,7 @@ last_updated: 2026-11-01
 
 Each app has its own env file: copy `apps/web/.env.example` → `apps/web/.env` and
 `apps/worker/.env.example` → `apps/worker/.env` (both gitignored, never commit). Vite/SvelteKit
-reads `apps/web/.env`; the worker container gets `apps/worker/.env` via `docker-compose.yml`
+reads `apps/web/.env`; the worker container gets `apps/worker/.env` via `docker-compose.yml` (which also pins DNS to 1.1.1.1 / 8.8.8.8, because Docker's default resolver failed locally)
 `env_file`. On Vercel, set the web vars in project settings (`docs/deploy.md`). Users' AI keys are **not** env
 vars (BYOK, ADR 0008). The only AI keys in env are the shared **demo** keys, used solely for
 allowlisted accounts (`docs/llm.md`). `ANTHROPIC_API_KEY`, `CLAUDE_OAUTH_TOKEN` and
