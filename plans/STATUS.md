@@ -15,7 +15,7 @@ Parallelism cap: 3 subagents (Opus).
 | 5 | 2 | feat/clips | - | merged | f616ecb; check+test pass (web 94, schema 11, worker 132) |
 | 7 | 2 | feat/agent | - | merged | eee4450; check+test pass (web 121, schema 11, worker 102) |
 | 9 | 2 | feat/performance | - | merged | 478a654; check+test pass (web 104, schema 11, worker 114) |
-| 10 | 3 | feat/integration | .worktrees/integration | checkpoint D | 3eb687f; check+test pass (web 135, schema 11, worker 148); waiting on user prod results |
+| 10 | 3 | feat/integration | - | merged | 3eb687f; check+test pass (web 135, schema 11, worker 148); waiting on user prod results |
 
 ## Decisions (2026-10-31, from user)
 1. Permissions: allow pnpm, uv, docker compose, ffmpeg/ffprobe, psql, git add/commit/status/diff/log/worktree. Blocked: git push, supabase db push, git reset --hard, git clean, rm outside repo.
@@ -156,3 +156,4 @@ Note: plans/plan10.md on main still says Oracle Cloud/HF Spaces; user says targe
 - Wave 3 start: worktree .worktrees/integration (feat/integration from main 700f20d), env sanitized (AI keys, DEMO_ALLOWED_EMAILS, YOUTUBE_CLIENT_SECRET blank; DEV_LOGIN_EMAIL=dev-integration@clip-studio.test), deps installed. Plan 10 subagent launched.
 - Plan 10 Phase 1+2 done (3eb687f, 18 commits). Orch re-ran check+test in worktree: pass (web 135, schema 11, worker 148). SKIP_ONBOARDING removed; onboarding step 8 Connect YouTube (9 steps); usage caps (5/day via demo_usage kind 'upload', 60 min, 2 processing); NSFW on editor uploads (video frames, audio transcribe+moderate_text, cached safety/<key>.json); fonts baked in Dockerfile; maxDuration 60 all functions; scripts/deploy-worker.sh (push/setup, gcloud) + docs/deploy.md (e2-medium rec) + README. No migrations, no new env vars. Seeds cleaned incl dev-brand rules/logo. No real AI calls. Not done: overlay/blur edit UI, transcription llm_calls logging, stuck-processing recovery, brand caption font default.
 - CHECKPOINT D: stopped, waiting on user's production test results.
+- User skipped checkpoint D (Wave 2 works on prod). Merged plan 10 c5d33d2 (main also had e342547 editor work). Main: check pass, web 135, schema 12, worker 149. Web deployed to prod (prebuilt, npx vercel). Worker NOT restarted (user's). Waiting on user: rebuild/restart laptop worker (Dockerfile + render.py changed), delete SKIP_ONBOARDING on Vercel. No db push needed.
