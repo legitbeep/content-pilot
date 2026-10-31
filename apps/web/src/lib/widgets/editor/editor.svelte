@@ -17,6 +17,7 @@
 	import Properties from './properties.svelte';
 	import FinishDialog from './finish-dialog.svelte';
 	import { renderBadge } from './render-badge';
+	import { AgentChat } from '$lib/features/editor-agent';
 
 	let {
 		clip,
@@ -248,12 +249,7 @@
 		class="row-span-2 flex min-h-0 flex-col gap-3 overflow-y-auto rounded-lg border bg-surface p-3"
 	>
 		<Properties {editor} onupload={upload} {uploading} />
-		<section
-			data-slot="agent-chat"
-			class="mt-auto flex min-h-32 items-center justify-center rounded-md border border-dashed p-3 text-center text-xs text-muted-foreground"
-		>
-			Editor agent chat goes here (coming soon).
-		</section>
+		<AgentChat host={editor} clipId={clip.id} {wordsByKey} />
 	</aside>
 
 	<div class="col-span-2">

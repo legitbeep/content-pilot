@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { newTimeline } from '$lib/entities/timeline';
 import { executePlan, findMoment, isDestructive, type AgentContext, type PlanStep } from './model';
+import { encodeWav } from './voice';
 
 const A = 'clips/a/source.mp4';
 const B = 'clips/b/source.mp4';
@@ -101,5 +102,17 @@ describe('executePlan', () => {
 	});
 	it('flags destructive plans', () => {
 		expect(isDestructive([step('a', 'delete_range', { start: 0, end: 1 })])).toBe(true);
+	});
+});
+
+describe('encodeWav', () => {
+	it('writes a 16 kHz mono PCM16 header', () => {
+		const b = encodeWav(new Float32Array([0, 1, -1]));
+		const v = new DataView(b.buffer);
+		expect(new TextDecoder().decode(b.slice(0, 4))).toBe('RIFF');
+		expect(v.getUint32(24, true)).toBe(16000);
+		expect(v.getUint16(22, true)).toBe(1);
+		expect(b.length).toBe(44 + 6);
+		expect(v.getInt16(46, true)).toBe(0x7fff);
 	});
 });

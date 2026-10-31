@@ -25,7 +25,8 @@ export type EditorAction =
 	| 'mark_out'
 	| 'delete'
 	| 'undo'
-	| 'redo';
+	| 'redo'
+	| 'talk';
 
 export const shortcuts: Shortcut[] = [
 	{ keys: ['Mod', 'K'], label: 'Open command palette', action: 'palette' },
@@ -54,7 +55,8 @@ export const shortcuts: Shortcut[] = [
 		action: 'delete'
 	},
 	{ keys: ['Mod', 'Z'], label: 'Editor: undo', page: '/editor', action: 'undo' },
-	{ keys: ['Shift', 'Mod', 'Z'], label: 'Editor: redo', page: '/editor', action: 'redo' }
+	{ keys: ['Shift', 'Mod', 'Z'], label: 'Editor: redo', page: '/editor', action: 'redo' },
+	{ keys: ['V'], label: 'Editor: hold to talk to the agent', page: '/editor', action: 'talk' }
 ];
 
 /** Key (as KeyboardEvent.key, lowercased) → queue action. */

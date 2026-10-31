@@ -52,6 +52,18 @@ them. All AI goes through `generateJSON` (`docs/llm.md`) on the user's own key (
 - `executePlan(timeline, steps, ctx)` → `{ timeline, results, error: {step, message} | null }`;
   `runStep` runs one step; `isDestructive(steps)` (any catalog op with `destructive`).
 
+## Chat panel + voice (`agent-chat.svelte`)
+- Lives in the editor's right column (`AgentHost` = what it needs from `EditorState`). Messages,
+  a checklist card per plan (pending / done / failed ticks), "Also heard" chips, Confirm / Cancel
+  for destructive plans, Retry from the failed step, Undo plan. Enter sends, Shift+Enter = newline.
+  Send is wrapped in `<RequiresAI need="llm">`.
+- **Voice**: the mic button exists only when `page.data.ai.voice` (a Wispr or Groq key, or demo).
+  Click to start/stop, or hold `V` (push-to-talk, `shortcuts.ts`, ignored while typing). The
+  browser records (MediaRecorder), resamples to 16 kHz mono PCM16 WAV (`encodeWav` in
+  `voice.ts`) and posts it to `POST /api/editor/voice` (`audio/wav`, ≤ 6 MB) →
+  `transcribeVoice` (`docs/llm.md`). The text lands in the input box for review; nothing is sent
+  automatically. Typing always works.
+
 ## Memory proposals
 The agent never writes active rules (CLAUDE.md hard rule 4). `propose_memory_update` goes through
 the same learned-rule pipeline as edits (`docs/brand-memory.md` → Learned rules): a `candidate` the

@@ -45,6 +45,14 @@ export type AgentContext = {
 	keys: string[];
 };
 
+/** What the chat needs from the editor (EditorState fits). */
+export type AgentHost = {
+	readonly timeline: Timeline;
+	readonly history: { present: unknown };
+	apply(op: string, args: unknown, source: 'agent'): boolean;
+	undo(): void;
+};
+
 export type StepResult =
 	| { kind: 'op'; timeline: Timeline; summary: string }
 	| { kind: 'moment'; ranges: Range[]; summary: string }

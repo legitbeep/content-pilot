@@ -92,7 +92,7 @@ Toasts: `toast()` from `svelte-sonner`; `<Toaster />` is mounted in the root lay
 - Shortcuts, defined only in `$lib/shared/config/shortcuts.ts`: ⌘K palette · ⌘B sidebar ·
   `?` shortcut sheet · `G` then `H/Q/C/B/S` → Home/Queue/Calendar/Brand memory/Settings.
   Page-scoped entries (`page: '/queue'`) are handled by that page but listed here so the sheet
-  shows them: Queue `J`/`K`/`Enter`/`Backspace` (`queueKeys`); Editor `Space`, `J`/`K`/`L`, `S` split, `I`/`O` marks, `Backspace` delete, ⌘Z / ⇧⌘Z (`editorKeys` + `comboOf`). All ignored while typing
+  shows them: Queue `J`/`K`/`Enter`/`Backspace` (`queueKeys`); Editor `Space`, `J`/`K`/`L`, `S` split, `I`/`O` marks, `Backspace` delete, ⌘Z / ⇧⌘Z, hold `V` to talk to the agent (handled by the agent chat; only with a voice key) (`editorKeys` + `comboOf`). All ignored while typing
   (`isTyping` in `$lib/shared/lib/is-typing.ts`).
 
 ## Do / don't
