@@ -3,38 +3,33 @@
 
 from collections.abc import Callable
 
-from . import brand_fit, extract_clips, nsfw_check, transcribe
+from . import probe, transcribe
+from .errors import NeedsInput, StepError, Stopped
 
+__all__ = ["STEPS", "NeedsInput", "StepError", "Stopped", "run", "step_name"]
+
+# Built so far. nsfw_check, brand_fit and extract_clips are stubs and join STEPS when built;
+# until then a job is `done` after transcription (note: "Clip extraction not built yet").
 # cleanup_source is NOT a step: it runs later from the cleanup sweep (docs/pipeline.md).
-STEPS = [transcribe, nsfw_check, brand_fit, extract_clips]
+STEPS = [probe, transcribe]
 
 
 def step_name(step) -> str:
     return step.__name__.rsplit(".", 1)[-1]
 
 
-class Stopped(Exception):
-    """User requested stop; raised before `step` would run."""
-
-    def __init__(self, step: str):
-        super().__init__(step)
-        self.step = step
-
-
-class NeedsInput(Exception):
-    """Raised by a step to pause the job. Caller sets status='needs_input',
-    input_request=request, resume_from_step=resume_from, and releases the slot."""
-
-    def __init__(self, request: dict, resume_from: str):
-        super().__init__(resume_from)
-        self.request = request
-        self.resume_from = resume_from
-
-
-def run(job: dict, should_stop: Callable[[], bool]) -> None:
+def run(
+    job: dict,
+    should_stop: Callable[[], bool],
+    on_step: Callable[[str, int, int], None] = lambda name, i, n: None,
+) -> None:
+    """Runs from job["resume_from_step"] (or the first step). on_step(name, index, total) is
+    called before each step so the caller can record current_step/progress."""
     names = [step_name(s) for s in STEPS]
-    start = names.index(job["resume_from_step"]) if job.get("resume_from_step") else 0
-    for step in STEPS[start:]:
+    resume = job.get("resume_from_step")
+    start = names.index(resume) if resume in names else 0
+    for i, step in enumerate(STEPS[start:], start):
         if should_stop():
             raise Stopped(step_name(step))
+        on_step(step_name(step), i, len(STEPS))
         step.run(job)

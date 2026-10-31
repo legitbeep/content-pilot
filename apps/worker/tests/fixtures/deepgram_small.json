@@ -1,0 +1,27 @@
+{
+	"metadata": { "request_id": "test", "duration": 4.2, "channels": 1, "models": ["nova-3"] },
+	"results": {
+		"channels": [
+			{
+				"alternatives": [
+					{
+						"transcript": "Hello there. Hi, how are you?",
+						"confidence": 0.99,
+						"words": [
+							{ "word": "hello", "punctuated_word": "Hello", "start": 0.08, "end": 0.4, "confidence": 0.99, "speaker": 0, "speaker_confidence": 0.8 },
+							{ "word": "there", "punctuated_word": "there.", "start": 0.4, "end": 0.8, "confidence": 0.98, "speaker": 0, "speaker_confidence": 0.8 },
+							{ "word": "hi", "punctuated_word": "Hi,", "start": 1.5, "end": 1.7, "confidence": 0.97, "speaker": 1, "speaker_confidence": 0.7 },
+							{ "word": "how", "punctuated_word": "how", "start": 1.7, "end": 1.9, "confidence": 0.99, "speaker": 1, "speaker_confidence": 0.7 },
+							{ "word": "are", "punctuated_word": "are", "start": 1.9, "end": 2.0, "confidence": 0.99, "speaker": 1, "speaker_confidence": 0.7 },
+							{ "word": "you", "punctuated_word": "you?", "start": 2.0, "end": 2.3, "confidence": 0.99, "speaker": 1, "speaker_confidence": 0.7 }
+						]
+					}
+				]
+			}
+		],
+		"utterances": [
+			{ "start": 0.08, "end": 0.8, "confidence": 0.98, "channel": 0, "transcript": "Hello there.", "speaker": 0, "id": "a" },
+			{ "start": 1.5, "end": 2.3, "confidence": 0.98, "channel": 0, "transcript": "Hi, how are you?", "speaker": 1, "id": "b" }
+		]
+	}
+}

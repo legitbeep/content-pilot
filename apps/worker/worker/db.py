@@ -7,6 +7,9 @@ from typing import Any, cast
 
 import psycopg
 from psycopg.rows import DictRow, dict_row
+from psycopg.types.json import Jsonb
+
+__all__ = ["Jsonb", "connect", "update_job"]
 
 
 def connect() -> psycopg.Connection[DictRow]:

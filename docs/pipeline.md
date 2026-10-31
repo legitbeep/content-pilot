@@ -1,33 +1,56 @@
 ---
 covers:
   - apps/worker/pipeline
+  - apps/worker/worker/r2.py
+  - apps/worker/worker/transcript.py
+  - apps/worker/tests/fixtures
 last_updated: 2026-10-31
 ---
 # Pipeline
 
-`apps/worker/pipeline/__init__.py` → `STEPS` in order; `run(job, should_stop)` starts at
-`job["resume_from_step"]` (module name) or the first step, checking `should_stop()` before each.
-After the last step the job is `done` (`finished_at` set).
+`apps/worker/pipeline/__init__.py` → `STEPS` in order; `run(job, should_stop, on_step)` starts at
+`job["resume_from_step"]` (module name; unknown → first step) or the first step, checking
+`should_stop()` before each and calling `on_step(name, index, total)` so `main.py` can record
+`current_step`, `progress` and `steps`. After the last step the job is `done` (`finished_at` set).
+
+**Built today: `probe`, `transcribe`.** `nsfw_check`, `brand_fit`, `extract_clips` are stubs and
+not in `STEPS` yet, so a job is `done` right after transcription with
+`note = "Clip extraction not built yet"`.
 
 ## Contract for every step
 - Module `pipeline/<name>.py` exposing `run(job: dict) -> None`.
 - **Idempotent**: re-running after a crash/retry must not duplicate rows or files
   (upsert, deterministic R2 keys, check-before-write).
 - Write `jobs.current_step` before starting (caller's job, when implemented).
-- Raise `NeedsInput(request, resume_from)` to pause; any other exception fails the job.
+- Raise `NeedsInput(request, resume_from)` to pause. Raise `StepError(message, detail)` for a
+  failure the user can act on: `message` → `jobs.error` (shown as-is), `detail` →
+  `jobs.error_detail`. Any other exception fails the job with a generic message + traceback.
+  Exceptions live in `pipeline/errors.py`; outcomes are handled in `main.py` (`docs/queue.md`).
 
 ## Steps
 | # | Step | Input | Output | Failure |
 |---|---|---|---|---|
-| 1 | `transcribe` | `source_key` in R2, user's transcription key | full transcript JSON → R2 `transcripts/<job_id>.json`; `jobs.transcript_path` | provider error → failed |
+| 0 | `probe` | `source_key` (presigned GET URL, `worker/r2.py`) | `ffprobe` → `jobs.media` `{duration_s, width, height, has_audio}`, `jobs.duration_s` | unreadable file, no video stream, **no audio track**, or > 60 min → failed with a clear message |
+| 1 | `transcribe` | presigned GET URL, user's Deepgram key (`worker/keys.py`) | R2 `transcripts/<job_id>.json` (our format) + `transcripts/<job_id>.deepgram.json` (raw); `jobs.transcript_path` | missing key / 401-403 (key marked `invalid_at`) / 402 / other → failed with a user message |
 | 2 | `nsfw_check` | transcript (+ sampled frames later) | pass/fail | **hard block** → failed, source deleted immediately |
 | 3 | `brand_fit` | transcript, `brand_profile`, active `brand_rules` | pass or question | **soft** → `NeedsInput(question, "extract_clips")` |
 | 4 | `extract_clips` | transcript, brand memory, server-wide Claude client (`worker/claude.py`) | per candidate: clip file in R2, `clips` row (reason, word slice), initial `timelines` row | LLM/FFmpeg error → failed (retry resumes here) |
 
 ## Transcripts
-- Full transcript (word-level timestamps, source seconds) lives only in R2 at
-  `transcripts/<job_id>.json`; path on `jobs.transcript_path`. Shape:
-  `{ "words": [{ "w": "Hello", "start": 0.12, "end": 0.40 }], "provider": "deepgram" }`.
+- Deepgram call (checked 2026-10-31): `POST https://api.deepgram.com/v1/listen?model=nova-3&smart_format=true&diarize_model=latest&utterances=true`,
+  `Authorization: Token <key>`, body `{"url": <presigned GET>}`. Word timestamps are always on.
+  Skipped when `transcript_path` is already set and the object exists (idempotent).
+- Full transcript lives only in R2 at `transcripts/<job_id>.json`; path on `jobs.transcript_path`.
+  **Our format** (pydantic `worker/transcript.py`, mirrored as `Transcript` in `$lib/entities/job`),
+  times in source seconds, speakers 0-based:
+  ```json
+  { "provider": "deepgram", "duration_s": 312.4,
+    "words": [{ "w": "Hello", "start": 0.12, "end": 0.40, "speaker": 0 }],
+    "utterances": [{ "speaker": 0, "start": 0.12, "end": 3.9, "text": "Hello there." }] }
+  ```
+  `w` is Deepgram's `punctuated_word`. Utterances come from Deepgram's `utterances`, or are built
+  from speaker changes in `words` if absent. Nothing after `transcribe` reads the provider's shape.
+  Test: `tests/test_transcript.py` with `tests/fixtures/deepgram_small.json`.
 - Each clip stores its own **word slice** in `clips.words`: the words inside the clip file's range,
   times re-based to the clip file (t=0 = `file_start_s`), **handles included**.
 - Captions and the editor agent read only `clips.words`, never the full transcript.

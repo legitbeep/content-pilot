@@ -35,7 +35,8 @@ Web code reads public vars through `$env/dynamic/public` (so a missing `.env` do
 |---|---|
 | `SUPABASE_URL` | Supabase project URL |
 | `SUPABASE_SECRET_KEY` | Secret key; bypasses RLS |
-| `DATABASE_URL` | Direct Postgres for `FOR UPDATE SKIP LOCKED` claims |
+| `DATABASE_URL` | Postgres for `FOR UPDATE SKIP LOCKED` claims. Use the Session pooler string from Supabase → Connect if your network has no IPv6 (the direct `db.` host is IPv6-only) |
+| `WORKER_CONCURRENCY` | Jobs processed at once (threads), default 1. Per-user cap of 2 is in the claim query |
 | `ENCRYPTION_KEY` | Same value as web; decrypts BYOK keys + refresh tokens |
 | `CLAUDE_OAUTH_TOKEN` | Claude OAuth token for AI pipeline steps (brand fit, clip extraction). Same value as web |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | Read sources, write renders |

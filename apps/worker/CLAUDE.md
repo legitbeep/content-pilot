@@ -7,7 +7,8 @@ timelines, publish scheduled posts, collect metric checkpoints. Read `docs/queue
 ## Layout
 - `main.py` — loop + job claiming (`docs/queue.md`).
 - `pipeline/` — one module per step, ordered in `pipeline/__init__.py` `STEPS` (`docs/pipeline.md`).
-- `worker/timeline.py` — pydantic timeline mirror (`docs/timeline.md`).
+- `worker/` — shared helpers: `db.py` (Postgres), `r2.py`, `crypto.py` + `keys.py` (BYOK),
+  `transcript.py` (our transcript format), `claude.py`, `timeline.py` (pydantic timeline mirror).
 - `tests/` — pytest; timeline fixtures come from `packages/timeline-schema/fixtures/`.
 
 ## Commands (from repo root)

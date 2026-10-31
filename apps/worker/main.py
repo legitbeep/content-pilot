@@ -1,40 +1,138 @@
 # Docs: docs/queue.md
-"""Worker entrypoint: claim jobs from Postgres and run the pipeline. Stub loop for now."""
+"""Worker entrypoint: claim jobs from Postgres and run the pipeline (docs/queue.md)."""
 
 import logging
+import os
+import threading
 import time
-from functools import partial
+import traceback
+from datetime import UTC, datetime
 
-from pipeline import run
+from pipeline import NeedsInput, StepError, Stopped, run
+from worker import db
 
 POLL_SECONDS = 5
+MAX_PROCESSING_PER_USER = 2
+DONE_NOTE = "Clip extraction not built yet"
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(threadName)s %(message)s")
 log = logging.getLogger("worker")
+
+CLAIM_SQL = """
+update jobs set status = 'processing', claimed_at = now(), attempts = attempts + 1,
+       stop_requested = false, error = null, error_detail = null, note = null, updated_at = now()
+where id = (select j.id from jobs j
+            where j.status = 'pending'
+              and (select count(*) from jobs p
+                   where p.user_id = j.user_id and p.status = 'processing') < %(limit)s
+            order by j.position, j.created_at
+            for update skip locked limit 1)
+returning *
+"""
 
 
 def claim_job() -> dict | None:
-    # TODO: SELECT ... FROM jobs WHERE status='pending' ORDER BY position, created_at
-    #       FOR UPDATE SKIP LOCKED LIMIT 1, then set status='processing'. See docs/queue.md.
-    return None
+    with db.connect() as c:
+        return c.execute(CLAIM_SQL, {"limit": MAX_PROCESSING_PER_USER}).fetchone()
 
 
 def stop_requested(job: dict) -> bool:
-    # TODO: re-read jobs.stop_requested for this job.
-    return False
+    with db.connect() as c:
+        row = c.execute(
+            "select stop_requested from jobs where id = %s and user_id = %s",
+            (job["id"], job["user_id"]),
+        ).fetchone()
+    return bool(row and row["stop_requested"])
+
+
+def now() -> str:
+    return datetime.now(UTC).isoformat()
+
+
+def process(job: dict) -> None:
+    """Run one claimed job and record the outcome."""
+    steps: list[dict] = list(job.get("steps") or [])
+
+    def finish_step(status: str) -> None:
+        if steps and steps[-1]["status"] == "running":
+            steps[-1] |= {"status": status, "finished_at": now()}
+
+    def on_step(name: str, i: int, n: int) -> None:
+        finish_step("done")
+        steps.append({"step": name, "status": "running", "started_at": now()})
+        job["current_step"] = name
+        db.update_job(
+            job["id"], current_step=name, progress=round(100 * i / n), steps=db.Jsonb(steps)
+        )
+
+    def finish(status: str, step_status: str, **fields) -> None:
+        finish_step(step_status)
+        db.update_job(job["id"], status=status, steps=db.Jsonb(steps), **fields)
+
+    log.info("job %s: start (resume_from=%s)", job["id"], job.get("resume_from_step"))
+    try:
+        run(job, should_stop=lambda: stop_requested(job), on_step=on_step)
+    except Stopped as e:
+        log.info("job %s: stopped before %s", job["id"], e.step)
+        finish("stopped", "stopped", current_step=e.step, stop_requested=False)
+    except NeedsInput as e:
+        finish(
+            "needs_input",
+            "done",
+            input_request=db.Jsonb(e.request),
+            resume_from_step=e.resume_from,
+        )
+    except StepError as e:
+        log.warning("job %s: %s failed: %s %s", job["id"], job["current_step"], e.message, e.detail)
+        finish("failed", "failed", error=e.message, error_detail=e.detail or None)
+    except Exception:
+        detail = traceback.format_exc()
+        log.error("job %s: %s crashed\n%s", job["id"], job.get("current_step"), detail)
+        step = (job.get("current_step") or "processing").replace("_", " ")
+        finish(
+            "failed",
+            "failed",
+            error=f"Something went wrong while running {step}. Retry, or check the details.",
+            error_detail=detail[-4000:],
+        )
+    else:
+        log.info("job %s: done", job["id"])
+        finish(
+            "done",
+            "done",
+            progress=100,
+            finished_at=datetime.now(UTC),
+            resume_from_step=None,
+            note=DONE_NOTE,
+        )
+
+
+def loop() -> None:
+    while True:
+        try:
+            job = claim_job()
+        except Exception:
+            log.exception("claim failed")
+            job = None
+        if job:
+            try:
+                process(job)
+            except Exception:  # e.g. DB down while recording the outcome; job stays processing
+                log.exception("job %s: could not record outcome", job["id"])
+        else:
+            time.sleep(POLL_SECONDS)
+        # TODO: cleanup sweep: done jobs with source_deleted_at null and
+        # (proceeded_at set or finished_at < now() - 48h) -> pipeline.cleanup_source.run(job).
 
 
 def main() -> None:
-    while True:
-        log.info("claiming jobs...")
-        job = claim_job()
-        if job:
-            # TODO: Stopped -> status='stopped'; NeedsInput -> status='needs_input' +
-            # input_request + resume_from_step (releases the slot); other errors -> 'failed'.
-            run(job, should_stop=partial(stop_requested, job))
-        # TODO: cleanup sweep: done jobs with source_deleted_at null and
-        # (proceeded_at set or finished_at < now() - 48h) -> pipeline.cleanup_source.run(job).
-        time.sleep(POLL_SECONDS)
+    n = int(os.environ.get("WORKER_CONCURRENCY", "1"))
+    log.info("worker up: concurrency=%d", n)
+    threads = [threading.Thread(target=loop, name=f"w{i}", daemon=True) for i in range(n)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
 
 
 if __name__ == "__main__":
