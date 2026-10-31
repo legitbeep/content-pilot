@@ -14,7 +14,7 @@ Source: `supabase/migrations/`. Every table has `user_id → auth.users` (profil
   clips, timelines, posts, post_metrics, baseline_seeds.
 - **Service role only** (RLS on, no policies): `user_keys`, `platform_connections` — hold
   ciphertext. Owners read safe columns via views `user_keys_public`
-  (provider, last4, validated_at, created_at) and `platform_connections_public`
+  (provider, last4, validated_at, invalid_at, created_at) and `platform_connections_public`
   (platform, account_name, connected_at). Views run as owner and filter on `auth.uid()`;
   `anon` has no access.
 - Worker uses `DATABASE_URL` (postgres role) → bypasses RLS; it must always scope by `user_id`.
@@ -29,7 +29,7 @@ Source: `supabase/migrations/`. Every table has `user_id → auth.users` (profil
 | Table | Key columns | Notes |
 |---|---|---|
 | profiles | id (=auth uid), display_name, onboarded_at | Row created by `on_auth_user_created` trigger |
-| user_keys | provider, ciphertext, iv, last4, validated_at | unique (user_id, provider). `docs/auth-and-keys.md` |
+| user_keys | provider, ciphertext, iv, last4, validated_at, invalid_at | unique (user_id, provider). `docs/auth-and-keys.md` |
 | brand_profile | user_id (pk), answers jsonb, example_posts jsonb | Onboarding output |
 | brand_rules | source, status, rule, evidence jsonb, conflicts_with | `docs/brand-memory.md` |
 | jobs | status, position, source_key, current_step, stop_requested, input_request, resume_from_step, error, attempts, claimed_at, transcript_path, finished_at, proceeded_at, source_deleted_at | `docs/queue.md`; transcript + cleanup: `docs/pipeline.md` |

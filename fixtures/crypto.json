@@ -1,0 +1,6 @@
+{
+	"_comment": "Cross-language AES-GCM fixture (docs/auth-and-keys.md). Test key only, never a real one. from_ts was encrypted by WebCrypto, from_python by cryptography AESGCM; each side decrypts the other's.",
+	"key": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=",
+	"from_ts": {"plaintext":"dg-from-typescript-1234","iv":"oswOhfJeYIMdMZfb","ciphertext":"oP1iZ05N3pm4YZ8jM3uEEdlCjvrMBBKclCBWXDTPmtzbeivvpNIK"},
+	"from_python": {"plaintext": "dg-from-python-5678", "iv": "B6X/u47mmSf9SnzM", "ciphertext": "J842gyTWLOw4y1LcAchcM+cR8bg6gcJR/w6sXHgRSSTq1p0="}
+}

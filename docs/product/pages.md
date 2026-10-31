@@ -20,7 +20,7 @@ Route → purpose / data / actions.
 | `/publish` | Publish | Post or schedule a rendered clip | `posts`, `platform_connections_public` | Generate captions (4 platforms), post to YouTube (private), copy others, schedule |
 | `/calendar` | Calendar | Scheduled + posted content | `posts`, `post_metrics`, `baseline_seeds` | Calendar view, table view, details modal, reschedule |
 | `/brand` | Brand Memory | See/curate rules | `brand_rules`, `brand_profile` | Accept/reject proposed rules, resolve conflicts, edit stated rules |
-| `/settings` | Settings | Keys + platforms | `user_keys_public`, `platform_connections_public` | Save/validate BYOK keys (last 4 shown), connect/disconnect YouTube |
+| `/settings` | Settings | Keys + platforms | `user_keys_public`, `platform_connections_public` | API keys: Deepgram (required), Wispr (optional); save = validate → encrypt → store; status valid/unverified/invalid, last 4, validated date, Replace/Remove. Connect/disconnect YouTube (later) |
 
 Non-product routes: `/login` (Continue with Google), `/auth/callback` (code → session),
 `/auth/signout` (POST), `/dev/ui` (dev-only design system review, `docs/design/design-system.md`).

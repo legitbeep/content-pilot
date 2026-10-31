@@ -24,6 +24,7 @@ each one's `covers:` frontmatter names the code it describes.
 - `packages/timeline-schema/` — timeline contract + shared fixtures.
 - `supabase/` — config and SQL migrations (schema + RLS).
 - `docs/` — product, architecture and per-area docs; ADRs in `docs/decisions/`.
+- `fixtures/` — cross-language test fixtures (`crypto.json`).
 - `scripts/` — repo tooling (`check-docs.ts`).
 - `.claude/` — settings, path-scoped rules, skills.
 
@@ -32,7 +33,7 @@ each one's `covers:` frontmatter names the code it describes.
 - `pnpm dev` — web dev server (uses hosted Supabase/R2 from `apps/web/.env`).
 - `pnpm worker` — worker in Docker.
 - `pnpm check` — typecheck + lint (web, schema, worker) + docs check. Must pass before finishing.
-- `pnpm test` — vitest (schema) + pytest (worker).
+- `pnpm test` — vitest (schema, web) + pytest (worker), incl. the cross-language crypto test.
 
 ## Hard rules
 1. Any code change updates the docs whose `covers:` include that path, in the same change.

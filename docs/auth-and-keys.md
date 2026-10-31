@@ -6,7 +6,13 @@ covers:
   - apps/web/src/routes/login
   - apps/web/src/routes/(authed)
   - apps/web/eslint.config.js
+  - apps/web/src/lib/entities/api-key
+  - apps/web/src/lib/features/api-keys
+  - apps/web/src/routes/(authed)/(shell)/settings
   - apps/worker/worker/claude.py
+  - apps/worker/worker/crypto.py
+  - apps/worker/worker/keys.py
+  - fixtures/crypto.json
   - supabase/migrations
 last_updated: 2026-10-31
 ---
@@ -54,19 +60,33 @@ OAuth token, `CLAUDE_OAUTH_TOKEN` (from `claude setup-token`), set in both `.env
 - Users never enter a Claude key; usage and limits are the token owner's.
 
 ## BYOK
-Providers: `deepgram` | `assemblyai` | `groq` (transcription), `wispr` (optional).
+Settings → API keys lists the providers in `$lib/entities/api-key/providers.ts`: **deepgram**
+(required: transcription) and **wispr** (optional: voice input in the editor). There is no
+Anthropic key: Claude is the server-wide token above. The `key_provider` enum also has
+`assemblyai`/`groq` for later; they are not offered yet.
 
-- **Encrypt**: AES-256-GCM, key = `ENCRYPTION_KEY` (base64, 32 bytes), random 12-byte IV per
-  write. Store `ciphertext` (incl. auth tag) + `iv` + `last4` in `user_keys`. Web: WebCrypto in
-  `$lib/server`. Worker: `cryptography` `AESGCM` (add the dep when needed). Same format both sides.
-- **Write**: server action only, with the secret-key client (table has no RLS policies).
-- **Read for UI**: `user_keys_public` view → provider, last4, validated_at. Plaintext and
-  ciphertext never reach the browser.
-- **Validate on save** (cheap authenticated call; reject the save on 401/403):
-  deepgram `GET /v1/projects` · assemblyai `GET /v2/transcript?limit=1`
-  · groq `GET /openai/v1/models` · wispr: see below. Set `validated_at` on success.
-- **Unverified** = `validated_at is null`: saved but not confirmed (network error, provider 5xx,
-  timeout). Validated on first use; set `validated_at` then, or surface the error at that point.
+- **Storage format** (one format, both languages): AES-256-GCM, key = base64 `ENCRYPTION_KEY`
+  (32 bytes). `user_keys.iv` = 12 random bytes per write; `user_keys.ciphertext` = encrypted
+  bytes ‖ 16-byte GCM tag (what WebCrypto and `cryptography`'s `AESGCM` both produce natively).
+  Web: `$lib/server/crypto.ts` (WebCrypto, writes bytea as `\x<hex>` through PostgREST).
+  Worker: `worker/crypto.py`. Cross-language test: `fixtures/crypto.json` holds one value
+  encrypted by each side; `crypto.test.ts` (vitest) and `tests/test_crypto.py` (pytest) each
+  decrypt the other's.
+- **Save** (`settings/+page.server.ts` → `saveKey` in `$lib/server/keys.ts`): validate with one
+  cheap authenticated call → encrypt → upsert with the secret-key client
+  (`$lib/server/supabase-admin.ts`; the table has no RLS policies). Saving clears `invalid_at`.
+- **Validate** (checked 2026-10-31): deepgram `GET https://api.deepgram.com/v1/projects` with
+  `Authorization: Token <key>` · wispr: see below. 2xx → `validated_at = now()`;
+  401/403 → save rejected with a message; network error / 5xx / timeout → saved as unverified.
+- **Status** shown in Settings (`keyStatus()`): `valid` = `validated_at` set · `unverified` =
+  `validated_at` null · `invalid` = `invalid_at` set (the worker got 401/403 using a saved key;
+  the job fails with "Deepgram rejected the API key. Update it in Settings."). Plus last 4 chars,
+  the validated/saved date, and Replace / Remove. The full key never goes back to the browser.
+- **Read for UI**: `user_keys_public` view → provider, last4, validated_at, invalid_at, created_at.
+- **Worker use**: `worker/keys.py` `get_key(user_id, provider)` decrypts; `mark_valid` /
+  `mark_invalid` set `validated_at` / `invalid_at` after the first real call.
+- **Upload gate**: Queue shows "Add your Deepgram key to start." with a link to Settings while a
+  required key is missing (`missingRequired()`); the presign route refuses too.
 
 ### Wispr (optional, never blocks the user)
 Voice is optional and typing always works, so a Wispr problem never blocks onboarding or saving.
@@ -79,6 +99,7 @@ Voice is optional and typing always works, so a Wispr problem never blocks onboa
 - Browser voice uses the same endpoint: the editor's server route mints a short-lived client
   JWT for the user so the org key never reaches the browser.
 - Source: api-docs.wisprflow.ai (`generate_access_token.md`, `rest_api_transcribe.md`), checked 2026-10-31.
-- OAuth refresh tokens (`platform_connections`) use the same scheme.
+
+OAuth refresh tokens (`platform_connections`) use the same scheme.
 
 Rotating `ENCRYPTION_KEY` invalidates every stored key/token (users re-enter). Fine for a hackathon.

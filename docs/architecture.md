@@ -37,7 +37,8 @@ flowchart LR
 ## Web: Feature-Sliced Design inside `src/lib`
 Layers (import only downward): `widgets → features → entities → shared`. Routes (`src/routes`)
 compose widgets/features. `src/lib/server` is SvelteKit's server-only folder (`$lib/server`),
-outside FSD layering: secrets, Supabase service client, crypto, R2 presign, agent.
+outside FSD layering: secrets, Supabase service client (`supabase-admin.ts`), crypto, keys,
+R2 presign, agent.
 Each layer has an `index.ts` with a `// Docs:` header; slices go in `src/lib/<layer>/<slice>/`.
 
 Today's slices:
@@ -48,6 +49,7 @@ Today's slices:
 - `shared/config/`: `nav.ts` (one route list for sidebar, palette, breadcrumbs) and
   `shortcuts.ts` (every keyboard shortcut).
 - `widgets/app-shell`: sidebar, top bar, command palette, shortcut sheet, key handler.
+- `entities/api-key`: BYOK provider list, key status. `features/api-keys`: Settings key row.
 
 Routes: `(authed)/(shell)/*` render inside `AppShell`; `(authed)/onboarding` is protected but
 full-screen; `login` and `auth/*` are public. Auth flow: `docs/auth-and-keys.md`.
