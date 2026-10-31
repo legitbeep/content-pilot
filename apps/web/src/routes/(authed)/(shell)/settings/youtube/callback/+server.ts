@@ -3,13 +3,15 @@ import { redirect } from '@sveltejs/kit';
 import { connectYoutube } from '$lib/server/youtube';
 import type { RequestHandler } from './$types';
 
-/** Google → here. Store the encrypted refresh token, then back to Settings with a result flag. */
+/** Google → here. Store the encrypted refresh token, then back to Settings (or onboarding) with a result flag. */
 export const GET: RequestHandler = async ({ url, cookies, locals: { user } }) => {
 	const state = cookies.get('yt_oauth_state');
+	const next = cookies.get('yt_oauth_next') === '/onboarding' ? '/onboarding' : '/settings';
 	cookies.delete('yt_oauth_state', { path: '/settings/youtube' });
+	cookies.delete('yt_oauth_next', { path: '/settings/youtube' });
 	const code = url.searchParams.get('code');
 	if (!code || !state || url.searchParams.get('state') !== state)
-		redirect(303, '/settings?youtube=denied');
+		redirect(303, `${next}?youtube=denied`);
 	let result = 'connected';
 	try {
 		await connectYoutube(user!.id, code, url.origin);
@@ -18,5 +20,5 @@ export const GET: RequestHandler = async ({ url, cookies, locals: { user } }) =>
 		const msg = e instanceof Error ? e.message : '';
 		result = msg === 'missing_scopes' || msg === 'no_channel' ? msg : 'error';
 	}
-	redirect(303, `/settings?youtube=${result}`);
+	redirect(303, `${next}?youtube=${result}`);
 };

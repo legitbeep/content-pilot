@@ -13,7 +13,8 @@ import {
 import { AIError, generateJSON, requireAIKeys } from './llm';
 import { presignGet, presignPut } from './r2';
 
-export const ONBOARDING_STEPS = 8;
+// 1 keys, 2-7 profile sections, 8 connect YouTube (optional), 9 review.
+export const ONBOARDING_STEPS = 9;
 
 export async function loadBrand(supabase: SupabaseClient, userId: string) {
 	const { data, error: err } = await supabase

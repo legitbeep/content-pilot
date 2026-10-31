@@ -28,7 +28,9 @@ last_updated: 2026-11-01
   → code exchange at `oauth2.googleapis.com/token` → `channels.list?part=snippet&mine=true` →
   refresh token encrypted (`ENCRYPTION_KEY`, same AES-GCM format as BYOK keys) → upsert
   `platform_connections` (channel_id, account_name, avatar_url) with the secret-key client →
-  `/settings?youtube=connected|denied|missing_scopes|no_channel|error`.
+  `/settings?youtube=connected|denied|missing_scopes|no_channel|error`. Onboarding's optional
+  step starts with `?next=/onboarding` (kept in a `yt_oauth_next` cookie; only `/onboarding` or
+  `/settings` are allowed) and gets the same flag back on `/onboarding`.
 - Redirect URI = `YOUTUBE_REDIRECT_URI`, or `<origin>/settings/youtube/callback` when unset. It
   must be listed on the OAuth client in Google Cloud (local + `https://clip-studio-pi.vercel.app`).
 - Disconnect (Settings action `disconnect`): POST `oauth2.googleapis.com/revoke` (best effort)

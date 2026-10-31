@@ -8,13 +8,17 @@
 	import { DraftRuleList } from '$lib/features/brand-rules';
 	import { formAction } from '$lib/shared/lib/form-action';
 	import { Button } from '$lib/shared/ui/button';
+	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
+	import { youtubeFlash } from '$lib/features/platform-connections';
 	import { PageHeader } from '$lib/shared/ui/page-header';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
 
-	const TOTAL = 8;
-	const SKIPPABLE = [3, 6, 7];
+	const TOTAL = 9;
+	const YOUTUBE_STEP = 8;
+	const SKIPPABLE = [3, 6, 7, YOUTUBE_STEP];
 	// Local copies: key saves re-run load, which must not reset what the user is typing.
 	let step = $state(untrack(() => data.step));
 	let profile = $state<BrandProfile>(untrack(() => structuredClone(data.profile)));
@@ -31,16 +35,20 @@
 	const title = $derived(
 		step === 1
 			? 'Connect your AI'
-			: step === TOTAL
-				? "Here's what we understood about your brand"
-				: section!.title
+			: step === YOUTUBE_STEP
+				? 'Connect YouTube'
+				: step === TOTAL
+					? "Here's what we understood about your brand"
+					: section!.title
 	);
 	const description = $derived(
 		step === 1
 			? 'Clips, copy and rules run on your own keys. You need one AI key and one transcription key; a Groq key covers both.'
-			: step === TOTAL
-				? 'Edit, delete or add rules. You can change them any time in Brand memory.'
-				: section!.description
+			: step === YOUTUBE_STEP
+				? 'Optional. Connect your channel to post and schedule clips, and to learn from how they perform. You can do this later in Settings.'
+				: step === TOTAL
+					? 'Edit, delete or add rules. You can change them any time in Brand memory.'
+					: section!.description
 	);
 
 	async function advance(skip = false) {
@@ -100,6 +108,28 @@
 					form={form && 'provider' in form && form.provider === p.id ? form : undefined}
 				/>
 			{/each}
+		</div>
+	{:else if step === YOUTUBE_STEP}
+		{@const result = page.url.searchParams.get('youtube')}
+		{#if result && youtubeFlash[result]}
+			<p class="text-muted-foreground" role="status">{youtubeFlash[result]}</p>
+		{/if}
+		<div class="flex items-center justify-between gap-4 rounded-lg border p-4">
+			<div>
+				<div class="font-medium">YouTube</div>
+				<div class="text-muted-foreground">
+					{data.youtube
+						? `Connected as ${data.youtube.account_name ?? 'your channel'}`
+						: 'Not connected'}
+				</div>
+			</div>
+			{#if !data.youtube}
+				<!-- Full navigation: the server route redirects to Google, then back here. -->
+				<form method="GET" action={resolve('/settings/youtube/connect')} data-sveltekit-reload>
+					<input type="hidden" name="next" value="/onboarding" />
+					<Button type="submit" variant="outline" size="sm">Connect</Button>
+				</form>
+			{/if}
 		</div>
 	{:else if section}
 		<ProfileSection section={section.id} bind:profile logoUrl={data.logoUrl} />
