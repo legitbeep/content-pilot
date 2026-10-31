@@ -3,6 +3,8 @@
 
 from collections.abc import Callable
 
+from worker.llm.errors import AIError
+
 from . import probe, transcribe
 from .errors import NeedsInput, StepError, Stopped
 
@@ -32,4 +34,7 @@ def run(
         if should_stop():
             raise Stopped(step_name(step))
         on_step(step_name(step), i, len(STEPS))
-        step.run(job)
+        try:
+            step.run(job)
+        except AIError as e:  # any AI adapter error (incl. missing_key) is user-readable
+            raise StepError(e.message, e.detail) from e

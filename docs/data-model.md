@@ -45,4 +45,4 @@ Source: `supabase/migrations/`. Every table has `user_id → auth.users` (profil
 Indexes: `llm_calls_user_created_idx` (usage summary), `jobs_claim_idx` (pending by position), `jobs_user_processing_idx` (per-user processing count), `jobs_cleanup_idx` (done, source not yet deleted), `posts_due_idx` (scheduled by time).
 
 R2 objects (not tables): `uploads/<user_id>/<upload_id>/<name>` source video,
-`transcripts/<job_id>.json` (normalised) + `transcripts/<job_id>.deepgram.json` (raw), `clips/<clip_id>/source.mp4`.
+`transcripts/<job_id>.json` (normalised; older jobs also have a raw `transcripts/<job_id>.deepgram.json`), `clips/<clip_id>/source.mp4`.

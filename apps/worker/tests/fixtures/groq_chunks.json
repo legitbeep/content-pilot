@@ -1,0 +1,41 @@
+{
+	"_comment": "Two Groq Whisper verbose_json chunks: chunk 2 starts at 598s (600s chunks, 2s overlap). Times are chunk-relative. 'world' and 'again' sit in the overlap and appear in both.",
+	"chunks": [
+		{
+			"start": 0,
+			"response": {
+				"words": [
+					{ "word": "Hello", "start": 0.5, "end": 0.9 },
+					{ "word": " big", "start": 597.0, "end": 597.4 },
+					{ "word": " world", "start": 598.6, "end": 598.95 },
+					{ "word": " again", "start": 599.2, "end": 599.6 }
+				],
+				"segments": [
+					{ "start": 0.5, "end": 0.9, "text": " Hello" },
+					{ "start": 597.0, "end": 599.6, "text": " big world again" }
+				]
+			}
+		},
+		{
+			"start": 598,
+			"response": {
+				"words": [
+					{ "word": "world", "start": 0.6, "end": 0.95 },
+					{ "word": "again", "start": 1.2, "end": 1.6 },
+					{ "word": "bye", "start": 5.0, "end": 5.3 }
+				],
+				"segments": [
+					{ "start": 0.6, "end": 1.6, "text": " world again" },
+					{ "start": 5.0, "end": 5.3, "text": " bye" }
+				]
+			}
+		}
+	],
+	"expected_words": [
+		["Hello", 0.5, 0.9],
+		["big", 597.0, 597.4],
+		["world", 598.6, 598.95],
+		["again", 599.2, 599.6],
+		["bye", 603.0, 603.3]
+	]
+}

@@ -3,6 +3,7 @@ covers:
   - packages/llm-registry
   - apps/web/src/lib/server/llm
   - apps/worker/worker/llm
+  - apps/worker/worker/transcription
   - apps/web/src/lib/entities/api-key
   - fixtures/key-resolution.json
   - scripts/check-ai-imports.ts
@@ -38,6 +39,26 @@ zod value / pydantic model.
   `AIError('unknown')` "<Provider> returned an answer we couldn't read…".
 - **Long input:** callers that send transcripts check `maxInputTokens` and chunk (extraction
   works in ~5-minute windows). Groq has the smallest window (~115k tokens; free tier also 8k TPM).
+
+## Transcription (worker)
+`transcribe(user_id, media_url) -> Transcript` in `worker/transcription` (our format,
+`worker/transcript.py`, `docs/pipeline.md`). Provider: the user's `ai_settings.transcription_provider`
+→ deepgram → groq → demo Groq (allowlisted only) → `AIError('missing_key')`. A 401/403 on the
+user's own key marks it invalid; success marks it valid. No retries inside: the job's Retry re-runs.
+- **Deepgram** (`deepgram.py`): `POST /v1/listen?model=nova-3&smart_format&diarize_model=latest&utterances`
+  with `{"url": <presigned GET>}`; word timestamps + speaker labels. 402 → "out of credit".
+- **Groq Whisper** (`groq.py`, `whisper-large-v3-turbo`): ffmpeg → mono 16 kHz 32 kbps mp3
+  (~14 MB per hour) → chunks of ≤600s (and under 90% of the 25 MB upload limit) with 2s overlap →
+  `POST /openai/v1/audio/transcriptions` multipart, `response_format=verbose_json`,
+  `timestamp_granularities[]=word` + `segment` → offset each chunk's times → each overlap is split
+  at its midpoint so no word is kept twice. **No speaker labels** (`speaker = null`).
+  Needs ffmpeg (in the worker image).
+- **Gemini is not used for transcription**: its word timestamps aren't reliable enough for cutting
+  clips on word boundaries. Gemini is LLM-only.
+- **Voice input hook (plan 7):** `aiCapabilities().voice` is true with a Wispr key, a Groq key, or
+  demo. Plan 7 should use Wispr when saved, else Groq Whisper via a small web route that posts the
+  recorded clip to the same Groq endpoint with the user's key (add it under `$lib/server/llm`,
+  never in the browser).
 
 ## Tasks and tiers
 Callers name a task, never a model. Unknown task → error; add new tasks to the registry and
