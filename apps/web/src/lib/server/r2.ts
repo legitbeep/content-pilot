@@ -56,3 +56,15 @@ export async function deleteObject(key: string): Promise<void> {
 	const res = await r2().fetch(objectUrl(key), { method: 'DELETE' });
 	if (!res.ok && res.status !== 404) throw new Error(`R2 DELETE ${key}: ${res.status}`);
 }
+
+/** Up to 1000 object keys under a prefix (ListObjectsV2). */
+export async function listKeys(prefix: string): Promise<string[]> {
+	const url = new URL(objectUrl('').replace(/\/$/, ''));
+	url.searchParams.set('list-type', '2');
+	url.searchParams.set('prefix', prefix);
+	const res = await r2().fetch(url);
+	if (!res.ok) throw new Error(`R2 LIST ${prefix}: ${res.status}`);
+	return [...(await res.text()).matchAll(/<Key>([^<]+)<\/Key>/g)].map((m) =>
+		m[1].replace(/&amp;/g, '&')
+	);
+}

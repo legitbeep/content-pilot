@@ -64,6 +64,8 @@ Today's slices:
 - `entities/post`: post types, platforms, status badge, `canPost` actions.
   `features/platform-connections`: Settings YouTube connect. `features/publish-clip`: publish
   form. `widgets/post-calendar`: calendar month/table views + post details (`docs/publishing.md`).
+- `features/editor-agent`: agent plan format + pure executor, chat panel, voice recorder;
+  server side in `$lib/server/agent` and `routes/api/editor/*` (`docs/agent.md`).
 - `shared/lib/form-action.ts` (`formAction()`: call a page's form action from JS).
 
 Routes: `(authed)/(shell)/*` render inside `AppShell`; `(authed)/onboarding` is protected but
