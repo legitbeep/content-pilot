@@ -17,7 +17,10 @@ const run = (completed: string | null) => {
 		}
 	};
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	return load({ locals: { supabase, user: { id: 'u1' } }, cookies: { get: () => undefined } } as any);
+	return load({
+		locals: { supabase, user: { id: 'u1' } },
+		cookies: { get: () => undefined }
+	} as any);
 };
 
 describe('shell onboarding gate', () => {
