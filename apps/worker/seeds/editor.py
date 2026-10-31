@@ -16,6 +16,7 @@ from pathlib import Path
 
 from psycopg.types.json import Jsonb
 
+from pipeline import nsfw_check
 from worker import db, r2
 
 TAG = "seed:editor"
@@ -110,6 +111,8 @@ def seed() -> None:
             dur = "8" if kind == "voiceover" else "30"
             ffmpeg("-f", "lavfi", "-i", src, "-t", dur, "-c:a", "aac", out)
             r2.upload_file(out, keys[kind], "audio/mp4")
+            # Generated tones: mark them checked so renders don't need AI keys for the check.
+            r2.put_json(nsfw_check.safety_key(keys[kind]), {"verdict": "pass", "seed": TAG})
 
     with db.connect() as c:
         c.execute(
@@ -153,6 +156,7 @@ def clean() -> None:
         r2.delete(f"renders/{cid}.mp4")
     for key in audio_keys(uid).values():
         r2.delete(key)
+        r2.delete(nsfw_check.safety_key(key))
     with db.connect() as c:  # cascades to clips, timelines, edit_events
         c.execute(
             "delete from jobs where id = %s and user_id = %s and note = %s", (job_id, uid, TAG)

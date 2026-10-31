@@ -130,3 +130,44 @@ def test_brand_fit_passes_without_conflict_or_memory(monkeypatch, fake):
     brand_fit.run({**JOB, "memory_snapshot": "Brand: X"})
     brand_fit.run({**JOB, "memory_snapshot": None})
     assert len(seen) == 1
+
+
+def test_check_upload_caches_and_deletes_explicit(monkeypatch, fake):
+    stored: dict = {}
+    monkeypatch.setattr(nsfw_check.r2, "exists", lambda k: k in stored)
+    monkeypatch.setattr(nsfw_check.r2, "put_json", lambda k, d: stored.__setitem__(k, d))
+    monkeypatch.setattr(nsfw_check, "frame_scores", lambda url: [0.1] * 10)
+    key = "uploads/u1/a/clip.mp4"
+    assert nsfw_check.check_upload("u1", key, "video") == "pass"
+    assert stored[nsfw_check.safety_key(key)]["verdict"] == "pass"
+    monkeypatch.setattr(nsfw_check, "frame_scores", lambda url: pytest.fail("not cached"))
+    assert nsfw_check.check_upload("u1", key, "video") == "pass"
+
+    monkeypatch.setattr(nsfw_check, "transcribe", lambda uid, url: transcript())
+    llm(monkeypatch, nsfw_check, Moderation(verdict="explicit"))
+    voice = "uploads/u1/b/voice.m4a"
+    assert nsfw_check.check_upload("u1", voice, "audio") == "explicit"
+    assert fake["deleted"] == [voice] and nsfw_check.safety_key(voice) not in stored
+
+
+def test_render_refuses_explicit_upload_and_skips_clip_files(monkeypatch):
+    from loops import render as render_loop
+    from worker.render import RenderError
+    from worker.timeline import Timeline
+
+    checked = []
+
+    def check(uid, key, kind):
+        checked.append((key, kind))
+        return "explicit" if kind == "audio" else "pass"
+
+    monkeypatch.setattr(render_loop.nsfw_check, "check_upload", check)
+    from seeds.editor import timeline
+
+    data = timeline("clips/c1/source.mp4")
+    voice = {"id": "a1", "kind": "voiceover", "key": "uploads/u1/x/voice.m4a", "start": 0}
+    data["audio"] = [voice | {"volume": 1, "muted": False}]
+    t = Timeline.model_validate(data)
+    with pytest.raises(RenderError, match="voice.m4a contains explicit content"):
+        render_loop._check_uploads("u1", t)
+    assert checked == [("uploads/u1/x/voice.m4a", "audio")]

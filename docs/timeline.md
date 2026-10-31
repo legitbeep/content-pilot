@@ -136,6 +136,13 @@ testsrc2 440 Hz, horizontal smptebars 660 Hz, horizontal hue-shifted testsrc2 33
   to `queued` (assumes one worker process). Debug: `python -m worker.run_once render <clip_id>`.
 - **Statuses** (`clips.render_status`, text + CHECK): null (never) · queued · rendering · done · failed.
 - The worker refuses any key that isn't one of the user's clip files or under `uploads/<user_id>/`.
+- **Upload safety check**: before rendering, every `uploads/<user_id>/…` key in the timeline goes
+  through `nsfw_check.check_upload` (videos in `segments` → image model on 1 fps frames; `audio[]`
+  → transcription + `moderate_text` on the user's keys). Explicit → the upload is deleted and the
+  render fails with "<file> contains explicit content and can't be used. Remove it from this
+  clip."; borderline is allowed. Verdicts are cached at `safety/<key>.json` (outside `uploads/`,
+  so the browser can't forge one), so each file is checked once. A missing AI key or model fails
+  the render with "Couldn't safety-check <file>: …" (`docs/pipeline.md`).
 - Inputs are presigned GET URLs read by ffmpeg directly; `ffprobe` decides per source whether it
   has audio (silence is generated if not).
 - **Captions/text need libass** (`subtitles` filter): present in the Docker image (Debian ffmpeg),
