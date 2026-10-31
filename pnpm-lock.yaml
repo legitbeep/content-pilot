@@ -13,6 +13,9 @@ importers:
       '@clip-studio/llm-registry':
         specifier: workspace:*
         version: link:../../packages/llm-registry
+      '@clip-studio/timeline-schema':
+        specifier: workspace:*
+        version: link:../../packages/timeline-schema
       aws4fetch:
         specifier: ^1.0.20
         version: 1.0.20

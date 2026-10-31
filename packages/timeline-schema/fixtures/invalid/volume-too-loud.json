@@ -1,0 +1,30 @@
+{
+	"version": 2,
+	"sourceKey": "clips/0b8f6a52-1c3e-4d6e-9a51-2f7d3c9e8a10/source.mp4",
+	"aspect": "9:16",
+	"cropX": 0.5,
+	"segments": [
+		{
+			"start": 1,
+			"end": 5
+		}
+	],
+	"originalAudio": {
+		"muted": false,
+		"volume": 5
+	},
+	"audio": [],
+	"ducking": false,
+	"captions": {
+		"enabled": false,
+		"style": {
+			"font": "Hanken Grotesk",
+			"color": "#FFFFFF",
+			"position": "bottom",
+			"size": "medium",
+			"wordsPerChunk": 3
+		}
+	},
+	"textOverlays": [],
+	"blurRegions": []
+}

@@ -4,7 +4,7 @@ covers:
   - apps/worker/worker/r2.py
   - apps/worker/worker/transcript.py
   - apps/worker/tests/fixtures
-last_updated: 2026-10-31
+last_updated: 2026-11-01
 ---
 # Pipeline
 
@@ -77,6 +77,9 @@ clicks **Proceed with editing** in the Clip Picker (`jobs.proceeded_at`), or 48h
 Deletes the source video and every clip file where `selected = false` (sets their `file_key`
 to null; rows stay as a negative signal for brand memory), then sets `source_deleted_at`.
 Missing objects count as deleted (idempotent). Selected clips keep their files for rendering.
+
+`worker/r2.py` helpers: `presigned_get`, `put_json`, `exists`, `upload_file(path, key, content_type)`,
+`delete(key)` (missing = deleted).
 
 Rendering (timeline → video) and publishing are separate worker loops
 (`docs/timeline.md`, `docs/publishing.md`).

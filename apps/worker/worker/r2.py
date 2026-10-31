@@ -48,3 +48,12 @@ def exists(key: str) -> bool:
         if e.response.get("Error", {}).get("Code") in ("404", "NoSuchKey", "NotFound"):
             return False
         raise
+
+
+def upload_file(path: str, key: str, content_type: str) -> None:
+    _client().upload_file(path, _bucket(), key, ExtraArgs={"ContentType": content_type})
+
+
+def delete(key: str) -> None:
+    """Missing objects count as deleted (S3 DELETE is idempotent)."""
+    _client().delete_object(Bucket=_bucket(), Key=key)

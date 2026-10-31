@@ -1,35 +1,72 @@
 {
-	"version": 1,
-	"sourceKey": "clips/5d2c1e7a-8b4f-4c39-a6e2-9f0b7d1c3e55/source.mp4",
+	"version": 2,
+	"sourceKey": "clips/0b8f6a52-1c3e-4d6e-9a51-2f7d3c9e8a10/source.mp4",
 	"aspect": "1:1",
+	"cropX": 0.3,
 	"segments": [
 		{
+			"start": 1,
+			"end": 4
+		},
+		{
 			"start": 5,
-			"end": 20.2
+			"end": 7.5
 		},
 		{
-			"start": 25,
-			"end": 43
+			"start": 0.5,
+			"end": 2.5,
+			"sourceKey": "clips/7c1d2e3f-0000-4000-8000-000000000002/source.mp4"
 		}
 	],
-	"captions": [
+	"originalAudio": {
+		"muted": false,
+		"volume": 0.8
+	},
+	"audio": [
 		{
+			"id": "voiceover-1",
+			"kind": "voiceover",
+			"key": "uploads/u1/vo/voiceover.m4a",
+			"start": 1,
+			"volume": 1.2,
+			"muted": false
+		},
+		{
+			"id": "music-1",
+			"kind": "music",
+			"key": "uploads/u1/music/music.m4a",
 			"start": 0,
-			"end": 2.4,
-			"text": "Here's the thing nobody tells you"
-		},
-		{
-			"start": 2.4,
-			"end": 5,
-			"text": "about pricing."
+			"volume": 0.5,
+			"muted": false
 		}
 	],
+	"ducking": true,
+	"captions": {
+		"enabled": true,
+		"style": {
+			"font": "Hanken Grotesk",
+			"color": "#F5C842",
+			"position": "bottom",
+			"size": "large",
+			"wordsPerChunk": 2
+		}
+	},
 	"textOverlays": [
 		{
 			"start": 0,
-			"end": 3,
+			"end": 2,
 			"text": "Pricing myth #1",
 			"position": "top"
+		}
+	],
+	"blurRegions": [
+		{
+			"start": 1,
+			"end": 3,
+			"x": 0.1,
+			"y": 0.1,
+			"w": 0.3,
+			"h": 0.2
 		}
 	]
 }

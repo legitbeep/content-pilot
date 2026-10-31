@@ -51,6 +51,7 @@
 	},
 	"dependencies": {
 		"@clip-studio/llm-registry": "workspace:*",
+		"@clip-studio/timeline-schema": "workspace:*",
 		"aws4fetch": "^1.0.20",
 		"zod": "^4.6.7"
 	}

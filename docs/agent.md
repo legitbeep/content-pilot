@@ -22,20 +22,13 @@ Calls the LLM only through `generateJSON` (`$lib/server/llm`, task `plan_edits` 
 ```
 `status`: `pending | in_progress | done | failed`. Streamed to the UI so the user sees progress.
 
-## Tools (planned signatures)
-All timeline tools are **pure**: `(timeline: Timeline, args) => Timeline`. No I/O, no DB. Unit-test
-each one. Live in `src/lib/server/agent/tools/` (or `src/lib/entities/timeline/` if the manual
-editor reuses them — preferred).
-| Tool | Args |
-|---|---|
-| `trimSegment` | `{ index, start?, end? }` |
-| `splitSegment` | `{ index, at }` |
-| `removeSegment` | `{ index }` |
-| `reorderSegments` | `{ order: number[] }` |
-| `setAspect` | `{ aspect: '9:16' \| '1:1' \| '16:9' }` |
-| `addCaption` / `updateCaption` / `removeCaption` | `{ start, end, text }` / `{ index, ...patch }` / `{ index }` |
-| `addTextOverlay` / `removeTextOverlay` | `{ start, end, text, position }` / `{ index }` |
-| `proposeMemoryUpdate` | `{ rule, evidence }` → returns a proposal, **not** a timeline |
+## Tools
+Timeline tools are the editor's operations: `opCatalog` in `$lib/entities/timeline` (built by
+plan 6, catalog in `docs/timeline.md`). Each entry has `name`, `description`, zod `args`, a
+`destructive` flag (ask before applying) and `apply`; run them with
+`applyOp(timeline, name, args)` → `{ timeline, summary }` (throws `OpError` with a readable
+message). Log each applied op to `edit_events` with `source = 'agent'`.
+Extra agent-only tool: `proposeMemoryUpdate` `{ rule, evidence }` → returns a proposal, **not** a timeline.
 
 ## Memory proposals
 The agent may never write `brand_rules`. `proposeMemoryUpdate` returns a proposal the UI shows;

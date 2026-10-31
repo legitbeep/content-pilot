@@ -2,7 +2,9 @@
 covers:
   - packages/timeline-schema
   - apps/worker/worker/timeline.py
-last_updated: 2026-10-31
+  - apps/web/src/lib/entities/timeline
+  - apps/worker/seeds/editor.py
+last_updated: 2026-11-01
 ---
 # Timeline
 
@@ -13,38 +15,97 @@ the worker renders it with FFmpeg on save. Web never touches video bytes.
 1. `packages/timeline-schema/timeline.schema.json` — the contract
 2. `packages/timeline-schema/src/index.ts` — zod mirror (web) — `import { Timeline } from '@clip-studio/timeline-schema'`
 3. `apps/worker/worker/timeline.py` — pydantic mirror (worker)
-4. `packages/timeline-schema/fixtures/{valid,invalid}/` — both mirrors are tested against these
+4. `packages/timeline-schema/fixtures/{valid,invalid}/` — both mirrors are tested against these;
+   `fixtures/captions.json` tests both caption mappers (`captionChunks` / `caption_chunks`)
 5. this doc
 
-`end > start` can't be expressed in JSON Schema; zod and pydantic enforce it.
+`end > start` and "blur region fits in the frame" can't be expressed in JSON Schema; zod and
+pydantic enforce them.
 
-## Shape (v1)
+## Shape (v2)
 ```json
 {
-  "version": 1,
+  "version": 2,
   "sourceKey": "clips/5d2c…/source.mp4",
   "aspect": "9:16",
-  "segments": [{ "start": 5, "end": 20.2 }, { "start": 25, "end": 43 }],
-  "captions": [{ "start": 0, "end": 2.4, "text": "Here's the thing" }],
-  "textOverlays": [{ "start": 0, "end": 3, "text": "Pricing myth #1", "position": "top" }]
+  "cropX": 0.5,
+  "segments": [{ "start": 5, "end": 20.2 }, { "start": 1, "end": 4, "sourceKey": "clips/9a1f…/source.mp4" }],
+  "originalAudio": { "muted": false, "volume": 1 },
+  "audio": [{ "id": "music-1", "kind": "music", "key": "uploads/<user>/<id>/song.m4a", "start": 0, "volume": 0.5, "muted": false }],
+  "ducking": true,
+  "captions": { "enabled": true, "style": { "font": "Hanken Grotesk", "color": "#FFFFFF", "position": "bottom", "size": "medium", "wordsPerChunk": 3 } },
+  "textOverlays": [{ "start": 0, "end": 3, "text": "Pricing myth #1", "position": "top" }],
+  "blurRegions": [{ "start": 1, "end": 3, "x": 0.1, "y": 0.1, "w": 0.3, "h": 0.2 }]
 }
 ```
 - `sourceKey`: the **clip file** (`clips.file_key`), cut by `extract_clips` with 5s handles
   before and after. Not the original upload — that is deleted at cleanup.
-- `segments`: kept ranges **of the clip file** (seconds from its start), in output order
-  (cuts, reorders). The initial segment is `[5, 5 + clip length]` (or less if the handle was
-  clamped at the source start); trims may extend into the handles (`0 … file duration`).
-- `captions`, `textOverlays`: times on the **output** timeline.
+- `segments`: kept ranges **of a source file** (seconds from its start), in output order
+  (cuts, reorders). `sourceKey` on a segment = another clip file of the same session or an
+  uploaded video (`uploads/<user_id>/…`, merge); default is the timeline's `sourceKey`. The
+  initial segment is `[5, 5 + clip length]` (or less if the handle was clamped at the source
+  start); trims may extend into the handles (`0 … file duration`).
+- `cropX`: horizontal crop position (0 left … 1 right) when the source is wider than `aspect`.
+- `originalAudio`: the segments' own audio. `audio`: added voiceover/music tracks; `start` on the
+  output timeline, `volume` 0..2 (1 = unchanged). `ducking`: lower music under speech.
+- `captions`: burned-in captions. **Text is not stored**: it is derived from `clips.words` of each
+  segment's source (words whose midpoint is inside the segment, mapped to output time, grouped
+  `wordsPerChunk` at a time, never across a cut). Same function in both mirrors.
+- `textOverlays`, `blurRegions`: times on the **output** timeline. Blur `x, y, w, h` are
+  fractions (0..1) of the output frame.
 - `aspect`: `9:16` | `1:1` | `16:9`.
+- New timelines: `newTimeline(sourceKey, start, end)` (9:16, captions on, default style).
+
+**v1 → v2**: breaking. No v1 rows existed when v2 landed (plan 6), so there is no migration; v1
+JSON is rejected (`fixtures/invalid/version-1.json`).
+
+## Operations (`$lib/entities/timeline`)
+Pure `(timeline, args) → { timeline, summary }` (summary = short human sentence, e.g. "Muted
+original audio"). Run through `applyOp(timeline, name, args)`: validates args (zod), applies to a
+copy, validates the result, throws `OpError` with a readable message. `opCatalog` lists every op
+with `name`, `description`, zod `args`, `destructive`; the editor agent (plan 7) exposes exactly
+these as tools. Times: "output" = seconds on the edited clip; segment `start/end` = source seconds.
+
+| Op | Args | Destructive |
+|---|---|---|
+| `trim` | `{ segment, start?, end? }` (source s) | |
+| `split` | `{ at }` (output s) | |
+| `delete_range` | `{ start, end }` (output s, may span segments) | yes |
+| `reorder` | `{ from, to }` (segment indexes) | |
+| `merge_clip` | `{ sourceKey, start, end, at? }` | |
+| `mute_track` | `{ track: 'original' \| audio id, muted }` | |
+| `set_volume` | `{ track, volume 0..2 }` | |
+| `add_audio` | `{ kind: voiceover \| music, key, start = 0, volume = 1 }` → id `<kind>-<n>` | |
+| `remove_audio` | `{ track }` | yes |
+| `set_ducking` | `{ enabled }` | |
+| `set_aspect` | `{ aspect }` | |
+| `set_crop_offset` | `{ x 0..1 }` | |
+| `blur_region` | `{ start, end, x, y, w, h }` | |
+| `add_text_overlay` | `{ start, end, text, position = top }` | |
+| `toggle_captions` | `{ enabled }` | |
+| `set_caption_style` | `{ font?, color?, position?, size?, wordsPerChunk? }` | |
+
+`history.ts`: pure undo/redo stack (`initHistory`, `push`, `undo`, `redo`) of `{ value, summary }`.
 
 ## Storage
 `timelines.data` (jsonb), `revision` bumps on every save. Render needed when
 `rendered_revision < revision`; worker writes `rendered_key` + `rendered_revision`.
 
-Renders read only the clip file. Unselected clip files are deleted at cleanup
-(`docs/pipeline.md`), so only selected clips can be rendered. Caption text comes from
-`clips.words` (same time base as the clip file); output-timeline caption times are derived by
-mapping word times through the kept segments.
+Every applied op (and every undo/redo, op `undo`/`redo`) is appended to `edit_events`
+(`clip_id, op, args, summary, source manual|agent`); plan 7 learns from these.
+
+Renders read only clip files and the user's uploads. Unselected clip files are deleted at cleanup
+(`docs/pipeline.md`), so only selected clips can be rendered or merged. Every key a timeline
+references must be one of the user's clip files or under `uploads/<user_id>/` (checked on save
+and again by the worker).
+
+## Seed data
+`pnpm seed:editor` (`apps/worker/seeds/editor.py`): for the dev-login user (or `SEED_EMAIL`), one
+done job tagged `jobs.note = 'seed:editor'` with 3 selected clips (ffmpeg test patterns: vertical
+testsrc2 440 Hz, horizontal smptebars 660 Hz, horizontal hue-shifted testsrc2 330 Hz; 20s files =
+10s clip + 5s handles), word slices, initial timelines, and `uploads/<user_id>/seed-editor/
+{voiceover,music}.m4a`. Ids are uuid5 of the user, so re-running resets the same rows.
+`pnpm seed:editor:clean` deletes exactly those rows (cascade) and R2 objects.
 
 ## FFmpeg mapping (planned)
 | Timeline | FFmpeg |
