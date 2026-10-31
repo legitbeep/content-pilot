@@ -103,6 +103,7 @@ Shared surfaces and the single owner of each:
 4. No demo server keys or user's keys; mocks + seed only.
 5. Phase 2: prepare scripts/deploy-worker.sh + docs/deploy.md only; user runs everything on VM/Vercel/Supabase.
 6. Phase 1+2 done + checks pass in worktree -> stop at checkpoint D, wait for prod results; then fix, merge, final deploy checklist.
+7. No Gemini LLM calls for testing (user tests Gemini manually); mocks only.
 Note: plans/plan10.md on main still says Oracle Cloud/HF Spaces; user says target is a Google Cloud VM -> follow user.
 
 ## Log
