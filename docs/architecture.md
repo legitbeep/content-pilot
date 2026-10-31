@@ -1,6 +1,7 @@
 ---
 covers:
   - apps/web/src/lib
+  - apps/web/components.json
   - apps/web/svelte.config.js
   - apps/worker/main.py
   - docker-compose.yml
@@ -12,9 +13,10 @@ last_updated: 2026-10-31
 flowchart LR
   B[Browser] -->|SvelteKit pages + server routes| W[apps/web on Vercel]
   B -->|PUT via presigned URL| R2[(Cloudflare R2)]
-  W -->|anon key + user JWT, RLS| DB[(Supabase Postgres)]
-  W -->|service role: keys, tokens| DB
-  W -->|Anthropic API, BYOK| A[Claude: editor agent]
+  W -->|publishable key + user JWT, RLS| DB[(Supabase Postgres)]
+  W -->|secret key: keys, tokens| DB
+  W -->|Claude OAuth token| A[Claude: editor agent + pipeline AI]
+  K -->|Claude OAuth token| A
   K[apps/worker in Docker] -->|claim jobs FOR UPDATE SKIP LOCKED| DB
   K -->|read source, write renders| R2
   K -->|transcription BYOK| T[Deepgram / AssemblyAI / Groq]
@@ -37,6 +39,18 @@ Layers (import only downward): `widgets → features → entities → shared`. R
 compose widgets/features. `src/lib/server` is SvelteKit's server-only folder (`$lib/server`),
 outside FSD layering: secrets, Supabase service client, crypto, R2 presign, agent.
 Each layer has an `index.ts` with a `// Docs:` header; slices go in `src/lib/<layer>/<slice>/`.
+
+Today's slices:
+- `shared/ui/*`: shadcn-svelte components (generated, aliases in `components.json`) plus ours
+  (page-header, empty-state, status-badge, timecode, data-table, topbar-actions). See
+  `docs/design/design-system.md`.
+- `shared/lib/utils.ts` (`cn` + shadcn prop types) and `shared/lib/hooks/`.
+- `shared/config/`: `nav.ts` (one route list for sidebar, palette, breadcrumbs) and
+  `shortcuts.ts` (every keyboard shortcut).
+- `widgets/app-shell`: sidebar, top bar, command palette, shortcut sheet, key handler.
+
+Routes: `(authed)/(shell)/*` render inside `AppShell`; `(authed)/onboarding` is protected but
+full-screen; `login` and `auth/*` are public. Auth flow: `docs/auth-and-keys.md`.
 
 ## Local dev
 `pnpm dev` runs web against hosted Supabase/R2. `pnpm worker` runs the worker in Docker

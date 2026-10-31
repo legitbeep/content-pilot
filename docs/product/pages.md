@@ -5,7 +5,10 @@ last_updated: 2026-10-31
 ---
 # Pages
 
-All are placeholders (title + TODO) today. Route → purpose / data / actions.
+All are placeholders today: a `PageHeader` + `EmptyState` with real copy, inside the app shell
+(`routes/(authed)/(shell)/`). Onboarding is protected but full-screen (`routes/(authed)/onboarding`).
+Every route except `/login` and `/auth/*` requires sign-in (`docs/auth-and-keys.md`).
+Route → purpose / data / actions.
 
 | Route | Page | Purpose | Data (tables) | Actions |
 |---|---|---|---|---|
@@ -18,5 +21,11 @@ All are placeholders (title + TODO) today. Route → purpose / data / actions.
 | `/calendar` | Calendar | Scheduled + posted content | `posts`, `post_metrics`, `baseline_seeds` | Calendar view, table view, details modal, reschedule |
 | `/brand` | Brand Memory | See/curate rules | `brand_rules`, `brand_profile` | Accept/reject proposed rules, resolve conflicts, edit stated rules |
 | `/settings` | Settings | Keys + platforms | `user_keys_public`, `platform_connections_public` | Save/validate BYOK keys (last 4 shown), connect/disconnect YouTube |
+
+Non-product routes: `/login` (Continue with Google), `/auth/callback` (code → session),
+`/auth/signout` (POST), `/dev/ui` (dev-only design system review, `docs/design/design-system.md`).
+
+Sidebar: Home, Queue, Calendar, Brand Memory, Settings. Clip Picker, Editor and Publish are
+reached from Queue (breadcrumb parent = Queue). Nav config: `$lib/shared/config/nav.ts`.
 
 Expected params later: `/clips?job=<id>`, `/editor?clip=<id>` (or `[id]` segments — decide when built).

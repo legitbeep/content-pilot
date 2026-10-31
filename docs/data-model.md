@@ -21,7 +21,7 @@ Source: `supabase/migrations/`. Every table has `user_id → auth.users` (profil
 
 ## Enums
 `job_status` pending|processing|needs_input|done|stopped|failed ·
-`platform` youtube|instagram|linkedin|x · `key_provider` anthropic|deepgram|assemblyai|groq|wispr ·
+`platform` youtube|instagram|linkedin|x · `key_provider` anthropic|deepgram|assemblyai|groq|wispr (`anthropic` unused since ADR 0007) ·
 `rule_source` stated|learned · `rule_status` proposed|active|rejected ·
 `post_status` draft|scheduled|posted|failed · `checkpoint` 48h|7d|14d|30d
 

@@ -1,0 +1,145 @@
+/* Docs: docs/design/design-system.md */
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn-svelte/tailwind.css'; /* data-open:, data-checked:, data-active: … variants used by shared/ui */
+
+@custom-variant dark (&:is(.dark *));
+
+/* Raw tokens. Dark is the only theme for now; a light theme redefines this block under `.light`. */
+:root {
+	--bg-canvas: #101114;
+	--bg-surface: #17181c;
+	--bg-elevated: #1f2026;
+	--border: #2a2b32;
+	--border-strong: #3a3b44;
+	--text: #e8e8ec;
+	--text-muted: #8b8c96;
+	--accent: #f5c842;
+	--accent-fg: #1a1500;
+	--success: #4cc38a;
+	--danger: #f2555a;
+	--info: #5e9eff;
+	--warning: var(--accent);
+
+	/* shadcn-svelte semantic vars, mapped onto the raw tokens. */
+	--radius: 0.5rem;
+	--background: var(--bg-canvas);
+	--foreground: var(--text);
+	--card: var(--bg-surface);
+	--card-foreground: var(--text);
+	--popover: var(--bg-elevated);
+	--popover-foreground: var(--text);
+	--primary: var(--accent);
+	--primary-foreground: var(--accent-fg);
+	--secondary: var(--bg-elevated);
+	--secondary-foreground: var(--text);
+	--muted: var(--bg-elevated);
+	--muted-foreground: var(--text-muted);
+	--destructive: var(--danger);
+	--input: var(--border);
+	--ring: var(--accent);
+	--sidebar: var(--bg-surface);
+	--sidebar-foreground: var(--text);
+	--sidebar-primary: var(--accent);
+	--sidebar-primary-foreground: var(--accent-fg);
+	--sidebar-accent: var(--bg-elevated);
+	--sidebar-accent-foreground: var(--text);
+	--sidebar-border: var(--border);
+	--sidebar-ring: var(--accent);
+}
+
+@theme inline {
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-fg);
+	--color-destructive: var(--destructive);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+	--color-sidebar: var(--sidebar);
+	--color-sidebar-foreground: var(--sidebar-foreground);
+	--color-sidebar-primary: var(--sidebar-primary);
+	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+	--color-sidebar-accent: var(--sidebar-accent);
+	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+	--color-sidebar-border: var(--sidebar-border);
+	--color-sidebar-ring: var(--sidebar-ring);
+
+	/* Our own names, for when the semantic ones don't read right. */
+	--color-canvas: var(--bg-canvas);
+	--color-surface: var(--bg-surface);
+	--color-elevated: var(--bg-elevated);
+	--color-border-strong: var(--border-strong);
+	--color-success: var(--success);
+	--color-danger: var(--danger);
+	--color-info: var(--info);
+	--color-warning: var(--warning);
+
+	--font-sans: 'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif;
+	--font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+@theme {
+	/* Type scale: 12 / 13 (base UI) / 14 / 16 / 20 / 24. */
+	--text-xs: 12px;
+	--text-xs--line-height: 16px;
+	--text-sm: 13px;
+	--text-sm--line-height: 20px;
+	--text-base: 14px;
+	--text-base--line-height: 20px;
+	--text-lg: 16px;
+	--text-lg--line-height: 24px;
+	--text-xl: 20px;
+	--text-xl--line-height: 28px;
+	--text-2xl: 24px;
+	--text-2xl--line-height: 32px;
+
+	/* Radius by hierarchy: inputs/badges 4, buttons 6, panels/modals 8. */
+	--radius-sm: 4px;
+	--radius-md: 6px;
+	--radius-lg: 8px;
+
+	/* No shadows: hierarchy comes from 1px borders and background steps. */
+	--shadow-*: initial;
+	--inset-shadow-*: initial;
+	--drop-shadow-*: initial;
+}
+
+@layer base {
+	* {
+		@apply border-border outline-ring/50;
+	}
+	html {
+		color-scheme: dark;
+	}
+	body {
+		@apply bg-background font-sans text-sm text-foreground antialiased;
+	}
+	::selection {
+		background: color-mix(in srgb, var(--accent) 30%, transparent);
+	}
+	.lucide {
+		stroke-width: 1.5;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
+}

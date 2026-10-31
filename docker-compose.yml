@@ -3,6 +3,6 @@ services:
   worker:
     build: ./apps/worker
     env_file:
-      - path: .env
+      - path: apps/worker/.env
         required: false
     restart: unless-stopped

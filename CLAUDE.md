@@ -29,14 +29,14 @@ each one's `covers:` frontmatter names the code it describes.
 
 ## Commands (root)
 - `pnpm install` — JS deps. Worker deps: `uv sync --directory apps/worker`.
-- `pnpm dev` — web dev server (uses hosted Supabase/R2 from `.env`).
+- `pnpm dev` — web dev server (uses hosted Supabase/R2 from `apps/web/.env`).
 - `pnpm worker` — worker in Docker.
 - `pnpm check` — typecheck + lint (web, schema, worker) + docs check. Must pass before finishing.
 - `pnpm test` — vitest (schema) + pytest (worker).
 
 ## Hard rules
 1. Any code change updates the docs whose `covers:` include that path, in the same change.
-2. Secrets live only in `.env` (gitignored); code and docs use placeholders, as in `.env.example`.
+2. Secrets live only in `.env` (gitignored); code and docs use placeholders, as in `apps/web/.env.example` and `apps/worker/.env.example`.
 3. Timeline JSON is the only way to change a clip; web code edits timelines, the worker renders video.
 4. Agent tools propose brand-memory changes; only an explicit user action writes `brand_rules`.
 5. Prefer small, explicit modules over clever abstractions; this is a hackathon.
@@ -44,5 +44,5 @@ each one's `covers:` frontmatter names the code it describes.
 ## Conventions
 - Every module entry file starts with a one-line `// Docs: docs/<doc>.md` (`# Docs:` in Python).
 - Skills in `.claude/skills/` cover the common changes: add-migration, add-pipeline-step,
-  add-agent-tool, add-page, change-timeline-schema, sync-docs, new-adr.
+  add-agent-tool, add-page, add-ui-component, change-timeline-schema, sync-docs, new-adr.
 - Big decisions get an ADR (`new-adr` skill).

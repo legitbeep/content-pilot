@@ -12,7 +12,7 @@ Not built yet.
 - Scopes: `youtube.upload`, `youtube.readonly`, `yt-analytics.readonly` (baseline seeding).
   `access_type=offline`, `prompt=consent` to get a refresh token.
 - Callback route (planned): `/settings/youtube/callback` → encrypt refresh token
-  (`APP_ENCRYPTION_KEY`) → upsert `platform_connections`.
+  (`ENCRYPTION_KEY`) → upsert `platform_connections`.
 - While the Google app is unverified, uploads are posted **private** (`privacyStatus: private`).
 
 ## Captions

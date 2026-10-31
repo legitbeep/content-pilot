@@ -7,7 +7,7 @@ last_updated: 2026-10-31
 
 Not built yet. Lives in `apps/web/src/lib/server/agent/` and is called from an editor server
 route (e.g. `src/routes/editor/+page.server.ts` action or `src/routes/api/agent/+server.ts`).
-Uses the user's Anthropic key (BYOK, decrypted server-side only).
+Uses the server-wide Claude client (`$lib/server/claude.ts`, `CLAUDE_OAUTH_TOKEN`, ADR 0007).
 
 ## Flow
 1. User message (typed, or Wispr voice → text) + current timeline + active brand rules.

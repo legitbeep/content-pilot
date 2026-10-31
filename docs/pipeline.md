@@ -22,7 +22,7 @@ After the last step the job is `done` (`finished_at` set).
 | 1 | `transcribe` | `source_key` in R2, user's transcription key | full transcript JSON → R2 `transcripts/<job_id>.json`; `jobs.transcript_path` | provider error → failed |
 | 2 | `nsfw_check` | transcript (+ sampled frames later) | pass/fail | **hard block** → failed, source deleted immediately |
 | 3 | `brand_fit` | transcript, `brand_profile`, active `brand_rules` | pass or question | **soft** → `NeedsInput(question, "extract_clips")` |
-| 4 | `extract_clips` | transcript, brand memory, user's Anthropic key | per candidate: clip file in R2, `clips` row (reason, word slice), initial `timelines` row | LLM/FFmpeg error → failed (retry resumes here) |
+| 4 | `extract_clips` | transcript, brand memory, server-wide Claude client (`worker/claude.py`) | per candidate: clip file in R2, `clips` row (reason, word slice), initial `timelines` row | LLM/FFmpeg error → failed (retry resumes here) |
 
 ## Transcripts
 - Full transcript (word-level timestamps, source seconds) lives only in R2 at

@@ -34,8 +34,38 @@ export default defineConfig(
 		}
 	},
 	{
-		// Override or add rule settings here, such as:
-		// 'svelte/button-has-type': 'error'
-		rules: {}
+		// shadcn-svelte components are generated; callers pass already-resolved hrefs.
+		files: ['src/lib/shared/ui/**'],
+		rules: { 'svelte/no-navigation-without-resolve': 'off' }
+	},
+	{
+		// Secret-key guard (docs/auth-and-keys.md): SUPABASE_SECRET_KEY and private env may only be
+		// read from server-only modules. SvelteKit also refuses $env/*/private in client bundles.
+		files: ['src/**/*.{ts,js,svelte}'],
+		ignores: ['src/lib/server/**', 'src/**/*.server.{ts,js}', 'src/routes/**/+server.{ts,js}'],
+		rules: {
+			'no-restricted-syntax': [
+				'error',
+				{
+					selector: 'Identifier[name="SUPABASE_SECRET_KEY"]',
+					message:
+						'SUPABASE_SECRET_KEY is server-only: use it from $lib/server or a *.server.ts file.'
+				},
+				{
+					selector: 'Literal[value="SUPABASE_SECRET_KEY"]',
+					message:
+						'SUPABASE_SECRET_KEY is server-only: use it from $lib/server or a *.server.ts file.'
+				}
+			],
+			'no-restricted-imports': [
+				'error',
+				{
+					paths: ['$env/static/private', '$env/dynamic/private'].map((name) => ({
+						name,
+						message: 'Private env is server-only: import it from $lib/server or a *.server.ts file.'
+					}))
+				}
+			]
+		}
 	}
 );
