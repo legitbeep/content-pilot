@@ -1,0 +1,25 @@
+# Node
+node_modules/
+.svelte-kit/
+build/
+.pnpm-store/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Supabase local
+supabase/.branches/
+supabase/.temp/
+
+# Misc
+tmp/
+.DS_Store

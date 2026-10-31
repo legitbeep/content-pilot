@@ -1,0 +1,8 @@
+# Only the worker runs locally; Supabase and R2 are hosted (see docs/env.md).
+services:
+  worker:
+    build: ./apps/worker
+    env_file:
+      - path: .env
+        required: false
+    restart: unless-stopped

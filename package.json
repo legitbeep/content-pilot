@@ -1,0 +1,12 @@
+{
+	"name": "clip-studio",
+	"private": true,
+	"packageManager": "pnpm@11.0.9",
+	"scripts": {
+		"dev": "pnpm --filter web dev",
+		"check": "pnpm -r check && pnpm -r --if-present lint && pnpm check:worker",
+		"check:worker": "uv run --directory apps/worker ruff check . && uv run --directory apps/worker ruff format --check . && uv run --directory apps/worker pyright",
+		"test": "pnpm -r --if-present test && uv run --directory apps/worker pytest -q",
+		"worker": "docker compose up --build worker"
+	}
+}

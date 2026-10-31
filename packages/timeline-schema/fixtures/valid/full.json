@@ -1,0 +1,14 @@
+{
+	"version": 1,
+	"sourceKey": "uploads/u1/podcast.mp4",
+	"aspect": "1:1",
+	"segments": [
+		{ "start": 120, "end": 135.2 },
+		{ "start": 140, "end": 158 }
+	],
+	"captions": [
+		{ "start": 0, "end": 2.4, "text": "Here's the thing nobody tells you" },
+		{ "start": 2.4, "end": 5, "text": "about pricing." }
+	],
+	"textOverlays": [{ "start": 0, "end": 3, "text": "Pricing myth #1", "position": "top" }]
+}
