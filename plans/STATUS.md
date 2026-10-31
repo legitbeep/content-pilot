@@ -12,9 +12,9 @@ Parallelism cap: 3 subagents (Opus).
 | 4 | 1 | feat/brand | .worktrees/brand | merged | tests on main pending (option 2) |
 | 6 | 1 | feat/editor | .worktrees/editor | merged | tests on main pending (option 2) |
 | 8 | 1 | feat/publish | .worktrees/publish | merged | tests on main pending (option 2) |
-| 5 | 2 | feat/clips | .worktrees/clips | todo | |
-| 7 | 2 | feat/agent | .worktrees/agent | todo | |
-| 9 | 2 | feat/performance | .worktrees/performance | todo | |
+| 5 | 2 | feat/clips | .worktrees/clips | running | port 5173 |
+| 7 | 2 | feat/agent | .worktrees/agent | running | port 5174 |
+| 9 | 2 | feat/performance | .worktrees/performance | running | port 5175 |
 | 10 | 3 | feat/integration | - | todo | |
 
 ## Decisions (2026-10-31, from user)
@@ -37,6 +37,64 @@ Parallelism cap: 3 subagents (Opus).
 10. Checkpoint A2 DEFERRED to Wave 1 checkpoint B (needs onboarding, plan 4). After plan-llm merges the adapter interface is frozen; bug fixes from real-key testing allowed. A2 items for checkpoint B: demo account e2e; Groq-only e2e + llm:smoke incl JSON; Gemini default (llm_calls shows gemini); no keys -> upload disabled. Skip Claude + Deepgram.
 11. Dev login test user must have a completed brand_profile (dev-only, DEV_LOGIN guard) so subagents reach signed-in pages. Plan 4 must keep this working.
 12. Worker runs locally until plan 10 deploys it.
+
+## Deferred to Checkpoint C (from Checkpoint B)
+- (a) demo account glorytoharsh@gmail.com e2e (onboarding -> upload -> transcript).
+- (c) Gemini default: llm:smoke rows provider = gemini (demo Gemini key hit quota).
+- Publish/YouTube real post test (needs clips from plan 5).
+- Editor audio upload test (needs clips from plan 5).
+
+## Wave 2 rules (from user, carried into every brief)
+1. Adapter interface frozen; bug fixes allowed, logged here.
+2. AI UI actions use <RequiresAI>; AI routes use requireAIKeys.
+3. Subagents never use demo server keys or user's real keys: worktree .env has GROQ/GEMINI/CLAUDE_OAUTH_TOKEN blanked, DEMO_ALLOWED_EMAILS empty. Mocks + seed only.
+4. Own seed rows only (DB + R2). Worker via run_once only.
+5. Migrations via psql, idempotent, prefixed p5_/p7_/p9_.
+6. No real YouTube posting / Analytics API; plan 9 uses recorded fixtures. YOUTUBE_CLIENT_SECRET blanked in worktrees.
+7. Dev server: pnpm --filter web dev --port <n> (5: 5173, 7: 5174, 9: 5175).
+8. Dev login keeps working; each worktree uses its own DEV_LOGIN_EMAIL (dev-clips@ / dev-agent@ / dev-perf@clip-studio.test).
+
+## Wave 2 overlap + ownership (decided 2026-11-01)
+Shared surfaces and the single owner of each:
+- **brand_rules learned candidates (7 + 9 write, 5 reads via memory):** plan 7 owns the learned-rule
+  lifecycle + docs/brand-memory.md "Learned rules"/"Conflicts" sections + the review UI on /brand
+  ("Learned from you" tab, reusing plan 4's Regenerate tick-box diff: only ticked candidates become
+  active, unticked can be dismissed -> archived). Per user brief + hard rule 4, learners NEVER set
+  status active; they only insert/update `candidate` rows (evidence_count +1, append evidence). The
+  "3+ -> active + toast" in plan7/plan9 text becomes "3+ -> highlighted as ready in review + toast".
+  Extension point for plan 9: write `brand_rules` rows directly from Python with
+  `status='candidate', source='performance'`, `evidence` items `{kind:'performance', post_id, feature, verdict}`;
+  dedupe by matching an existing candidate with the same `evidence[0].feature` + verdict. Plan 9
+  appends one subsection to brand-memory.md; never edits plan 7's sections or the /brand route.
+- **clip_feedback (5 writes, 7 reads):** plan 5 owns. Contract fixed now: `clip_feedback(id uuid pk,
+  user_id, clip_id, job_id, decision text check in ('approved','rejected'), reason text null,
+  created_at)`, owner RLS. Plan 5 applies this migration to the shared DB FIRST (before Phase 1)
+  so plan 7 can seed rows. Plan 7 never creates it.
+- **clips.features / ranking_score + apply_weights (5 calls, 9 implements):** plan 5 owns the columns
+  and writes `features = {topic, length_bucket: short(<=30s)|medium(<=60s)|long, hook_type}`. Plan 9 owns
+  `apps/worker/ranking.py`: `apply_weights(user_id: str, candidates: list[dict]) -> list[dict]`
+  (each candidate has `scores` + `features`; returns them ordered with `ranking_score` set; loads
+  feature_weights itself; does the 15% exploration). Plan 5 creates the same file as a stub
+  (ranking_score = mean of scores, sort desc). At merge: add/add conflict -> take plan 9's file.
+  feature_weights keys: `topic:<x>`, `length:<bucket>`, `hook:<type>`.
+- **edit_events (6 owns; 7 reads+writes agent events; 9 writes caption edits):** no new columns
+  from either. Plan 9 writes caption edits as `op='caption_edit'`, `source='manual'`, `clip_id`,
+  `args={platform, before, after}`; plan 7's analyzer reads them. If op has a CHECK constraint,
+  plan 9 relaxes it in its own p9_ migration and notes it in the handoff.
+- **buildMemoryContext:** plan 4 owned, read-only for all three (5: clip_selection on job confirm
+  -> jobs.memory_snapshot; 7: editing; 9: copy). No changes; no Python port.
+- **LLM registry/prompts:** all needed tasks already exist (moderate_text, brand_fit, extract_clips,
+  understand_request, plan_edits, learn_rules, captions, recommendations). Each plan keeps its
+  prompts in its own module; registry edits append-only. `learn_rules` used by 7 and 9 with
+  separate prompts.
+- **jobs columns (memory_snapshot, user_intent):** plan 5 only (nullable, p5_ migration).
+- **Shared append-only files:** docs/INDEX.md, docs/data-model.md, docs/env.md, .env.example,
+  shortcuts.ts (plan 7 only), sidebar nav, worker main.py (plan 9 adds checkpoints loop line),
+  run_once (plan 9 adds `checkpoint`), worker pipeline step list (plan 5 owns).
+- **Wave-1 code touched:** Queue UI needs_input sheet + done->picker link (5); /brand route (7);
+  YouTube OAuth callback, publisher posted hook, CaptionGenerator, Home (9); editor agent slot (7).
+**Merge order:** 5 -> 9 -> 7 (9 replaces 5's apply_weights stub; 7 consumes 5's clip_feedback and
+9's caption_edit events + performance candidates in its review UI).
 
 ## Log
 - Step 0 done. Step 1 prep launched.
@@ -69,3 +127,5 @@ Parallelism cap: 3 subagents (Opus).
 - UA fix bfabc02 (check+test pass). Worker restarted with fix. Web redeploy for fix denied by auto-mode (prod deploy) -> user to run it.
 - Docker DNS fixed (dns 1.1.1.1/8.8.8.8 in compose); worker now runs in Docker (docker compose up -d worker), libass available. Deferred by user: publish/YouTube test and editor audio upload (need clips from plan 5); groq-only accepted as enough for now.
 - Web redeployed with UA fix (prod = main incl. bfabc02 + DNS commit).
+- Wave 2 preconditions checked (main d291f6f): 4/6/8 merged in order, check+test pass (web 93, schema 11, worker 102), db push done. FAIL: Wave 1 worktrees still present (clean, merged); Checkpoint B open items not yet listed as deferred to C. Stopped, asked user.
+- Wave 1 worktrees removed. Wave 2 worktrees created (clips/agent/performance from d291f6f), env sanitized (no demo/real AI keys, no YouTube secret), deps installed.
