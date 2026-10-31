@@ -18,3 +18,10 @@ def test_dispatches_job_and_exit_codes(monkeypatch, capsys):
 def test_bad_args():
     assert run_once.cli(["nope", "abc"]) == 2
     assert run_once.cli(["job"]) == 2
+
+
+def test_dispatches_post(monkeypatch, capsys):
+    monkeypatch.setattr(run_once.publisher, "run_once", lambda i: "posted")
+    run_once.HANDLERS["post"] = run_once.publisher.run_once
+    assert run_once.cli(["post", "p1"]) == 0
+    assert "post p1: posted" in capsys.readouterr().out

@@ -5,6 +5,7 @@ import sys
 from collections.abc import Callable
 
 import main
+from loops import publisher
 
 
 def run_job(job_id: str) -> str:
@@ -17,6 +18,7 @@ def run_job(job_id: str) -> str:
 # One line per kind; later plans add render, post, checkpoint here.
 HANDLERS: dict[str, Callable[[str], str]] = {
     "job": run_job,
+    "post": publisher.run_once,
 }
 
 

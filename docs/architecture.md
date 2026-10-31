@@ -56,6 +56,9 @@ Today's slices:
   `features/api-keys`: Settings key row, provider select, AI preferences.
 - `entities/job`: job/transcript types, upload limits, transitions. `features/upload-video`:
   dropzone + presigned upload. `widgets/job-queue`: queue list + details sheet (`docs/queue.md`).
+- `entities/post`: post types, platforms, status badge, `canPost` actions.
+  `features/platform-connections`: Settings YouTube connect. `features/publish-clip`: publish
+  form (`docs/publishing.md`).
 - `shared/lib/form-action.ts` (`formAction()`: call a page's form action from JS).
 
 Routes: `(authed)/(shell)/*` render inside `AppShell`; `(authed)/onboarding` is protected but

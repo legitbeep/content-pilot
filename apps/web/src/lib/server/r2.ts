@@ -54,3 +54,11 @@ export async function deleteObject(key: string): Promise<void> {
 	const res = await r2().fetch(objectUrl(key), { method: 'DELETE' });
 	if (!res.ok && res.status !== 404) throw new Error(`R2 DELETE ${key}: ${res.status}`);
 }
+
+/** Presigned GET URL (e.g. a <video> preview of a render), valid for `expires` seconds. */
+export async function presignGet(key: string, expires = 3600): Promise<string> {
+	const url = new URL(objectUrl(key));
+	url.searchParams.set('X-Amz-Expires', String(expires));
+	const signed = await r2().sign(new Request(url), { aws: { signQuery: true } });
+	return signed.url;
+}

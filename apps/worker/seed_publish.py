@@ -4,7 +4,8 @@
   pnpm seed:publish         create (or recreate) the seed job, clips and renders
   pnpm seed:publish:clean   delete exactly what the seed created
 
-Rows are tagged by the job title `seed:publish`; clips/posts cascade from that job.
+Rows are tagged by the job title `seed:publish`; clips/posts cascade from that job. A fake
+YouTube connection (account_name `seed:publish`) is added only when the user has none.
 """
 
 import os
@@ -13,6 +14,7 @@ import sys
 import tempfile
 
 from worker import db, r2
+from worker.crypto import encrypt
 
 TAG = "seed:publish"
 EMAIL = os.environ.get("SEED_EMAIL", "dev@clip-studio.test")
@@ -33,6 +35,7 @@ def clean() -> None:
         for r in rows:
             r2.delete(r["render_path"])
         n = c.execute("delete from jobs where title = %s", (TAG,)).rowcount
+        c.execute("delete from platform_connections where account_name = %s", (TAG,))
     print(f"cleaned {n} seed job(s), {len(rows)} render(s)")
 
 
@@ -43,6 +46,14 @@ def seed() -> None:
         if not user:
             sys.exit(f"No user {EMAIL}. Sign in once via /auth/dev-login, then rerun.")
         uid = user["id"]
+        # Fake YouTube connection (only if none): lets /publish work without real OAuth; the
+        # worker's token refresh fails with invalid_grant -> the "Reconnect" error path.
+        iv, ct = encrypt("seed-fake-refresh-token")
+        c.execute(
+            "insert into platform_connections (user_id, platform, refresh_token_ciphertext, iv, "
+            "account_name) values (%s, 'youtube', %s, %s, %s) on conflict do nothing",
+            (uid, ct, iv, TAG),
+        )
         job = c.execute(
             "insert into jobs (user_id, status, source_key, title) "
             "values (%s, 'done', 'seed/publish', %s) returning id",
