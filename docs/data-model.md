@@ -21,7 +21,7 @@ orchestrator runs `npx supabase db push --include-all` on main after merging.
 
 ## RLS summary
 - **Own rows** (`user_id = auth.uid()`, all ops): profiles, brand_profile, brand_rules, jobs,
-  clips, clip_feedback, timelines, edit_events, posts, post_metrics, baseline_seeds, ai_settings. Read-only own rows: llm_calls.
+  clips, clip_feedback, timelines, edit_events, learn_cursor, posts, post_metrics, baseline_seeds, ai_settings. Read-only own rows: llm_calls.
 - **Service role only** (RLS on, no policies): `demo_usage`; `user_keys`, `platform_connections` — hold
   ciphertext. Owners read safe columns via views `user_keys_public`
   (provider, last4, validated_at, invalid_at, created_at) and `platform_connections_public`
@@ -47,6 +47,7 @@ orchestrator runs `npx supabase db push --include-all` on main after merging.
 | clip_feedback | clip_id, job_id, decision (`approved`\|`rejected`), reason (null), created_at | Append-only, one row per Clip Picker approve/reject. Own rows. Written by plan 5, read by plan 7's learner |
 | timelines | clip_id (unique), data jsonb, revision, rendered_key, rendered_revision | `data` validates against timeline-schema. Render needed when `rendered_revision < revision` |
 | edit_events | clip_id, op, args jsonb, summary, source (`manual`\|`agent`), created_at | One row per applied timeline op (and undo/redo). Own rows. `docs/timeline.md` |
+| learn_cursor | user_id (pk), last_event_at, ran_at | Plan 7 edit-learning cursor: last `edit_events.created_at` analyzed (compare-and-set claim). Own rows. `docs/brand-memory.md` |
 | posts | clip_id, platform, title, caption, tags text[], status, scheduled_at, posted_at, external_id, external_url, error, attempts, updated_at | One row per YouTube post (copy-only platforms get no row). `docs/publishing.md` |
 | post_metrics | post_id, checkpoint, views, likes, comments, score, avg_view_pct, verdict, rating, rating_note | unique (post_id, checkpoint). `docs/publishing.md` |
 | platform_connections | platform, refresh_token_ciphertext, iv, account_name, channel_id, avatar_url, baselines_seeded_at, baseline_method | unique (user_id, platform). `docs/publishing.md` |

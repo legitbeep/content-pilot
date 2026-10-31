@@ -5,6 +5,8 @@ covers:
   - apps/web/src/lib/features/brand-profile
   - apps/web/src/lib/features/brand-rules
   - apps/web/src/lib/server/brand.ts
+  - apps/web/src/lib/server/agent/learn.ts
+  - apps/web/src/routes/api/editor/learn
   - apps/web/src/routes/(authed)/onboarding
   - apps/web/src/routes/(authed)/(shell)/brand
   - supabase/migrations
@@ -68,12 +70,13 @@ an LLM + transcription capability, or demo; the server re-checks with `requireAI
 Tabs: **Rules** (grouped by scope; filter by scope and source, "Show archived"; per rule
 pin/unpin, edit text + scope, archive/restore via `?/rule`; add a manual rule), **You told us**
 (the same `ProfileSection`s as onboarding, each saved with `?/profile`; saving never touches
-rules), **Learned from you** (candidates; empty state "Rules appear here as you edit clips and
-posts perform.").
+rules), **Learned from you** (candidates: conflict cards + tick-box review, see Learned rules;
+empty state "Rules appear here as you edit clips and posts perform.").
 "Regenerate rules from profile" (`<RequiresAI need="llm">`, `?/regenerate`) runs `stated_rules`
 and returns a diff without saving: rules to add (text not already present) and `onboarding`
 `active` rules to archive (not in the new set; pinned and manual rules are never proposed). Adds
-are ticked by default, archives not; `?/applyRegenerate` applies only the ticked ones.
+are ticked by default, archives not (`RuleReview`, shared with the learned review);
+`?/applyRegenerate` applies only the ticked ones.
 
 ## buildMemoryContext (`$lib/entities/brand/memory.ts`)
 `buildMemoryContext(profile, rules, { scope, topics?, maxTokens? })` → text block for prompts.
@@ -96,14 +99,44 @@ No worker (Python) mirror: the web stores the clip_selection text on `jobs.memor
 a job is created and the worker reads only that (`docs/pipeline.md`).
 
 ## Learned rules
-Same kind of edit made 3+ times across clips (e.g. always removing the first 2s) → a `candidate`
-rule with `source: edits` and the edits as evidence (plan 7). The performance loop does the same
-for repeated high/low scores (`docs/publishing.md`). Accept → `active`; reject → `archived`
-(don't re-propose the same rule).
+Learners **never activate a rule** (CLAUDE.md hard rule 4): they only insert or update
+`candidate` rows; only the user's tick on /brand makes one `active`.
+- **Edits (plan 7, `$lib/server/agent/learn.ts`)**: `POST /api/editor/learn` runs after every
+  editor save (only when 25+ `edit_events` arrived since the user's `learn_cursor`) and after
+  "Finish all clips" (`force`). It claims the run by moving `learn_cursor.last_event_at`
+  (compare-and-set; moved back if the AI call fails), drops undone edits and trivial ones
+  (`meaningful`: undo/redo, splits, trims within 1s of the clip's original range, caption typo
+  fixes by edit distance), and sends the rest plus `clip_feedback` (plan 5; tolerated if missing)
+  and every rule (as `r1…` with status) to task `learn_rules`. The model returns
+  `{patterns: [{rule, scope, evidence: ['e1', 'f2'], same_as, contradicts}]}`.
+- Caption edits (plan 9) are `edit_events` with `op = 'caption_edit'`, `args = {platform, before,
+  after}`; read like any other event.
+- `applyPatterns` (pure, tested): match by `same_as` or identical text. Candidate match → append
+  evidence, `evidence_count` + the number of **new clips** (posts / items without a clip count
+  once each). Active/pinned match → nothing (already a rule). Archived match → nothing (dismissed
+  rules are never re-proposed). No match → new `candidate`, `source = 'edits'`, count = distinct
+  clips. Evidence items: `{kind: 'edit' | 'caption' | 'feedback' | 'proposal', clip_id, event_id |
+  feedback_id, …}`; plan 9 writes `{kind: 'performance', post_id, feature, verdict}`.
+- **Ready**: `evidence_count >= READY_AT` (3, `$lib/entities/brand`). Crossing it returns the rule
+  in `ready` and the editor toasts "New rule ready to review: …" with a Review link
+  (`/brand?tab=learned`). Still a candidate.
+- The agent's `propose_memory_update` → `POST /api/editor/propose` → `proposeRule`: the same
+  `applyPatterns` (identical-text match, evidence `{kind: 'proposal', clip_id, text}`), no AI call.
+- **Review** (/brand "Learned from you", `?tab=learned` opens it): `RuleReview` (the same tick-box
+  component as "Regenerate rules from profile", `$lib/features/brand-rules`), sections "Ready to
+  review" (highlighted, ticked by default) and "Still learning" (unticked), for every candidate of
+  any source (edits and performance). "Use selected rules" → ticked become `active`; "Dismiss
+  unticked" → `archived`. Action `?/learned` (`op=apply`, `activate`/`dismiss` ids; only rows still
+  `candidate`).
+- Seed: `pnpm seed:agent` / `pnpm seed:agent:clean` (`apps/worker/seeds/agent.py`).
 
 ## Conflicts
-A candidate that contradicts an active rule gets `conflicts_with = <other rule id>` and is shown
-with `ConflictCard` (stated vs learned, "Keep mine" / "Update rule"). Never auto-override.
+`applyPatterns` sets `conflicts_with = <rule id>` when the model says a pattern contradicts an
+**active or pinned** rule, and the editor toasts "Your edits go against "…". Pick which to keep."
+On /brand such candidates show as `ConflictCard` (stated vs learned, "seen N times") above the
+review: **Keep mine** (`?/learned op=keep`) archives the candidate; **Update rule** (`op=update`)
+archives the stated rule and activates the candidate. Nothing is ever overridden without one of
+these clicks.
 
 ## Who reads it
 - `brand_fit` step: `jobs.memory_snapshot` → pass or `NeedsInput` question; the answer is

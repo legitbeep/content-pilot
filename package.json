@@ -25,6 +25,8 @@
 		"seed:clips:clean": "uv run --directory apps/worker --env-file .env python -m seeds.clips --clean",
 		"checkpoints:run-now": "YOUTUBE_FAKE=true uv run --directory apps/worker --env-file .env python -m worker.run_once checkpoint",
 		"seed:performance": "YOUTUBE_FAKE=true uv run --directory apps/worker --env-file .env python -m seeds.performance",
-		"seed:performance:clean": "uv run --directory apps/worker --env-file .env python -m seeds.performance --clean"
+		"seed:performance:clean": "uv run --directory apps/worker --env-file .env python -m seeds.performance --clean",
+		"seed:agent": "uv run --directory apps/worker --env-file .env python -m seeds.agent",
+		"seed:agent:clean": "uv run --directory apps/worker --env-file .env python -m seeds.agent --clean"
 	}
 }

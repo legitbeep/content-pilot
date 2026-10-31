@@ -107,7 +107,8 @@ and again by the worker).
 - `EditorState` (`editor-state.svelte.ts`): history (`$state.raw`), playhead, selection, marks,
   `urls` (R2 key → presigned GET), `durations`. `apply(op, args, source)` runs `applyOp`, pushes
   history, queues an edit event and autosaves after 800ms (`flush()`; one save at a time).
-  Plan 7 applies agent ops with `apply(op, args, 'agent')`.
+  The agent chat (`AgentChat` from `$lib/features/editor-agent`, right column under Properties)
+  applies agent ops with `apply(op, args, 'agent')` (`docs/agent.md`).
 - Actions (`+page.server.ts`): `save` {revision, timeline, events, render?} — zod-validates, checks
   key ownership, `update … where revision = expected` (409 = changed elsewhere), inserts
   `edit_events`, optionally queues the render; `renderAll` queues every session clip (creates

@@ -2,6 +2,7 @@
 	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
+	import { page } from '$app/state';
 	import { toast } from 'svelte-sonner';
 	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	import { RequiresAI } from '$lib/entities/api-key';
@@ -10,12 +11,15 @@
 		SOURCES,
 		scopeLabel,
 		sourceLabel,
+		ConflictCard,
+		READY_AT,
 		type BrandProfile,
+		type BrandRule,
 		type DraftRule,
 		type Scope
 	} from '$lib/entities/brand';
 	import { pickSection, ProfileSection, sections, type Section } from '$lib/features/brand-profile';
-	import { RuleRow, ScopeSelect } from '$lib/features/brand-rules';
+	import { RuleReview, RuleRow, ScopeSelect, type Picked } from '$lib/features/brand-rules';
 	import { formAction } from '$lib/shared/lib/form-action';
 	import { Button } from '$lib/shared/ui/button';
 	import { EmptyState } from '$lib/shared/ui/empty-state';
@@ -62,7 +66,6 @@
 			(g) => g.rules.length
 		)
 	);
-	const learned = $derived(data.rules.filter((r) => r.status === 'candidate'));
 
 	let newText = $state('');
 	let newScope = $state<Scope>('all');
@@ -70,8 +73,6 @@
 	// ---- Regenerate diff: nothing changes until the user applies the parts they accept.
 	type Diff = { adds: DraftRule[]; removes: { id: string; text: string; scope: Scope }[] };
 	let diff = $state<Diff | null>(null);
-	let acceptAdd = $state<boolean[]>([]);
-	let acceptRemove = $state<boolean[]>([]);
 	let regenerating = $state(false);
 	let applying = $state(false);
 
@@ -84,21 +85,19 @@
 				return;
 			}
 			diff = d;
-			acceptAdd = d.adds.map(() => true);
-			acceptRemove = d.removes.map(() => false);
 		} catch (e) {
 			toast.error(e instanceof Error ? e.message : 'Could not regenerate rules.');
 		} finally {
 			regenerating = false;
 		}
 	}
-	async function applyDiff() {
+	async function applyDiff({ on }: Picked) {
 		if (!diff) return;
 		applying = true;
 		try {
 			await formAction('applyRegenerate', {
-				adds: JSON.stringify(diff.adds.filter((_, i) => acceptAdd[i])),
-				remove: diff.removes.filter((_, i) => acceptRemove[i]).map((r) => r.id)
+				adds: JSON.stringify(diff.adds.filter((_, i) => on.includes(`add-${i}`))),
+				remove: diff.removes.filter((r) => on.includes(r.id)).map((r) => r.id)
 			});
 			diff = null;
 			await invalidateAll();
@@ -109,6 +108,47 @@
 			applying = false;
 		}
 	}
+
+	// ---- Learned from you (plan 7): candidates from edits (plan 7) and performance (plan 9).
+	// Nothing becomes active until the user ticks it (or picks "Update rule" on a conflict).
+	const byId = $derived(new Map(data.rules.map((r) => [r.id, r])));
+	const stated = (r: BrandRule) => {
+		const s = r.conflicts_with ? byId.get(r.conflicts_with) : undefined;
+		return s && (s.status === 'active' || s.status === 'pinned') ? s : undefined;
+	};
+	const candidates = $derived(data.rules.filter((r) => r.status === 'candidate'));
+	const conflicts = $derived(candidates.filter((r) => stated(r)));
+	const reviewable = $derived(candidates.filter((r) => !stated(r)));
+	const meta = (r: BrandRule) =>
+		`${sourceLabel[r.source] ?? r.source} · seen ${r.evidence_count} ${r.evidence_count === 1 ? 'time' : 'times'}`;
+	const learnedSections = $derived([
+		{
+			label: 'Ready to review',
+			items: reviewable
+				.filter((r) => r.evidence_count >= READY_AT)
+				.map((r) => ({ id: r.id, text: r.rule, meta: meta(r), ready: true, checked: true }))
+		},
+		{
+			label: 'Still learning',
+			items: reviewable
+				.filter((r) => r.evidence_count < READY_AT)
+				.map((r) => ({ id: r.id, text: r.rule, meta: meta(r) }))
+		}
+	]);
+	let reviewing = $state(false);
+	async function learned(fields: Record<string, string | string[]>, done: string) {
+		reviewing = true;
+		try {
+			await formAction('learned', fields);
+			await invalidateAll();
+			toast.success(done);
+		} catch (e) {
+			toast.error(e instanceof Error ? e.message : 'Could not update the rules.');
+		} finally {
+			reviewing = false;
+		}
+	}
+	let tab = $state(untrack(() => page.url.searchParams.get('tab') ?? 'rules'));
 </script>
 
 <PageHeader
@@ -116,7 +156,7 @@
 	description="What you told us, and the rules every AI step follows."
 />
 
-<Tabs.Root value="rules" class="max-w-3xl">
+<Tabs.Root bind:value={tab} class="max-w-3xl">
 	<Tabs.List>
 		<Tabs.Trigger value="rules">Rules</Tabs.Trigger>
 		<Tabs.Trigger value="profile">You told us</Tabs.Trigger>
@@ -160,35 +200,27 @@
 		</div>
 
 		{#if diff}
-			<div class="flex flex-col gap-3 rounded-lg border border-border-strong p-4">
-				<p class="font-medium">Suggested changes from your profile</p>
-				<p class="text-xs text-muted-foreground">Only the changes you tick are applied.</p>
-				{#if diff.adds.length}
-					<span class="text-xs text-muted-foreground">Add</span>
-					{#each diff.adds as add, i (i)}
-						<label class="flex items-start gap-2">
-							<input type="checkbox" bind:checked={acceptAdd[i]} class="mt-1 accent-primary" />
-							<span
-								>{add.text}
-								<span class="text-xs text-muted-foreground">· {scopeLabel[add.scope]}</span></span
-							>
-						</label>
-					{/each}
-				{/if}
-				{#if diff.removes.length}
-					<span class="text-xs text-muted-foreground">Archive</span>
-					{#each diff.removes as rem, i (rem.id)}
-						<label class="flex items-start gap-2">
-							<input type="checkbox" bind:checked={acceptRemove[i]} class="mt-1 accent-primary" />
-							<span class="text-muted-foreground">{rem.text}</span>
-						</label>
-					{/each}
-				{/if}
-				<div class="flex justify-end gap-2">
-					<Button variant="ghost" onclick={() => (diff = null)}>Discard</Button>
-					<Button variant="outline" disabled={applying} onclick={applyDiff}>Apply selected</Button>
-				</div>
-			</div>
+			<RuleReview
+				title="Suggested changes from your profile"
+				sections={[
+					{
+						label: 'Add',
+						items: diff.adds.map((a, i) => ({
+							id: `add-${i}`,
+							text: a.text,
+							meta: scopeLabel[a.scope],
+							checked: true
+						}))
+					},
+					{
+						label: 'Archive',
+						items: diff.removes.map((r) => ({ id: r.id, text: r.text, muted: true }))
+					}
+				]}
+				busy={applying}
+				onapply={applyDiff}
+				secondary={{ label: 'Discard', onclick: () => (diff = null) }}
+			/>
 		{/if}
 
 		<form
@@ -253,11 +285,29 @@
 	</Tabs.Content>
 
 	<Tabs.Content value="learned" class="flex flex-col gap-4 pt-4">
-		{#if learned.length}
-			<ul class="divide-y rounded-lg border">
-				{#each learned as rule (rule.id)}<RuleRow {rule} />{/each}
-			</ul>
-		{:else}
+		{#each conflicts as c (c.id)}
+			<ConflictCard
+				stated={stated(c)!.rule}
+				learned={c.rule}
+				evidence={c.evidence_count}
+				onkeep={() => learned({ op: 'keep', id: c.id }, 'Kept your rule.')}
+				onupdate={() => learned({ op: 'update', id: c.id }, 'Rule updated.')}
+			/>
+		{/each}
+		{#if reviewable.length}
+			<RuleReview
+				title="Rules learned from your edits and results"
+				hint={`Nothing is used until you tick it. Rules seen ${READY_AT}+ times are ready to review.`}
+				sections={learnedSections}
+				busy={reviewing}
+				applyLabel="Use selected rules"
+				onapply={({ on }) => learned({ op: 'apply', activate: on }, 'Rules added.')}
+				secondary={{
+					label: 'Dismiss unticked',
+					onclick: ({ off }) => learned({ op: 'apply', dismiss: off }, 'Dismissed.')
+				}}
+			/>
+		{:else if !conflicts.length}
 			<EmptyState
 				icon={SparklesIcon}
 				text="Rules appear here as you edit clips and posts perform."

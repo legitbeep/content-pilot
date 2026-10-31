@@ -56,10 +56,13 @@ user's own key marks it invalid; success marks it valid. No retries inside: the 
   Needs ffmpeg (in the worker image).
 - **Gemini is not used for transcription**: its word timestamps aren't reliable enough for cutting
   clips on word boundaries. Gemini is LLM-only.
-- **Voice input hook (plan 7):** `aiCapabilities().voice` is true with a Wispr key, a Groq key, or
-  demo. Plan 7 should use Wispr when saved, else Groq Whisper via a small web route that posts the
-  recorded clip to the same Groq endpoint with the user's key (add it under `$lib/server/llm`,
-  never in the browser).
+- **Voice input (plan 7, `voice.ts`):** `transcribeVoice(userId, wav)` for the editor agent's
+  mic. Provider (`voiceProvider`): the user's Wispr Flow key (`POST
+  https://platform-api.wisprflow.ai/api/v1/dash/api`, Bearer org key, `{audio: <base64 16 kHz
+  WAV>, language: ['en'], context: {app: {type: 'ai'}}}` → `{text}`; docs checked 2026-11-01) →
+  the user's Groq key (Whisper `transcription.groq.model`, multipart, `response_format=json`) →
+  demo Groq → `missing_key`. A 401/403 marks the user's key invalid. Called only by
+  `POST /api/editor/voice`; the browser posts audio, never sees a key. Tests: `voice.test.ts`.
 
 ## Tasks and tiers
 Callers name a task, never a model. Unknown task → error; add new tasks to the registry and
