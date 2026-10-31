@@ -8,7 +8,7 @@ covers:
   - apps/web/src/lib/features/api-keys
   - fixtures/key-resolution.json
   - scripts/check-ai-imports.ts
-last_updated: 2026-10-31
+last_updated: 2026-11-01
 ---
 # LLM + transcription adapters
 
@@ -126,7 +126,7 @@ the secret key / `DATABASE_URL`; RLS lets owners read their own rows. A failed i
 the call.
 
 ## Settings → AI providers
-`routes/(authed)/(shell)/settings`: key rows for groq, anthropic, gemini, deepgram, wispr
+`routes/(authed)/(shell)/settings` (onboarding step 1 reuses the same `ApiKeyRow`s and `keyActions`): key rows for groq, anthropic, gemini, deepgram, wispr
 (`$lib/features/api-keys`), then `AiPreferences`: default AI provider and transcription provider
 (only providers with a usable key; "Automatic" = resolution order), Advanced per-task overrides,
 saved to `ai_settings` (`?/prefs`, RLS). Usage: calls + tokens per provider and key source from

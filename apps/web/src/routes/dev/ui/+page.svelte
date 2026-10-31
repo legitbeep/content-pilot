@@ -34,6 +34,11 @@
 	import * as DropdownMenu from '$lib/shared/ui/dropdown-menu';
 	import * as Avatar from '$lib/shared/ui/avatar';
 	import * as Command from '$lib/shared/ui/command';
+	import { ChipsInput } from '$lib/shared/ui/chips-input';
+	import { ConflictCard } from '$lib/entities/brand';
+
+	let chips = $state(['javascript', 'careers']);
+	let chipsFull = $state(['one', 'two', 'three']);
 
 	const tokens = [
 		['--bg-canvas', 'App background'],
@@ -332,6 +337,25 @@
 		<DataTable {columns} rows={[]}>
 			{#snippet empty()}Nothing scheduled.{/snippet}
 		</DataTable>
+	</div>
+
+	{@render section('Chips input')}
+	<div class="flex max-w-md flex-col gap-4">
+		<ChipsInput bind:value={chips} max={5} label="Add a topic" />
+		<ChipsInput value={[]} label="Empty" placeholder="Empty: type and press Enter" />
+		<ChipsInput bind:value={chipsFull} max={3} label="Full" />
+		<ChipsInput value={['locked']} label="Disabled" disabled />
+	</div>
+
+	{@render section('Conflict card (entities/brand)')}
+	<div class="max-w-2xl">
+		<ConflictCard
+			stated="Keep clips under 30 seconds."
+			learned="You keep extending clips to about 45 seconds."
+			evidence={4}
+			onkeep={() => toast('Kept your rule')}
+			onupdate={() => toast('Rule updated')}
+		/>
 	</div>
 
 	{@render section('Empty state')}

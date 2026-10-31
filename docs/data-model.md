@@ -2,7 +2,7 @@
 covers:
   - supabase/migrations
   - apps/web/src/lib/entities
-last_updated: 2026-10-31
+last_updated: 2026-11-01
 ---
 # Data model
 
@@ -32,7 +32,7 @@ orchestrator runs `npx supabase db push --include-all` on main after merging.
 ## Enums
 `job_status` pending|processing|needs_input|done|stopped|failed ·
 `platform` youtube|instagram|linkedin|x · `key_provider` anthropic|deepgram|assemblyai|groq|wispr|gemini (`assemblyai` unused) ·
-`rule_source` stated|learned · `rule_status` proposed|active|rejected ·
+`rule_source` onboarding|edits|performance|manual (legacy stated|learned) · `rule_status` candidate|active|pinned|archived (legacy proposed|rejected) · `rule_scope` clip_selection|copy|captions|editing|all ·
 `post_status` draft|scheduled|posted|failed · `checkpoint` 48h|7d|14d|30d
 
 ## Tables
@@ -40,8 +40,8 @@ orchestrator runs `npx supabase db push --include-all` on main after merging.
 |---|---|---|
 | profiles | id (=auth uid), display_name, onboarded_at | Row created by `on_auth_user_created` trigger |
 | user_keys | provider, ciphertext, iv, last4, validated_at, invalid_at | unique (user_id, provider). `docs/auth-and-keys.md` |
-| brand_profile | user_id (pk), answers jsonb, example_posts jsonb | Onboarding output |
-| brand_rules | source, status, rule, evidence jsonb, conflicts_with | `docs/brand-memory.md` |
+| brand_profile | user_id (pk), answers jsonb, example_posts jsonb, onboarding_step, onboarding_completed_at | Onboarding output; `answers` shape = `BrandProfile` (`docs/brand-memory.md`). `onboarding_completed_at` gates the shell |
+| brand_rules | source, status, scope, rule (text), evidence_count, evidence jsonb, conflicts_with, updated_at | `docs/brand-memory.md` |
 | jobs | status, position, source_key, title, request, duration_s, media jsonb, current_step, progress, steps jsonb, stop_requested, input_request, resume_from_step, error, error_detail, note, attempts, claimed_at, transcript_path, finished_at, proceeded_at, source_deleted_at | `error` is user-readable, `error_detail` technical. `media` = probe output. `docs/queue.md`; transcript + cleanup: `docs/pipeline.md` |
 | clips | job_id, start_s, end_s, reason, score, file_key, file_start_s, file_end_s, words jsonb, selected | `start_s/end_s/file_*` in source seconds; `words` relative to the clip file (handles included). unique (job_id, start_s, end_s). `file_key` null once deleted |
 | timelines | clip_id (unique), data jsonb, revision, rendered_key, rendered_revision | `data` validates against timeline-schema. Render needed when `rendered_revision < revision` |
@@ -53,7 +53,7 @@ orchestrator runs `npx supabase db push --include-all` on main after merging.
 | demo_usage | user_id, kind (`job`), created_at | Append-only log of demo-key jobs; the daily demo cap counts it. No FK to jobs (deleting a job never frees a slot). RLS on, no policies (server only). `docs/llm.md` |
 | baseline_seeds | platform, external_id, checkpoint, views, published_at | Pre-existing channel videos seeding the baseline. unique (user_id, platform, external_id, checkpoint). `docs/publishing.md` |
 
-Indexes: `llm_calls_user_created_idx` (usage summary), `jobs_claim_idx` (pending by position), `jobs_user_processing_idx` (per-user processing count), `jobs_cleanup_idx` (done, source not yet deleted), `posts_due_idx` (scheduled by time).
+Indexes: `brand_rules_user_status_idx`, `llm_calls_user_created_idx` (usage summary), `jobs_claim_idx` (pending by position), `jobs_user_processing_idx` (per-user processing count), `jobs_cleanup_idx` (done, source not yet deleted), `posts_due_idx` (scheduled by time).
 
 R2 objects (not tables): `uploads/<user_id>/<upload_id>/<name>` source video,
-`transcripts/<job_id>.json` (normalised; older jobs also have a raw `transcripts/<job_id>.deepgram.json`), `clips/<clip_id>/source.mp4`.
+`brand/<user_id>/logo.<ext>` brand logo, `transcripts/<job_id>.json` (normalised; older jobs also have a raw `transcripts/<job_id>.deepgram.json`), `clips/<clip_id>/source.mp4`.

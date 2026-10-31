@@ -55,7 +55,12 @@ describe('dev login', () => {
 			row: { user_id: 'dev-user' },
 			opts: { onConflict: 'user_id', ignoreDuplicates: true }
 		});
-		expect(writes[1]).toMatchObject({ table: 'profiles', op: 'update' });
+		expect(writes[1]).toMatchObject({
+			table: 'brand_profile',
+			op: 'update',
+			row: { onboarding_completed_at: expect.any(String) }
+		});
+		expect(writes[2]).toMatchObject({ table: 'profiles', op: 'update' });
 	});
 
 	it('is enabled only in dev with DEV_LOGIN=true', () => {
