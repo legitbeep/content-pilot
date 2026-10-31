@@ -26,7 +26,8 @@ flowchart LR
 ```
 
 ## Responsibilities
-- **apps/web** (SvelteKit 2, adapter-vercel): UI, auth session, presigning uploads, BYOK save +
+- **apps/web** (SvelteKit 2, adapter-vercel, runtime pinned to `nodejs24.x` in `svelte.config.js`;
+  Vercel project `clip-studio`, production `https://clip-studio-pi.vercel.app`): UI, auth session, presigning uploads, BYOK save +
   validation, editor agent (server routes), enqueueing jobs/renders. Never touches video bytes.
 - **apps/worker** (Python, Docker, FFmpeg): one loop that claims queue jobs, runs the pipeline,
   renders timelines, publishes scheduled posts, collects metric checkpoints.

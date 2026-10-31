@@ -26,3 +26,7 @@ tmp/
 
 # Git worktrees
 .worktrees/
+
+# Vercel CLI (link, pull, build output)
+.vercel
+.env*.local

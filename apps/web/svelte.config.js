@@ -9,7 +9,8 @@ const config = {
 		runes: ({ filename }) => (filename.split(/[/\\]/).includes('node_modules') ? undefined : true)
 	},
 	kit: {
-		adapter: adapter()
+		// Explicit runtime: builds don't depend on the local Node version.
+		adapter: adapter({ runtime: 'nodejs24.x' })
 	}
 };
 
