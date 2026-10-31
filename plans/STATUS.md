@@ -12,9 +12,9 @@ Parallelism cap: 3 subagents (Opus).
 | 4 | 1 | feat/brand | .worktrees/brand | merged | tests on main pending (option 2) |
 | 6 | 1 | feat/editor | .worktrees/editor | merged | tests on main pending (option 2) |
 | 8 | 1 | feat/publish | .worktrees/publish | merged | tests on main pending (option 2) |
-| 5 | 2 | feat/clips | .worktrees/clips | running | port 5173 |
-| 7 | 2 | feat/agent | .worktrees/agent | running | port 5174 |
-| 9 | 2 | feat/performance | .worktrees/performance | running | port 5175 |
+| 5 | 2 | feat/clips | .worktrees/clips | ready-to-merge | f616ecb; check+test pass (web 94, schema 11, worker 132) |
+| 7 | 2 | feat/agent | .worktrees/agent | ready-to-merge | eee4450; check+test pass (web 121, schema 11, worker 102) |
+| 9 | 2 | feat/performance | .worktrees/performance | ready-to-merge | 478a654; check+test pass (web 104, schema 11, worker 114) |
 | 10 | 3 | feat/integration | - | todo | |
 
 ## Decisions (2026-10-31, from user)
@@ -129,3 +129,8 @@ Shared surfaces and the single owner of each:
 - Web redeployed with UA fix (prod = main incl. bfabc02 + DNS commit).
 - Wave 2 preconditions checked (main d291f6f): 4/6/8 merged in order, check+test pass (web 93, schema 11, worker 102), db push done. FAIL: Wave 1 worktrees still present (clean, merged); Checkpoint B open items not yet listed as deferred to C. Stopped, asked user.
 - Wave 1 worktrees removed. Wave 2 worktrees created (clips/agent/performance from d291f6f), env sanitized (no demo/real AI keys, no YouTube secret), deps installed.
+- Wave 2 subagents launched in parallel: 5 (clips, 5173), 7 (agent, 5174), 9 (performance, 5175).
+- Plan 7 done (eee4450). Orch re-ran check+test in worktree: pass (web 121, schema 11, worker 102). All AI mock-only. Risk: learn-rules DB flow has no permanent test. Stray 1-byte apps/worker/seeds/agent.py.tmp left in MAIN checkout by subagent (its rm was denied) -> left for user.
+- Plan 9 done (478a654). Orch re-ran check+test: pass (web 104, schema 11, worker 114). Deviations: hand-built charts (no layerchart dep), rule text templated (learn_rules unused), ratings stored not weighted, 14d checkpoint kept. YOUTUBE_FAKE opt-in (default off, documented dev-only). p9 migration also adds clips.features if not exists (no-op). Touched $lib/server/youtube.ts (reconnect resets baselines). Merge: take p9 ranking.py.
+- Plan 5 done (f616ecb). Orch re-ran check+test: pass (web 94, schema 11, worker 132). NSFW model Falconsai (Apache-2.0, ONNX int8) via ADD --checksum; Docker build not run. Main's Docker worker (old code) claimed a dev-clips seed job; seed leaves 2 placeholder `processing` jobs for dev-clips user to block it (removed by seed:clips:clean). nsfw_check ~15-20 min per 60-min video on CPU. Picker shortcuts page-local.
+- All 3 Wave 2 plans ready-to-merge. No new required env vars (optional: NSFW_MODEL_PATH, YOUTUBE_FAKE dev-only; Wispr is a per-user Settings key). Checkpoint C issued; waiting on user results. Merge order 5 -> 9 -> 7.
