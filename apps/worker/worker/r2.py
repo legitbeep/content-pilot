@@ -40,6 +40,10 @@ def put_json(key: str, data: object) -> None:
     )
 
 
+def get_bytes(key: str) -> bytes:
+    return _client().get_object(Bucket=_bucket(), Key=key)["Body"].read()
+
+
 def exists(key: str) -> bool:
     try:
         _client().head_object(Bucket=_bucket(), Key=key)

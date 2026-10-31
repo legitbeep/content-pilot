@@ -53,6 +53,7 @@ Web code reads public vars through `$env/dynamic/public` (so a missing `.env` do
 | `GEMINI_API_KEY`, `GROQ_API_KEY` | Shared demo keys (allowlisted users only). Read only in `worker/llm/keys.py` |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | Read sources, write renders |
 | `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET` | Token refresh, uploads, stats (Data + Analytics APIs) |
+| `NSFW_MODEL_PATH` | Optional. NSFW image model file; default `apps/worker/models/nsfw.onnx` (baked into the Docker image, `pnpm nsfw:model` locally; `docs/pipeline.md`) |
 
 Adding a var: add it to the right `.env.example` (placeholder + comment) and this doc in the same change.
 

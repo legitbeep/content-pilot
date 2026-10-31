@@ -146,9 +146,7 @@
 				{:else if can(job.status, 'answer')}
 					<Button size="xs" variant="outline" onclick={() => (openId = job.id)}>Answer</Button>
 				{:else if can(job.status, 'open_clips')}
-					<Button size="xs" variant="outline" href={resolve(`/clips?job=${job.id}`)}
-						>Open clips</Button
-					>
+					<Button size="xs" variant="outline" href={resolve(`/clips/${job.id}`)}>Open clips</Button>
 				{/if}
 				{#if can(job.status, 'delete')}
 					<Button size="xs" variant="ghost" onclick={() => (confirmDelete = job)}>Delete</Button>

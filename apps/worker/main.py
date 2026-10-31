@@ -8,14 +8,13 @@ import time
 import traceback
 from datetime import UTC, datetime
 
-from loops import publisher
+from loops import cleanup, publisher
 from loops import render as render_loop
 from pipeline import NeedsInput, StepError, Stopped, run
 from worker import db
 
 POLL_SECONDS = 5
 MAX_PROCESSING_PER_USER = 2
-DONE_NOTE = "Clip extraction not built yet"
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(threadName)s %(message)s")
 log = logging.getLogger("worker")
@@ -108,7 +107,6 @@ def process(job: dict) -> str:
             progress=100,
             finished_at=datetime.now(UTC),
             resume_from_step=None,
-            note=DONE_NOTE,
         )
 
 
@@ -126,8 +124,6 @@ def loop() -> None:
                 log.exception("job %s: could not record outcome", job["id"])
         else:
             time.sleep(POLL_SECONDS)
-        # TODO: cleanup sweep: done jobs with source_deleted_at null and
-        # (proceeded_at set or finished_at < now() - 48h) -> pipeline.cleanup_source.run(job).
 
 
 def main() -> None:
@@ -136,6 +132,7 @@ def main() -> None:
     threads = [threading.Thread(target=loop, name=f"w{i}", daemon=True) for i in range(n)]
     threads.append(threading.Thread(target=render_loop.loop, name="render", daemon=True))
     threads.append(threading.Thread(target=publisher.loop, name="publisher", daemon=True))
+    threads.append(threading.Thread(target=cleanup.loop, name="cleanup", daemon=True))
     for t in threads:
         t.start()
     for t in threads:

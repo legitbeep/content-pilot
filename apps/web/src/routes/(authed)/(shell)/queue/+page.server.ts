@@ -1,4 +1,5 @@
 import { fail } from '@sveltejs/kit';
+import { buildMemoryContext, profileFromRow, type MemoryRule } from '$lib/entities/brand';
 import { can, UPLOAD_LIMITS, type Job, type JobAction } from '$lib/entities/job';
 import { recordDemoJob, requireAIKeys, requireDemoJobQuota } from '$lib/server/llm';
 import { deleteObject, headSize, presignPut } from '$lib/server/r2';
@@ -55,6 +56,23 @@ async function requireUploadKeys(userId: string) {
 	return demo;
 }
 
+/** Brand memory frozen on the job (scope clip_selection); the worker reads only this text. */
+async function memorySnapshot({ locals: { supabase } }: Ctx) {
+	const [profile, rules] = await Promise.all([
+		supabase.from('brand_profile').select('answers, example_posts').maybeSingle(),
+		supabase.from('brand_rules').select('rule, scope, status, evidence_count')
+	]);
+	if (profile.error || rules.error) console.error('memory snapshot', profile.error ?? rules.error);
+	const text = buildMemoryContext(
+		profileFromRow(profile.data),
+		(rules.data ?? []) as MemoryRule[],
+		{
+			scope: 'clip_selection'
+		}
+	);
+	return text.trim() || null;
+}
+
 const safeName = (name: string) => name.replace(/[^\w.-]+/g, '_').slice(-100) || 'video';
 
 export const actions: Actions = {
@@ -101,7 +119,8 @@ export const actions: Actions = {
 			title: String(form.get('title') ?? '').slice(0, 200) || null,
 			request: requestText || null,
 			duration_s: duration > 0 ? duration : null,
-			position: await nextPosition(ctx)
+			position: await nextPosition(ctx),
+			memory_snapshot: await memorySnapshot(ctx)
 		});
 		if (error) {
 			console.error('jobs insert', error);
@@ -187,6 +206,8 @@ export const actions: Actions = {
 			.update({
 				status: 'pending',
 				input_request: { ...job.input_request, answer },
+				// Job-scoped intent for extraction, never a brand rule.
+				...(job.input_request?.kind === 'brand_fit' ? { user_intent: answer.slice(0, 2000) } : {}),
 				position: await nextPosition(ctx)
 			})
 			.eq('id', job.id)

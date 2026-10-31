@@ -36,7 +36,7 @@ queue form action loads the job and checks `can(status, action)` first, then wri
 | processing | done / failed | worker | after last step (`finished_at`, `progress = 100`) / on exception (`error`, `error_detail`) |
 | processing | stopped | worker | `stop_requested = true` seen before next step (`pipeline.Stopped`) |
 | processing | needs_input | worker | step raises `pipeline.NeedsInput`; sets `input_request`, `resume_from_step`; slot released |
-| needs_input | pending | web | **answer**: `input_request.answer` stored, back to the end of the queue |
+| needs_input | pending | web | **answer**: `input_request.answer` stored (a `brand_fit` answer also → `jobs.user_intent`), back to the end of the queue |
 | failed / stopped | pending | web | **retry** / **re-queue**: `resume_from_step = current_step`, errors cleared, end of queue |
 
 ## Actions by state (Queue page)
@@ -44,8 +44,8 @@ queue form action loads the job and checks `can(status, action)` first, then wri
 |---|---|
 | pending | drag to reorder, edit request (details sheet), delete |
 | processing | stop |
-| needs_input | open question (details sheet) and answer |
-| done | open clips (`/clips?job=<id>`, placeholder) |
+| needs_input | open question (details sheet): one-click options from `input_request.options`, free text when `allow_text`, flagged time ranges (nsfw); "Cancel" deletes the job; delete |
+| done | open clips (`/clips/<id>`, the Clip Picker) |
 | stopped | re-queue, delete |
 | failed | retry, delete, error shown in the details sheet (user message + "Show details") |
 
@@ -62,7 +62,8 @@ Video bytes never touch SvelteKit. Three steps, all from the browser:
    presigned R2 PUT URL (`$lib/server/r2.ts`, `aws4fetch`, 1 h).
 3. Browser **PUTs** the file to R2 (XHR for the progress bar), then **`?/create`**: checks the key
    is under the user's prefix and the object exists (HEAD, size ≤ 2 GB), then inserts the job as
-   `pending` at the end of the queue (`position = max + 1`) with `title`, `request`, `duration_s`.
+   `pending` at the end of the queue (`position = max + 1`) with `title`, `request`, `duration_s`
+   and `memory_snapshot` (brand memory, scope clip_selection, `docs/pipeline.md`).
    It repeats the key/quota check first and, for demo users, `recordDemoJob` after the insert.
    Answer and retry also call `requireAIKeys` (they re-run AI steps). Thrown errors reach the UI
    through `formAction`, which surfaces `error(...)` messages as-is; the upload button is gated by
@@ -106,8 +107,7 @@ one job; acceptable for now.
 ## Running a job (worker)
 Per step: `current_step`, `progress` (step index / step count) and a `steps` entry
 (`running` → `done`/`failed`/`stopped`) are written before and after. Then:
-- all steps ok → `done`, `progress = 100`, `finished_at`, `note = "Clip extraction not built yet"`
-  (while only probe + transcribe exist).
+- all steps ok → `done`, `progress = 100`, `finished_at`.
 - `Stopped` → `stopped` (`current_step` = the step that would have run next).
 - `NeedsInput` → `needs_input`, `input_request`, `resume_from_step`.
 - `StepError(message)` → `failed`, `error = message` (user-readable, e.g. "Deepgram rejected the API
@@ -124,7 +124,8 @@ root) processes one item and exits. Needs `DATABASE_URL` etc. in the environment
 (`claim_job(job_id)`: still must be `pending` and under the per-user limit), runs `process`, prints
 `job <id>: <status>`, and exits 1 if the job failed or could not be claimed, 2 on bad arguments.
 Kind `render` claims that clip if `render_status = 'queued'` and renders it (`loops/render.py`,
-`docs/timeline.md`). Kind `post` runs the publisher for one scheduled post (`docs/publishing.md`).
+`docs/timeline.md`). Kind `post` runs the publisher for one scheduled post (`docs/publishing.md`). Kind `cleanup`
+runs `cleanup_source` for one due job (`docs/pipeline.md`).
 Later kinds (checkpoint) add one entry to `HANDLERS` in `worker/run_once.py`.
 Like every worker module, it starts with `# Docs: docs/queue.md`.
 

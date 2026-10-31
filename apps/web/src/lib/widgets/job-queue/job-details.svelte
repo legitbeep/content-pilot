@@ -5,6 +5,7 @@
 	import { StatusBadge } from '$lib/shared/ui/status-badge';
 	import { Timecode } from '$lib/shared/ui/timecode';
 	import { can, stepLabels, type Job, type Transcript } from '$lib/entities/job';
+	import { RequiresAI } from '$lib/entities/api-key';
 
 	let {
 		job,
@@ -103,12 +104,55 @@
 					<section class="flex flex-col gap-2">
 						<h3 class="font-medium">Question</h3>
 						<p>{job.input_request?.question ?? 'The pipeline needs your input.'}</p>
-						<Textarea bind:value={answer} rows={3} placeholder="Your answer" />
-						<div class="flex justify-end">
-							<Button onclick={() => run('answer', job, { answer })} disabled={!answer.trim()}
-								>Send answer</Button
-							>
-						</div>
+						{#if job.input_request?.flagged?.length}
+							<ul class="flex flex-col gap-1 text-muted-foreground">
+								{#each job.input_request.flagged as f, i (i)}
+									<li class="flex gap-2">
+										<span><Timecode seconds={f.start} />–<Timecode seconds={f.end} /></span>
+										<span>{f.why}</span>
+									</li>
+								{/each}
+							</ul>
+						{/if}
+						{#if job.input_request?.options?.length}
+							<!-- Answering re-runs AI steps; Cancel (= delete) never needs a key. -->
+							<RequiresAI need={['llm', 'transcription']}>
+								{#snippet children({ disabled })}
+									<div class="flex flex-wrap gap-2">
+										{#each job.input_request?.options ?? [] as option (option)}
+											<Button
+												size="sm"
+												variant="outline"
+												disabled={disabled && option !== 'Cancel'}
+												onclick={() =>
+													option === 'Cancel'
+														? ondelete(job)
+														: run('answer', job, { answer: option })}>{option}</Button
+											>
+										{/each}
+									</div>
+								{/snippet}
+							</RequiresAI>
+						{/if}
+						{#if !job.input_request?.options?.length || job.input_request.allow_text}
+							<Textarea
+								bind:value={answer}
+								rows={3}
+								placeholder={job.input_request?.options?.length
+									? 'Or tell us what you want'
+									: 'Your answer'}
+							/>
+							<div class="flex justify-end">
+								<RequiresAI need={['llm', 'transcription']}>
+									{#snippet children({ disabled })}
+										<Button
+											onclick={() => run('answer', job, { answer })}
+											disabled={disabled || !answer.trim()}>Send answer</Button
+										>
+									{/snippet}
+								</RequiresAI>
+							</div>
+						{/if}
 					</section>
 				{/if}
 

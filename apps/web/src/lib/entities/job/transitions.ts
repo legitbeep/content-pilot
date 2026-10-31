@@ -20,7 +20,7 @@ export type JobAction =
 export const actionsFor: Record<JobStatus, JobAction[]> = {
 	pending: ['reorder', 'edit_request', 'delete'],
 	processing: ['stop'],
-	needs_input: ['answer'],
+	needs_input: ['answer', 'delete'], // delete = the question's "Cancel"
 	done: ['open_clips'],
 	stopped: ['requeue', 'delete'],
 	failed: ['retry', 'delete']

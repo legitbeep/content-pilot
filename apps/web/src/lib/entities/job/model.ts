@@ -23,13 +23,26 @@ export type Job = {
 	progress: number;
 	steps: JobStep[];
 	stop_requested: boolean;
-	input_request: { question?: string; answer?: string } | null;
+	input_request: InputRequest | null;
+	memory_snapshot?: string | null;
+	user_intent?: string | null;
 	error: string | null;
 	error_detail: string | null;
 	note: string | null;
 	transcript_path: string | null;
 	created_at: string;
 	finished_at: string | null;
+};
+
+/** What a paused (needs_input) job asks, written by the worker's NeedsInput (docs/pipeline.md).
+ * `options` are one-click answers; "Cancel" deletes the job. `flagged`: nsfw_check time ranges. */
+export type InputRequest = {
+	kind?: 'nsfw' | 'brand_fit';
+	question?: string;
+	options?: string[];
+	allow_text?: boolean;
+	flagged?: { start: number; end: number; why: string }[];
+	answer?: string;
 };
 
 /** Normalised transcript in R2 at transcripts/<job_id>.json (docs/pipeline.md).

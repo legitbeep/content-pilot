@@ -31,3 +31,6 @@ tmp/
 .vercel
 .env*.local
 .vitest/
+
+# NSFW model weights (downloaded by pnpm nsfw:model; baked into the Docker image)
+apps/worker/models/
