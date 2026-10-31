@@ -11,7 +11,7 @@ Parallelism cap: 3 subagents (Opus).
 | llm | 0 | feat/llm-adapter | .worktrees/llm | merged | d400a60; main check+test pass; worktree removed; awaiting user db push |
 | 4 | 1 | feat/brand | .worktrees/brand | ready-to-merge | 88033e7; check+test pass (orch verified, web 69) |
 | 6 | 1 | feat/editor | .worktrees/editor | running | port 5174 |
-| 8 | 1 | feat/publish | .worktrees/publish | running | port 5175 |
+| 8 | 1 | feat/publish | .worktrees/publish | ready-to-merge | 0385bab; check+test pass (orch verified, web 72, worker 84) |
 | 5 | 2 | feat/clips | .worktrees/clips | todo | |
 | 7 | 2 | feat/agent | .worktrees/agent | todo | |
 | 9 | 2 | feat/performance | .worktrees/performance | todo | |
@@ -55,3 +55,4 @@ Parallelism cap: 3 subagents (Opus).
 - User ran db push (2 llm migrations applied). Docs sync subagent launched.
 - Docs sync fbb6c06 (architecture.md, queue.md). Wave 1 worktrees created from main; 3 subagents launched.
 - Plan 4 done (88033e7). Risks: existing accounts without onboarding_completed_at see onboarding once; no Python buildMemoryContext yet (plan 5 worker needs it -> tell plan 5); Settings key actions moved to $lib/server/keys.ts (merge-conflict risk with llm-owned settings). Demo Gemini key hit rate limit during testing.
+- Plan 8 done (0385bab). Added nullable clips.render_path/render_status(text)/description on shared DB; told plan 6 subagent to reconcile render_status type. Worker YOUTUBE_CLIENT_ID/SECRET got invalid_client (user to check). Upload code only fake-tested.
