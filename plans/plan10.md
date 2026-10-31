@@ -34,3 +34,7 @@ Read CLAUDE.md, docs/INDEX.md and every plans/handoff-*.md first. Plan mode firs
 - On the deployed URL, a fresh account completes: onboarding -> upload -> clips with
   reasons -> edit with the agent -> render -> schedule -> auto-post -> calendar.
 - docs fully in sync (docs check passes).
+
+## Cleanup from earlier waves
+
+- Remove the TEMP onboarding bypass (`SKIP_ONBOARDING`, grep `TEMP(onboarding-bypass)`), its test, env example and docs, and unset it on Vercel.

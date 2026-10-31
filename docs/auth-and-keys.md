@@ -37,7 +37,8 @@ Flow:
    (`depends('supabase:auth')`), and `onAuthStateChange` → `invalidate('supabase:auth')`.
 5. First login: `routes/(authed)/(shell)/+layout.server.ts` reads the user's
    `brand_profile.onboarding_completed_at`. Missing (no row or null) → 303 `/onboarding` (outside the
-   shell, still protected); onboarding sends completed users to `/` (`docs/brand-memory.md`).
+   shell, still protected); onboarding sends completed users to `/` (`docs/brand-memory.md`). TEMP: `SKIP_ONBOARDING=true`
+   skips this redirect (`docs/env.md`); removed in plan10.
 6. Sign out: the avatar menu POSTs to `/auth/signout` → `signOut()` → `/login`.
 
 Route groups: `(authed)` = signed-in area (Supabase layouts). `(authed)/(shell)` = pages inside
