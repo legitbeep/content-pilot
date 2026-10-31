@@ -51,17 +51,19 @@
 		<ul class="grid grid-cols-2 gap-3 sm:grid-cols-3">
 			{#each renders as r (r.id)}
 				{@const badge = renderBadge(r.status)}
-				<li class="flex flex-col gap-2 rounded-lg border bg-surface p-2">
+				<li
+					class="flex animate-in-fade flex-col gap-2 rounded-xl border bg-surface bg-gradient-surface p-2"
+				>
 					{#if r.url}
 						<!-- svelte-ignore a11y_media_has_caption -->
 						<video
 							src={r.url}
 							controls
-							class="aspect-[9/16] w-full rounded-sm bg-black object-contain"
+							class="aspect-[9/16] w-full rounded-lg bg-black object-contain"
 						></video>
 					{:else}
 						<div
-							class="flex aspect-[9/16] w-full items-center justify-center rounded-sm bg-elevated text-xs text-muted-foreground"
+							class="flex aspect-[9/16] w-full items-center justify-center rounded-lg bg-subtle p-3 text-center text-xs text-muted-foreground"
 						>
 							{r.error ?? 'No render yet'}
 						</div>

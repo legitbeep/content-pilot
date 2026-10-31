@@ -7,7 +7,10 @@ the user has a voice key; hold V to talk. -->
 	import { toast } from 'svelte-sonner';
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import CircleIcon from '@lucide/svelte/icons/circle';
+	import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
 	import MicIcon from '@lucide/svelte/icons/mic';
+	import SendHorizontalIcon from '@lucide/svelte/icons/send-horizontal';
+	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	import XIcon from '@lucide/svelte/icons/x';
 	import { RequiresAI } from '$lib/entities/api-key';
 	import type { Word } from '$lib/entities/timeline';
@@ -212,22 +215,37 @@ the user has a voice key; hold V to talk. -->
 	}}
 />
 
-<section data-slot="agent-chat" class="mt-auto flex min-h-72 flex-col gap-2 border-t pt-3">
-	<div>
-		<h2 class="text-xs font-medium text-muted-foreground">Editor agent</h2>
-		<p class="text-xs text-muted-foreground">Finds moments by what's said, not by visuals.</p>
+<section
+	data-slot="agent-chat"
+	class="mt-auto flex max-h-[55%] min-h-64 shrink-0 flex-col gap-3 border-t bg-gradient-surface p-3"
+>
+	<div class="flex items-center gap-2">
+		<span
+			class="flex size-6 items-center justify-center rounded-md bg-accent-subtle text-accent-text"
+		>
+			<SparklesIcon class="size-3.5" />
+		</span>
+		<div class="min-w-0">
+			<h2 class="text-sm font-medium">Editor agent</h2>
+			<p class="text-xs text-muted-foreground">Finds moments by what's said, not by visuals.</p>
+		</div>
 	</div>
 
-	<div bind:this={list} class="flex max-h-96 min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
+	<div bind:this={list} class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
 		{#each turns as t (t.id)}
-			<div class="flex flex-col gap-2">
-				<p class="self-end rounded-md bg-elevated px-2 py-1.5 text-sm">{t.message}</p>
+			<div class="flex animate-in-fade flex-col gap-2">
+				<p class="max-w-[85%] self-end rounded-lg rounded-br-sm bg-elevated px-3 py-2 text-sm">
+					{t.message}
+				</p>
 				{#if t.status === 'thinking'}
-					<p class="text-xs text-muted-foreground">{t.statusText}</p>
+					<p class="flex items-center gap-1.5 text-xs text-muted-foreground">
+						<LoaderCircleIcon class="size-3.5 animate-spin" />
+						{t.statusText}
+					</p>
 				{/if}
 				{#if t.reply}<p class="text-sm">{t.reply}</p>{/if}
 				{#if t.steps.length}
-					<ul class="flex flex-col gap-1 rounded-md border p-2">
+					<ul class="flex flex-col gap-1.5 rounded-lg border bg-subtle p-2">
 						{#each t.steps as s (s.step.id)}
 							<li class="flex items-start gap-2 text-sm">
 								{#if s.state === 'done'}
@@ -250,10 +268,15 @@ the user has a voice key; hold V to talk. -->
 					<div class="flex flex-wrap gap-1">
 						{#each t.sideNotes as note, i (i)}
 							<span
-								class="inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 text-xs text-muted-foreground"
+								class="inline-flex items-center gap-1 rounded-sm border bg-subtle px-1.5 py-0.5 text-xs text-muted-foreground"
 							>
 								Also heard: {note}
-								<button type="button" aria-label="Dismiss" onclick={() => t.sideNotes.splice(i, 1)}>
+								<button
+									type="button"
+									class="rounded-sm transition-colors outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+									aria-label="Dismiss"
+									onclick={() => t.sideNotes.splice(i, 1)}
+								>
 									<XIcon class="size-3" />
 								</button>
 							</span>
@@ -275,7 +298,7 @@ the user has a voice key; hold V to talk. -->
 				</div>
 			</div>
 		{:else}
-			<p class="text-xs text-muted-foreground">
+			<p class="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
 				Ask for edits in plain words, e.g. “make it vertical and lower the music to 20%”.
 			</p>
 		{/each}
@@ -307,7 +330,7 @@ the user has a voice key; hold V to talk. -->
 					{#snippet children({ disabled })}
 						<Button
 							type="button"
-							size="sm"
+							size={recording || transcribing ? 'sm' : 'icon-sm'}
 							variant={recording ? 'secondary' : 'ghost'}
 							disabled={disabled || transcribing}
 							aria-pressed={!!recording}
@@ -328,6 +351,7 @@ the user has a voice key; hold V to talk. -->
 						variant="outline"
 						disabled={disabled || busy || !input.trim()}
 					>
+						{#if busy}<LoaderCircleIcon class="animate-spin" />{:else}<SendHorizontalIcon />{/if}
 						Send
 					</Button>
 				{/snippet}

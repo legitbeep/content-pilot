@@ -130,7 +130,13 @@ def main() -> None:
     n = int(os.environ.get("WORKER_CONCURRENCY", "1"))
     log.info("worker up: concurrency=%d", n)
     threads = [threading.Thread(target=loop, name=f"w{i}", daemon=True) for i in range(n)]
-    threads.append(threading.Thread(target=render_loop.loop, name="render", daemon=True))
+    # Shorts are short, so 2 parallel renders stay well under ~10 min of combined video.
+    render_n = int(os.environ.get("RENDER_CONCURRENCY", "2"))
+    render_loop.requeue_interrupted()
+    threads += [
+        threading.Thread(target=render_loop.loop, name=f"render{i}", daemon=True)
+        for i in range(render_n)
+    ]
     threads.append(threading.Thread(target=publisher.loop, name="publisher", daemon=True))
     threads.append(threading.Thread(target=cleanup.loop, name="cleanup", daemon=True))
     threads.append(threading.Thread(target=checkpoints.loop, name="checkpoints", daemon=True))

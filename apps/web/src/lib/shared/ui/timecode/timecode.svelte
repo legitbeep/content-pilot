@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { formatTimecode } from './format';
 
-	let { seconds }: { seconds: number } = $props();
+	let { seconds, whole = false }: { seconds: number; whole?: boolean } = $props();
 </script>
 
-<span class="font-mono text-xs tabular-nums">{formatTimecode(seconds)}</span>
+<span class="font-mono text-xs tabular-nums">{formatTimecode(seconds, { whole })}</span>

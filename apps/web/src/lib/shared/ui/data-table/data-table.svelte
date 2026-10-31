@@ -55,7 +55,7 @@
 	});
 </script>
 
-<div class="rounded-lg border">
+<div class="overflow-hidden rounded-xl border bg-surface">
 	<Table.Root>
 		<Table.Header>
 			<Table.Row class="hover:bg-transparent">
@@ -84,7 +84,7 @@
 		<Table.Body>
 			{#each sorted as row, i (i)}
 				<Table.Row
-					class={onrowclick ? 'cursor-pointer hover:bg-elevated' : 'hover:bg-elevated'}
+					class={onrowclick ? 'cursor-pointer' : undefined}
 					onclick={onrowclick && (() => onrowclick(row))}
 				>
 					{#each columns as col (col.key)}

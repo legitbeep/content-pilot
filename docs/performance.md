@@ -8,6 +8,7 @@ covers:
   - supabase/migrations/20261101150000_p9_performance.sql
   - apps/web/src/lib/server/publishing/llm-captions.ts
   - apps/web/src/lib/server/recommendations.ts
+  - supabase/migrations/20261101210000_recommendations.sql
   - apps/web/src/lib/server/youtube-fixtures
   - apps/web/src/lib/widgets/performance
 last_updated: 2026-11-01
@@ -113,8 +114,9 @@ instagram: {caption, hashtags}, linkedin: {text}, x: {text}}` → `toCaptions` e
 (YouTube title ≤ 100 and no `<>`, tags without `#`, Instagram ≤ 2200 with `#` hashtags, LinkedIn ≤
 3000, X ≤ 280) into the form's `{title, description, tags}` per platform.
 - Publish page: the template captions (now with the brand's default CTA + hashtags) stay as the
-  instant prefill; **Generate captions** (`<RequiresAI need="llm">`, action `captions` →
-  `requireAIKeys('llm')`) replaces them. AI errors show as a toast (`aiFail`).
+  instant prefill; when the user has an LLM (`page.data.ai.llm`) the form calls action `captions`
+  (→ `requireAIKeys('llm')`) on mount and swaps the LLM copy into the editable fields. The YouTube
+  fields show even without a YouTube connection, so captions are always visible. AI errors show as a toast (`aiFail`).
 - Copy-only platforms (Instagram, LinkedIn, X) are now editable textareas (X shows n/280).
 - **Caption edits → `edit_events`** (contract in plans/STATUS.md): `op = 'caption_edit'`,
   `source = 'manual'`, `clip_id`, `args = {platform, before, after}`, summary "Edited the
@@ -124,27 +126,43 @@ instagram: {caption, hashtags}, linkedin: {text}, x: {text}}` → `toCaptions` e
   `edit_events.op` has no CHECK constraint, so no migration was needed.
 
 ## Home (`routes/(authed)/(shell)/+page.*`, `$lib/widgets/performance`)
-- Header: **Generate clips** (the one primary button, → `/queue`) and **Recommended long-form
-  videos** (outline, opens a sheet).
-- Load (RLS): posted posts, all `post_metrics`, last 6 `change_log`, YouTube connected?
+- Hero (`PageHeader` inside a `bg-abstract` box): **Generate clips** (the one primary button,
+  → `/queue`).
+- **Recommended long-form videos** section (`Recommendations` widget) right below the Key numbers
+  stat cards (with posts) or the Get started row (no posts). See Recommendations below.
+- Load (RLS): posted posts, all `post_metrics`, last 6 `change_log`, YouTube connected?, the saved
+  `recommendations` row.
   `homeStats` (pure, `stats.ts`, tested) uses each post's latest checkpoint: views per posting
   week and posts per week (last 12 weeks, Monday UTC), top 5 clips by views, score distribution
-  (< 0.6, 0.6-1, 1-1.5, 1.5-3, > 3) + count of posts with "not enough data". No posts → empty state.
+  (< 0.6, 0.6-1, 1-1.5, 1.5-3, > 3) + count of posts with "not enough data", and `totals`
+  (posts, summed latest views, mean of known scores or null) for the three `Stat` cards. No posts
+  → a "Get started" row of three step cards (upload, pick clips, publish) instead of the dashboard.
 - Charts are the shared `BarChart` (hand-built bars, no chart dependency; shadcn-svelte's chart
-  needs layerchart + d3, skipped).
+  needs layerchart + d3, skipped), each in a `Card`.
 - "What we learned": `change_log` cards (rule entries link to `/brand?tab=learned`, the review list).
 - Rating nudge (`ratingNudges`): up to 2 posts whose **7d** score is > 1.5 or < 0.6 and unrated →
   1-5 stars + optional note → action `rate` updates that `post_metrics` row (`rating`,
   `rating_note`). Stored as extra evidence; learning doesn't weigh it yet.
 
 ## Recommendations (`$lib/server/recommendations.ts`)
-Action `recommend` (`requireAIKeys('llm')`, button in `<RequiresAI need="llm">`), optional region
-(2-letter code). Needs a YouTube connection (its OAuth token; else "Connect YouTube in Settings").
+Action `recommend` (`requireAIKeys('llm')`, buttons in `<RequiresAI need="llm">`). No user
+preference is asked: results are global (no `regionCode` / `relevanceLanguage`) and driven by
+brand memory. Needs a YouTube connection (its OAuth token; else "Connect YouTube in Settings").
+0. `loadMemory`: `searchTopics(core_topics, recent clip topics, niche)` (pure, tested) = core
+   topics first, then the most frequent `clips.features.topic` of the last 30 clips, niche when
+   both are empty; case-insensitive dedupe, max 3 (none → "Add core topics in Brand memory first").
+   Prompt context = `buildMemoryContext(profile, brand_rules, {scope: 'clip_selection', topics})`.
 1. `search.list(part=snippet, type=video, videoLicense=creativeCommon, videoDuration=long,
-   maxResults=10, q=<core topic>, regionCode?)` for up to 3 core topics (niche when none), deduped.
-2. With a region: `videos.list(chart=mostPopular, regionCode)` titles as a trending signal.
-3. `generateJSON` task `recommendations` → `{picks: [{videoId, reason}]}` (≤ 4); ids not in the
-   candidates are dropped. UI: title, channel, licence (Creative Commons), reason, "Open on
-   YouTube". Nothing is downloaded; the user uploads the file in the Queue.
-`YOUTUBE_FAKE=true` (web `.env`, dev only) answers from `$lib/server/youtube-fixtures/` (shaped
-like `youtube#searchListResponse` / `youtube#videoListResponse`).
+   maxResults=10, q=<topic>)` per topic, deduped; keeps the `medium` thumbnail.
+2. `generateJSON` task `recommendations` (brand memory block + candidates) →
+   `{picks: [{videoId, reason}]}` (≤ 4); ids not in the candidates are dropped.
+3. The batch is upserted into `recommendations` (one row per user; a refresh replaces it) and
+   loaded on Home. Nothing is downloaded; the user uploads the file in the Queue.
+UI: never fetched → a centered `Card` (icon, one line, **Get recommendations**, `secondary` since
+the hero owns the primary; Connect-YouTube link when not connected). With a batch → header
+**Get new recommendations** (outline, refresh icon, spinner + disabled while loading) and a
+1/2/4-column `Card` grid: thumbnail, title, channel, "20+ min" (YouTube's `long` filter; no extra
+duration call), licence badge, reason, "Open on YouTube". Shimmer `Skeleton` grid while fetching;
+errors show inline + a toast.
+`YOUTUBE_FAKE=true` (web `.env`, dev only) answers from `$lib/server/youtube-fixtures/search_list.json`
+(shaped like `youtube#searchListResponse`; `videos_most_popular.json` is no longer read).

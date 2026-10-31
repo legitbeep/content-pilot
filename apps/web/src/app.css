@@ -7,20 +7,40 @@
 
 /* Raw tokens. Dark is the only theme for now; a light theme redefines this block under `.light`. */
 :root {
-	--bg-canvas: #101114;
-	--bg-surface: #17181c;
-	--bg-elevated: #1f2026;
-	--border: #2a2b32;
-	--border-strong: #3a3b44;
-	--text: #e8e8ec;
-	--text-muted: #8b8c96;
-	--accent: #f5c842;
-	--accent-fg: #1a1500;
-	--success: #4cc38a;
-	--danger: #f2555a;
-	--info: #5e9eff;
-	--caption: #a78bfa; /* editor caption track */
-	--warning: var(--accent);
+	/* Cool near-black with a faint violet cast (Frame.io / Riverside / Linear). Steps of ~+7 L. */
+	--bg-canvas: #0c0c11;
+	--bg-subtle: #101016; /* inset wells: inputs, table header, tab list */
+	--bg-surface: #131319;
+	--bg-elevated: #1b1b23;
+	--border: #26262f;
+	--border-strong: #363642;
+	--text: #ededf2; /* 16.7:1 on canvas */
+	--text-muted: #9898a6; /* 6.0:1 on elevated */
+	--accent: #7357ff; /* electric violet; white on it 4.6:1 */
+	--accent-fg: #ffffff;
+	--accent-text: #b4a6ff; /* violet for text/links on dark, 8:1 */
+	--accent-subtle: color-mix(in srgb, var(--accent) 14%, transparent); /* tinted fills */
+	--success: #3ecf8e;
+	--danger: #ff5c62;
+	--info: #5eb0ff;
+	--warning: #f5a524;
+	--caption: #f472b6; /* editor caption track; pink so it never reads as the accent */
+
+	/* Gradients and glows: subtle, never loud. */
+	--gradient-surface: linear-gradient(
+		180deg,
+		color-mix(in srgb, var(--text) 3%, transparent),
+		transparent 70%
+	);
+	--gradient-accent: linear-gradient(135deg, var(--accent), var(--caption));
+	--glow-accent:
+		0 0 0 1px color-mix(in srgb, var(--accent) 60%, transparent),
+		0 4px 20px -4px color-mix(in srgb, var(--accent) 55%, transparent);
+
+	/* Motion. */
+	--ease-out-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
+	--duration-fast: 150ms;
+	--duration-base: 200ms;
 
 	/* shadcn-svelte semantic vars, mapped onto the raw tokens. */
 	--radius: 0.5rem;
@@ -64,6 +84,8 @@
 	--color-muted-foreground: var(--muted-foreground);
 	--color-accent: var(--accent);
 	--color-accent-foreground: var(--accent-fg);
+	--color-accent-text: var(--accent-text);
+	--color-accent-subtle: var(--accent-subtle);
 	--color-destructive: var(--destructive);
 	--color-border: var(--border);
 	--color-input: var(--input);
@@ -79,6 +101,7 @@
 
 	/* Our own names, for when the semantic ones don't read right. */
 	--color-canvas: var(--bg-canvas);
+	--color-subtle: var(--bg-subtle);
 	--color-surface: var(--bg-surface);
 	--color-elevated: var(--bg-elevated);
 	--color-border-strong: var(--border-strong);
@@ -107,15 +130,76 @@
 	--text-2xl: 24px;
 	--text-2xl--line-height: 32px;
 
-	/* Radius by hierarchy: inputs/badges 4, buttons 6, panels/modals 8. */
+	/* Radius by hierarchy: inputs/badges 4, buttons 6, popovers/menus 8, cards/dialogs 12. */
 	--radius-sm: 4px;
 	--radius-md: 6px;
 	--radius-lg: 8px;
+	--radius-xl: 12px;
 
-	/* No shadows: hierarchy comes from 1px borders and background steps. */
+	/* Hierarchy comes from 1px borders and background steps. Only two shadows exist:
+	   a soft lift for floating layers and the accent glow. */
 	--shadow-*: initial;
 	--inset-shadow-*: initial;
 	--drop-shadow-*: initial;
+	--shadow-overlay: 0 12px 32px -12px rgb(0 0 0 / 0.7);
+	--shadow-glow: var(--glow-accent);
+
+	/* Motion: hover/press 150ms, enter 200ms, one soft ease-out everywhere. */
+	--default-transition-duration: var(--duration-fast);
+	--default-transition-timing-function: var(--ease-out-soft);
+	--animate-in-fade: in-fade var(--duration-base) var(--ease-out-soft) both;
+	--animate-shimmer: shimmer 1.6s linear infinite;
+	@keyframes in-fade {
+		from {
+			opacity: 0;
+			transform: translateY(4px);
+		}
+	}
+	@keyframes shimmer {
+		to {
+			background-position: -200% 0;
+		}
+	}
+}
+
+/* Surface sheen: a card/panel fill with a faint top light. */
+@utility bg-gradient-surface {
+	background-image: var(--gradient-surface);
+}
+/* Violet to pink, for 1-2px accent borders/bars and small decorative marks only. */
+@utility bg-gradient-accent {
+	background-image: var(--gradient-accent);
+}
+/* Abstract backdrop: soft low-opacity color glows (violet, pink, blue). Put on a `relative
+   overflow-hidden` container behind page headers, hero/empty states, dropzones, login. */
+@utility bg-abstract {
+	background-image:
+		radial-gradient(
+			40% 60% at 12% 0%,
+			color-mix(in srgb, var(--accent) 18%, transparent),
+			transparent 70%
+		),
+		radial-gradient(
+			35% 55% at 88% 10%,
+			color-mix(in srgb, var(--caption) 10%, transparent),
+			transparent 70%
+		),
+		radial-gradient(
+			50% 60% at 60% 110%,
+			color-mix(in srgb, var(--info) 9%, transparent),
+			transparent 70%
+		);
+}
+/* Loading placeholder sweep (Skeleton uses it). */
+@utility shimmer {
+	background-image: linear-gradient(
+		90deg,
+		transparent 0%,
+		color-mix(in srgb, var(--text) 6%, transparent) 50%,
+		transparent 100%
+	);
+	background-size: 200% 100%;
+	animation: var(--animate-shimmer);
 }
 
 @layer base {
@@ -129,7 +213,7 @@
 		@apply bg-background font-sans text-sm text-foreground antialiased;
 	}
 	::selection {
-		background: color-mix(in srgb, var(--accent) 30%, transparent);
+		background: color-mix(in srgb, var(--accent) 35%, transparent);
 	}
 	.lucide {
 		stroke-width: 1.5;

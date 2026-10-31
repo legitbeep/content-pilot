@@ -1,21 +1,30 @@
 <script lang="ts">
-	// Editor layout: session clips (left), preview, tracks (bottom), properties + agent slot (right).
+	// Editor layout: toolbar (top), session clips (left), preview + transport (centre), tracks
+	// (bottom), properties + agent chat (right).
+	import CheckIcon from '@lucide/svelte/icons/check';
+	import CircleAlertIcon from '@lucide/svelte/icons/circle-alert';
+	import GripVerticalIcon from '@lucide/svelte/icons/grip-vertical';
+	import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
+	import PlusIcon from '@lucide/svelte/icons/plus';
+	import Redo2Icon from '@lucide/svelte/icons/redo-2';
+	import Undo2Icon from '@lucide/svelte/icons/undo-2';
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { toast } from 'svelte-sonner';
 	import type { EditorClip, Timeline, Word } from '$lib/entities/timeline';
-	import { comboOf, editorKeys } from '$lib/shared/config';
+	import { comboOf, editorKeys, type EditorAction } from '$lib/shared/config';
 	import { formAction } from '$lib/shared/lib/form-action';
 	import { isTyping } from '$lib/shared/lib/is-typing';
 	import { Button } from '$lib/shared/ui/button';
+	import { Separator } from '$lib/shared/ui/separator';
 	import { StatusBadge } from '$lib/shared/ui/status-badge';
-	import { TopbarActions } from '$lib/shared/ui/topbar-actions';
 	import { cn } from '$lib/shared/lib/utils';
 	import { CLIP_DRAG_TYPE, EditorState } from './editor-state.svelte';
 	import Preview from './preview.svelte';
 	import Tracks from './tracks.svelte';
 	import Properties from './properties.svelte';
 	import FinishDialog from './finish-dialog.svelte';
+	import ToolButton from './tool-button.svelte';
 	import { renderBadge } from './render-badge';
 	import { page } from '$app/state';
 	import { AgentChat, learnFromEdits } from '$lib/features/editor-agent';
@@ -59,10 +68,35 @@
 		clips.filter((c) => c.file_key).map((c) => [c.file_key!, c.words ?? []])
 	);
 
+	// Live render status per session clip; polled while any render is queued or running.
+	// svelte-ignore state_referenced_locally
+	let renders = $state<Record<string, { status: string | null; error: string | null }>>(
+		Object.fromEntries(clips.map((c) => [c.id, { status: c.render_status, error: c.render_error }]))
+	);
+	const rendering = $derived(
+		Object.values(renders).some((r) => r.status === 'queued' || r.status === 'rendering')
+	);
+	/** Sent to render by the user (green check in the clip list): queued, rendering or done. */
+	const resolved = (id: string) =>
+		['queued', 'rendering', 'done'].includes(renders[id]?.status ?? '');
+
+	$effect(() => {
+		if (!rendering) return;
+		const timer = setInterval(async () => {
+			const res = await fetch(resolve(`/editor/${clip.id}/renders`));
+			if (!res.ok) return;
+			for (const r of (await res.json()) as { id: string; status: string; error: string }[])
+				renders[r.id] = { status: r.status, error: r.error };
+		}, 3000);
+		return () => clearInterval(timer);
+	});
+
 	let uploading: 'voiceover' | 'music' | 'video' | null = $state(null);
 	let finishing = $state(false);
 	let finishOpen = $state(false);
 
+	const clipIndex = $derived(clips.findIndex((c) => c.id === clip.id));
+	const clipBadge = $derived(renderBadge(renders[clip.id].status));
 	const statusText = $derived(
 		{ saved: 'Saved', dirty: 'Unsaved changes', saving: 'Saving…', error: 'Not saved' }[
 			editor.status
@@ -128,15 +162,23 @@
 		else if (d.file) toast.error('Drop a video or audio file.');
 	}
 
+	/** Save + queue this clip's render, then move on to the next clip not yet resolved. */
 	async function saveAndRender() {
-		if (await editor.flush(true)) toast.success('Saved. Rendering this clip now.');
+		if (!(await editor.flush(true))) return;
+		renders[clip.id] = { status: 'queued', error: null };
+		const next = [...clips.slice(clipIndex + 1), ...clips.slice(0, clipIndex)].find(
+			(c) => !resolved(c.id)
+		);
+		toast.success(next ? 'Rendering. On to the next clip.' : 'Saved. Rendering this clip now.');
+		if (next) await goto(resolve(`/editor/${next.id}`));
 	}
 
 	async function finishAll() {
 		finishing = true;
 		try {
 			if (!(await editor.flush())) return;
-			await formAction('renderAll', {});
+			const r = await formAction<{ queued: string[] }>('renderAll', {});
+			for (const id of r.queued) renders[id] = { status: 'queued', error: null };
 			finishOpen = true;
 			if (page.data.ai?.llm) void learnFromEdits(true);
 		} catch (e) {
@@ -146,11 +188,8 @@
 		}
 	}
 
-	function onkeydown(e: KeyboardEvent) {
-		if (isTyping(e.target) || e.altKey || finishOpen) return;
-		const action = editorKeys[comboOf(e)];
-		if (!action) return;
-		e.preventDefault();
+	/** Runs an editor action, from a shortcut or a toolbar button. */
+	function run(action: EditorAction) {
 		const t = editor.timeline;
 		switch (action) {
 			case 'play':
@@ -198,6 +237,14 @@
 		}
 	}
 
+	function onkeydown(e: KeyboardEvent) {
+		if (isTyping(e.target) || e.altKey || finishOpen) return;
+		const action = editorKeys[comboOf(e)];
+		if (!action) return;
+		e.preventDefault();
+		run(action);
+	}
+
 	beforeNavigate(() => void editor.flush());
 </script>
 
@@ -208,81 +255,139 @@
 	}}
 />
 
-<TopbarActions>
-	<span class={cn('text-xs', editor.status === 'error' ? 'text-danger' : 'text-muted-foreground')}>
-		{statusText}
-	</span>
-	<Button size="sm" variant="outline" disabled={!editor.canUndo} onclick={() => editor.undo()}>
-		Undo
-	</Button>
-	<Button size="sm" variant="outline" disabled={!editor.canRedo} onclick={() => editor.redo()}>
-		Redo
-	</Button>
-	<Button size="sm" variant="outline" disabled={finishing} onclick={finishAll}>
-		Finish all clips
-	</Button>
-	<Button size="sm" disabled={editor.status === 'saving'} onclick={saveAndRender}>Save</Button>
-</TopbarActions>
-
 <div
 	data-full-width
-	class="grid h-[calc(100svh-5.5rem)] min-h-[36rem] grid-cols-[13rem_minmax(0,1fr)_19rem] grid-rows-[minmax(0,1fr)_auto] gap-3"
+	class="grid h-[calc(100svh-5.5rem)] min-h-[36rem] animate-in-fade grid-cols-[13rem_minmax(0,1fr)_20rem] grid-rows-[auto_minmax(0,1fr)_auto] gap-3"
 >
-	<aside class="flex min-h-0 flex-col gap-2 overflow-y-auto rounded-lg border bg-surface p-2">
-		<h2 class="px-1 text-xs font-medium text-muted-foreground">Clips in this session</h2>
+	<header class="col-span-3 flex h-10 items-center gap-3">
+		<div class="flex min-w-0 items-center gap-2">
+			<h1 class="shrink-0 text-base font-semibold">Clip {clipIndex + 1}</h1>
+			<span class="truncate text-muted-foreground" title={clip.reason}>{clip.reason}</span>
+			{#if clipBadge}<StatusBadge status={clipBadge} />{/if}
+		</div>
+		<span class="flex-1"></span>
+		<span
+			class={cn(
+				'flex items-center gap-1.5 text-xs',
+				editor.status === 'error' ? 'text-danger' : 'text-muted-foreground'
+			)}
+			aria-live="polite"
+		>
+			{#if editor.status === 'saving'}
+				<LoaderCircleIcon class="size-3.5 animate-spin" />
+			{:else if editor.status === 'error'}
+				<CircleAlertIcon class="size-3.5" />
+			{:else if editor.status === 'saved'}
+				<CheckIcon class="size-3.5" />
+			{:else}
+				<span class="size-1.5 rounded-full bg-warning"></span>
+			{/if}
+			{statusText}
+		</span>
+		<Separator orientation="vertical" class="data-vertical:h-5 data-vertical:self-center" />
+		<div class="flex items-center">
+			<ToolButton label="Undo" action="undo" disabled={!editor.canUndo} onclick={() => run('undo')}>
+				<Undo2Icon />
+			</ToolButton>
+			<ToolButton label="Redo" action="redo" disabled={!editor.canRedo} onclick={() => run('redo')}>
+				<Redo2Icon />
+			</ToolButton>
+		</div>
+		<Button
+			size="sm"
+			variant="outline"
+			disabled={editor.status === 'saving'}
+			onclick={saveAndRender}
+		>
+			Render clip
+		</Button>
+		<Button size="sm" disabled={finishing} onclick={finishAll}>
+			{#if finishing}<LoaderCircleIcon class="animate-spin" />{/if}
+			Finish all clips
+		</Button>
+	</header>
+
+	<aside class="flex min-h-0 flex-col gap-1 overflow-y-auto rounded-xl border bg-surface p-2">
+		<h2 class="px-2 py-1 text-xs font-medium text-muted-foreground">Clips in this session</h2>
 		{#each clips as c, i (c.id)}
-			{@const badge = renderBadge(c.render_status)}
+			{@const r = renders[c.id]}
+			{@const badge = renderBadge(r.status)}
+			{@const current = c.id === clip.id}
 			<div
 				class={cn(
-					'flex flex-col gap-1.5 rounded-md border p-2',
-					c.id === clip.id ? 'border-border-strong bg-elevated' : 'border-transparent',
-					c.id !== clip.id && 'cursor-grab'
+					'group relative flex flex-col gap-1.5 rounded-lg border p-2 transition-colors',
+					current
+						? 'border-border-strong bg-elevated'
+						: 'cursor-grab border-transparent hover:bg-elevated/60'
 				)}
-				draggable={c.id !== clip.id}
+				draggable={!current}
 				ondragstart={(e) => {
 					e.dataTransfer?.setData(CLIP_DRAG_TYPE, c.id);
 					if (e.dataTransfer) e.dataTransfer.effectAllowed = 'copy';
 				}}
 				role="listitem"
-				title={c.id !== clip.id ? 'Drag onto the timeline to add it' : undefined}
+				title={!current ? 'Drag onto the timeline to add it' : undefined}
 			>
+				{#if current}
+					<span class="absolute inset-y-2 left-0 w-0.5 rounded-full bg-primary"></span>
+				{/if}
 				<button
 					type="button"
-					class="text-left text-sm"
+					class="rounded-sm text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+					aria-current={current ? 'page' : undefined}
 					onclick={() => goto(resolve(`/editor/${c.id}`))}
 				>
-					<span class="line-clamp-2">Clip {i + 1}: {c.reason}</span>
+					<span class="flex items-center justify-between gap-2">
+						<span class="font-medium">Clip {i + 1}</span>
+						{#if resolved(c.id)}
+							<span
+								class="flex size-4 items-center justify-center rounded-full bg-success text-background"
+								role="img"
+								aria-label="Resolved"
+							>
+								<CheckIcon class="size-3" strokeWidth={3} />
+							</span>
+						{/if}
+					</span>
+					<span class="line-clamp-2 text-xs text-muted-foreground">{c.reason}</span>
 				</button>
-				<div class="flex items-center justify-between gap-2">
+				<div class="flex h-6 items-center justify-between gap-2">
 					{#if badge}
 						<StatusBadge status={badge} />
 					{:else}
 						<span class="text-xs text-muted-foreground">Not rendered</span>
 					{/if}
-					{#if c.id !== clip.id}
-						<Button size="sm" variant="ghost" class="h-6 px-2 text-xs" onclick={() => mergeClip(c)}>
-							Add here
-						</Button>
+					{#if !current}
+						<span class="flex items-center gap-0.5">
+							<GripVerticalIcon
+								class="size-3.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+							/>
+							<ToolButton
+								label="Add to the end of this clip"
+								size="icon-xs"
+								onclick={() => mergeClip(c)}
+							>
+								<PlusIcon />
+							</ToolButton>
+						</span>
 					{/if}
 				</div>
-				{#if c.render_error}<p class="text-xs text-danger">{c.render_error}</p>{/if}
+				{#if r.error}<p class="text-xs text-danger">{r.error}</p>{/if}
 			</div>
 		{/each}
 	</aside>
 
-	<section class="min-h-0">
-		<Preview {editor} {wordsByKey} />
+	<section class="flex min-h-0 flex-col overflow-hidden rounded-xl border bg-surface">
+		<Preview {editor} {wordsByKey} onaction={run} />
 	</section>
 
-	<aside
-		class="row-span-2 flex min-h-0 flex-col gap-3 overflow-y-auto rounded-lg border bg-surface p-3"
-	>
+	<aside class="row-span-2 flex min-h-0 flex-col overflow-hidden rounded-xl border bg-surface">
 		<Properties {editor} onupload={upload} {uploading} />
 		<AgentChat host={editor} clipId={clip.id} {wordsByKey} />
 	</aside>
 
 	<div class="col-span-2">
-		<Tracks {editor} {wordsByKey} {sourceName} ondrop={dropOnTimeline} />
+		<Tracks {editor} {wordsByKey} {sourceName} ondrop={dropOnTimeline} onaction={run} />
 	</div>
 </div>
 

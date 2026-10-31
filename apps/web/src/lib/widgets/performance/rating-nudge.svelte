@@ -4,6 +4,7 @@
 	import StarIcon from '@lucide/svelte/icons/star';
 	import { Button } from '$lib/shared/ui/button';
 	import { Input } from '$lib/shared/ui/input';
+	import { Card } from '$lib/shared/ui/card';
 	import { formAction } from '$lib/shared/lib/form-action';
 	import { cn } from '$lib/shared/lib/utils';
 
@@ -26,12 +27,18 @@
 	}
 </script>
 
-<section class="flex flex-col gap-3 rounded-lg border bg-card p-4">
-	<p>
-		<span class="font-medium">{post.title ?? 'A clip'}</span> got {score.toFixed(1)}x your usual
-		views after 7 days. How happy are you with it?
+<Card class="flex animate-in-fade flex-col gap-3 sm:flex-row sm:items-center">
+	<span
+		class="flex size-8 shrink-0 items-center justify-center rounded-lg border bg-elevated text-warning"
+	>
+		<StarIcon />
+	</span>
+	<p class="min-w-0 flex-1">
+		<span class="font-medium">{post.title ?? 'A clip'}</span> got
+		<span class="tabular-nums">{score.toFixed(1)}x</span> your usual views after 7 days. How happy are
+		you with it?
 	</p>
-	<div class="flex flex-wrap items-center gap-3">
+	<div class="flex flex-wrap items-center gap-2">
 		<div class="flex" role="radiogroup" aria-label="Rating, 1 to 5 stars">
 			{#each [1, 2, 3, 4, 5] as n (n)}
 				<button
@@ -40,9 +47,9 @@
 					aria-checked={rating === n}
 					aria-label="{n} star{n === 1 ? '' : 's'}"
 					onclick={() => (rating = n)}
-					class="rounded-sm p-1 text-muted-foreground hover:text-foreground"
+					class="rounded-sm p-1 text-muted-foreground outline-none hover:text-warning focus-visible:ring-2 focus-visible:ring-ring active:scale-90"
 				>
-					<StarIcon class={cn(n <= rating && 'fill-current text-foreground')} />
+					<StarIcon class={cn(n <= rating && 'fill-current text-warning')} />
 				</button>
 			{/each}
 		</div>
@@ -50,11 +57,11 @@
 			bind:value={note}
 			placeholder="Why? (optional)"
 			maxlength={300}
-			class="w-64"
+			class="w-48"
 			aria-label="Note"
 		/>
 		<Button variant="outline" size="sm" onclick={save} disabled={busy || !rating}
-			>Save rating</Button
+			>{busy ? 'Saving…' : 'Save rating'}</Button
 		>
 	</div>
-</section>
+</Card>

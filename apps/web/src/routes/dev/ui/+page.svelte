@@ -29,12 +29,15 @@
 	import * as Tabs from '$lib/shared/ui/tabs';
 	import * as Tooltip from '$lib/shared/ui/tooltip';
 	import * as Dialog from '$lib/shared/ui/dialog';
-	import * as Sheet from '$lib/shared/ui/sheet';
 	import * as Popover from '$lib/shared/ui/popover';
 	import * as DropdownMenu from '$lib/shared/ui/dropdown-menu';
 	import * as Avatar from '$lib/shared/ui/avatar';
 	import * as Command from '$lib/shared/ui/command';
 	import { ChipsInput } from '$lib/shared/ui/chips-input';
+	import { Card } from '$lib/shared/ui/card';
+	import { CopyButton } from '$lib/shared/ui/copy-button';
+	import { Stat } from '$lib/shared/ui/stat';
+	import UploadIcon from '@lucide/svelte/icons/upload';
 	import { ConflictCard } from '$lib/entities/brand';
 
 	let chips = $state(['javascript', 'careers']);
@@ -42,6 +45,7 @@
 
 	const tokens = [
 		['--bg-canvas', 'App background'],
+		['--bg-subtle', 'Inputs, table header, tab list'],
 		['--bg-surface', 'Sidebar, panels, cards'],
 		['--bg-elevated', 'Popovers, modals, hover rows'],
 		['--border', 'Default 1px border'],
@@ -49,11 +53,14 @@
 		['--text', 'Primary text'],
 		['--text-muted', 'Secondary text, metadata'],
 		['--accent', 'Primary button, focus, active nav, playhead'],
-		['--accent-fg', 'Text on yellow'],
+		['--accent-fg', 'Text on violet'],
+		['--accent-text', 'Violet text and links on dark'],
+		['--accent-subtle', 'Tinted violet fills'],
 		['--success', 'Done'],
 		['--danger', 'Failed, destructive'],
 		['--info', 'Processing'],
-		['--warning', 'Same as accent']
+		['--warning', 'Warnings'],
+		['--caption', 'Editor caption track']
 	] as const;
 	const sizes = [
 		['text-2xl', '24 · page titles (rare)'],
@@ -90,7 +97,8 @@
 	let slider = $state(40);
 	let date = $state<DateValue | undefined>();
 	let dialogOpen = $state(false);
-	let sheetOpen = $state(false);
+	let panelOpen = $state(false);
+	let fadeKey = $state(0);
 </script>
 
 {#snippet statusCell(r: Row)}<StatusBadge status={r.status} />{/snippet}
@@ -146,12 +154,44 @@
 
 	{@render section('Radius')}
 	<div class="flex gap-4">
-		{#each [['rounded-sm', '4 · inputs, badges'], ['rounded-md', '6 · buttons'], ['rounded-lg', '8 · panels, modals']] as [cls, label] (cls)}
+		{#each [['rounded-sm', '4 · inputs, badges'], ['rounded-md', '6 · buttons'], ['rounded-lg', '8 · popovers, menus'], ['rounded-xl', '12 · cards, dialogs']] as [cls, label] (cls)}
 			<div class="flex flex-col items-center gap-2">
 				<div class="size-16 border border-border-strong bg-surface {cls}"></div>
 				<span class="text-xs text-muted-foreground">{label}</span>
 			</div>
 		{/each}
+	</div>
+
+	{@render section('Gradients, glow, abstract backdrop')}
+	<div class="grid gap-3 sm:grid-cols-3">
+		<div
+			class="h-24 rounded-xl border bg-surface bg-gradient-surface p-3 text-xs text-muted-foreground"
+		>
+			bg-gradient-surface
+		</div>
+		<div class="flex h-24 flex-col justify-end rounded-xl border bg-surface p-3">
+			<div class="mb-2 h-0.5 w-16 rounded-full bg-gradient-accent"></div>
+			<span class="text-xs text-muted-foreground">bg-gradient-accent (thin marks only)</span>
+		</div>
+		<div class="flex h-24 items-center justify-center rounded-xl border bg-surface shadow-glow">
+			<span class="text-xs text-muted-foreground">shadow-glow</span>
+		</div>
+	</div>
+	<div class="relative mt-3 overflow-hidden rounded-xl border bg-surface bg-abstract p-8">
+		<h3 class="text-lg font-semibold tracking-tight">bg-abstract</h3>
+		<p class="text-muted-foreground">Behind page heroes, empty states, dropzones and login.</p>
+	</div>
+
+	{@render section('Motion')}
+	<div class="flex flex-wrap items-center gap-3">
+		{#key fadeKey}
+			<div class="animate-in-fade rounded-lg border bg-surface px-3 py-2 text-xs">
+				animate-in-fade
+			</div>
+		{/key}
+		<Button variant="outline" size="sm" onclick={() => fadeKey++}>Replay</Button>
+		<Skeleton class="h-8 w-40" />
+		<span class="text-xs text-muted-foreground">Skeleton shimmer</span>
 	</div>
 
 	{@render section('Buttons')}
@@ -165,6 +205,14 @@
 		<Button disabled>Disabled</Button>
 		<Button size="sm" variant="outline"><PlusIcon />Small</Button>
 		<Button size="icon" variant="ghost" aria-label="More"><EllipsisIcon /></Button>
+	</div>
+	<div class="mt-3 flex flex-wrap items-center gap-2">
+		<Button size="xs" variant="outline">xs</Button>
+		<Button size="sm" variant="outline">sm</Button>
+		<Button variant="outline">default</Button>
+		<Button size="lg" variant="outline">lg</Button>
+		<Button size="lg"><UploadIcon />Upload video</Button>
+		<Button href="/dev/ui" variant="outline">As link</Button>
 	</div>
 
 	{@render section('Form controls')}
@@ -209,6 +257,7 @@
 		{#each statuses as s (s)}<StatusBadge status={s} />{/each}
 	</div>
 	<div class="mt-3 flex flex-wrap gap-2">
+		<Badge variant="accent">Suggested</Badge>
 		<Badge variant="secondary">Secondary</Badge>
 		<Badge variant="outline">Outline</Badge>
 		<Badge variant="destructive">Destructive</Badge>
@@ -233,6 +282,34 @@
 			>Transcript tab content.</Tabs.Content
 		>
 	</Tabs.Root>
+	<Tabs.Root value="all" class="mt-4">
+		<Tabs.List variant="line">
+			<Tabs.Trigger value="all">All</Tabs.Trigger>
+			<Tabs.Trigger value="scheduled">Scheduled</Tabs.Trigger>
+			<Tabs.Trigger value="published">Published</Tabs.Trigger>
+		</Tabs.List>
+	</Tabs.Root>
+
+	{@render section('Card, stat, copy button')}
+	<div class="grid gap-4 sm:grid-cols-3">
+		<Card><Stat label="Clips made" value={128} delta={12} hint="vs last 7 days" /></Card>
+		<Card><Stat label="Avg. views" value="2.4k" delta={-3} /></Card>
+		<Card><Stat label="Scheduled" value={6} hint="next in 2 h" /></Card>
+	</div>
+	<div class="mt-4 grid gap-4 sm:grid-cols-2">
+		<Card title="Episode 42 — pricing" description="Uploaded 2 days ago · 1:02:05">
+			{#snippet actions()}
+				<StatusBadge status="done" />
+			{/snippet}
+			<div class="flex items-center gap-1 text-xs text-muted-foreground">
+				<span class="font-mono">job_8f2a91c4</span>
+				<CopyButton value="job_8f2a91c4" label="Copy job ID" />
+			</div>
+		</Card>
+		<Card href="/dev/ui" title="Clickable card" description="Whole card is a link; hover lifts it.">
+			<span class="text-xs text-muted-foreground">No nested links inside.</span>
+		</Card>
+	</div>
 
 	{@render section('Overlays')}
 	<div class="flex flex-wrap gap-2">
@@ -261,17 +338,29 @@
 			</Dialog.Content>
 		</Dialog.Root>
 
-		<Sheet.Root bind:open={sheetOpen}>
-			<Sheet.Trigger>
-				{#snippet child({ props })}<Button {...props} variant="outline">Sheet</Button>{/snippet}
-			</Sheet.Trigger>
-			<Sheet.Content>
-				<Sheet.Header>
-					<Sheet.Title>Clip details</Sheet.Title>
-					<Sheet.Description>Why this moment was picked.</Sheet.Description>
-				</Sheet.Header>
-			</Sheet.Content>
-		</Sheet.Root>
+		<Dialog.Root bind:open={panelOpen}>
+			<Dialog.Trigger>
+				{#snippet child({ props })}<Button {...props} variant="outline">Panel dialog</Button
+					>{/snippet}
+			</Dialog.Trigger>
+			<Dialog.Content size="lg">
+				<Dialog.Header>
+					<Dialog.Title>Clip details</Dialog.Title>
+					<Dialog.Description>Why this moment was picked.</Dialog.Description>
+				</Dialog.Header>
+				<Dialog.Body class="flex flex-col divide-y p-0 [&>section]:px-5 [&>section]:py-4">
+					{#each ['Hook', 'Reason', 'Transcript'] as h (h)}
+						<section class="flex flex-col gap-2">
+							<h3 class="text-xs font-medium text-muted-foreground">{h}</h3>
+							<p>Fixed header and footer; only this body scrolls.</p>
+						</section>
+					{/each}
+				</Dialog.Body>
+				<Dialog.Footer>
+					<Button variant="outline" onclick={() => (panelOpen = false)}>Close</Button>
+				</Dialog.Footer>
+			</Dialog.Content>
+		</Dialog.Root>
 
 		<Popover.Root>
 			<Popover.Trigger>

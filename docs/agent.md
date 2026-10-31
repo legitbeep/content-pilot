@@ -55,7 +55,7 @@ them. All AI goes through `generateJSON` (`docs/llm.md`) on the user's own key (
   `runStep` runs one step; `isDestructive(steps)` (any catalog op with `destructive`).
 
 ## Chat panel + voice (`agent-chat.svelte`)
-- Lives in the editor's right column (`AgentHost` = what it needs from `EditorState`). Messages,
+- Lives at the bottom of the editor's right column, under the properties tabs (`AgentHost` = what it needs from `EditorState`). Messages,
   a checklist card per plan (pending / done / failed ticks), "Also heard" chips, Confirm / Cancel
   for destructive plans, Retry from the failed step, Undo plan. Enter sends, Shift+Enter = newline.
   Send is wrapped in `<RequiresAI need="llm">`.

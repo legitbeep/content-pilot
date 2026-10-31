@@ -33,7 +33,7 @@ allowlisted accounts (`docs/llm.md`). `ANTHROPIC_API_KEY`, `CLAUDE_OAUTH_TOKEN` 
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | server | Presign browser uploads, HEAD/GET/DELETE objects. The bucket needs a CORS rule allowing `PUT` from the web origin(s) with any header |
 | `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET` | server | YouTube connect OAuth |
 | `YOUTUBE_REDIRECT_URI` | server | YouTube OAuth callback URL |
-| `YOUTUBE_FAKE` | server, **dev only** | `true` = Home recommendations read YouTube search/trending from recorded fixtures (`docs/performance.md`). Ignored outside `vite dev` (`dev &&` guard), so a production build can't use it |
+| `YOUTUBE_FAKE` | server, **dev only** | `true` = Home recommendations read YouTube search from a recorded fixture (`docs/performance.md`). Ignored outside `vite dev` (`dev &&` guard), so a production build can't use it |
 | `DEV_LOGIN` | server, **dev only** | `true` enables `/auth/dev-login` (test-user sign-in for agents) under `vite dev`. Ignored in production builds |
 | `DEV_LOGIN_EMAIL`, `DEV_LOGIN_PASSWORD` | server, dev only | Test user credentials. Defaults `dev@clip-studio.test` / `dev-login-password`. See `docs/auth-and-keys.md` |
 
@@ -48,6 +48,7 @@ Web code reads public vars through `$env/dynamic/public` (so a missing `.env` do
 | `SUPABASE_SECRET_KEY` | Secret key; bypasses RLS |
 | `DATABASE_URL` | Postgres for `FOR UPDATE SKIP LOCKED` claims. Use the Session pooler string from Supabase → Connect if your network has no IPv6 (the direct `db.` host is IPv6-only) |
 | `WORKER_CONCURRENCY` | Jobs processed at once (threads), default 1. Per-user cap of 2 is in the claim query |
+| `RENDER_CONCURRENCY` | Clip renders at once (threads), default 2 |
 | `ENCRYPTION_KEY` | Same value as web; decrypts BYOK keys + refresh tokens |
 | `DEMO_ALLOWED_EMAILS`, `DEMO_DAILY_JOB_LIMIT` | Same values as web; the worker checks the job owner's email in `auth.users` |
 | `GEMINI_API_KEY`, `GROQ_API_KEY` | Shared demo keys (allowlisted users only). Read only in `worker/llm/keys.py` |

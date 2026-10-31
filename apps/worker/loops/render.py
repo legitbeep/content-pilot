@@ -135,10 +135,15 @@ def run_once(clip_id: str) -> str:
     return process(clip) if clip else "failed: not queued (press Save in the editor first)"
 
 
-def loop() -> None:
+def requeue_interrupted() -> None:
+    """Startup only, before the render threads: renders cut off by a restart are re-queued."""
     # ponytail: assumes one worker process; with several, requeue only stale claims (claimed_at).
     with db.connect() as c:
         c.execute("update clips set render_status = 'queued' where render_status = 'rendering'")
+
+
+def loop() -> None:
+    """One render at a time; main.py starts RENDER_CONCURRENCY of these."""
     while True:
         try:
             clip = claim()

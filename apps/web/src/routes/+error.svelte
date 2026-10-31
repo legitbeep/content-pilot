@@ -19,6 +19,6 @@
 <svelte:head><title>Error {page.status} · Clip Studio</title></svelte:head>
 
 <main class="mx-auto flex w-full max-w-xl flex-col gap-4 px-6 py-24">
-	<h1 class="text-xl font-medium">Error {page.status}</h1>
+	<h1 class="text-xl font-semibold tracking-tight">Error {page.status}</h1>
 	<EmptyState icon={TriangleAlertIcon} {text} action={{ label: 'Go home', href: resolve('/') }} />
 </main>

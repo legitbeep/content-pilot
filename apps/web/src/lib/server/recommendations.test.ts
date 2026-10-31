@@ -36,8 +36,11 @@ vi.mock('./llm', () => ({
 	}
 }));
 
-const { recommend, searchCandidates } = await import('./recommendations');
-const profile = { niche: 'health', audience: 'students', core_topics: ['hygiene', 'habits'] };
+const { recommend, searchCandidates, searchTopics } = await import('./recommendations');
+const memory = {
+	memory: 'Niche: health\nCore topics: hygiene, habits',
+	topics: ['hygiene', 'habits']
+};
 
 beforeEach(() => {
 	state.connected = true;
@@ -49,36 +52,49 @@ beforeEach(() => {
 	];
 });
 
+describe('searchTopics', () => {
+	it('core topics first, then frequent clip topics, deduped, max 3', () => {
+		expect(searchTopics(['Hygiene'], ['sleep', 'hygiene', 'diet', 'sleep'], 'health')).toEqual([
+			'Hygiene',
+			'sleep',
+			'diet'
+		]);
+	});
+	it('falls back to the niche, and to nothing', () => {
+		expect(searchTopics([], [], 'health')).toEqual(['health']);
+		expect(searchTopics([], [], '')).toEqual([]);
+	});
+});
+
 describe('recommend', () => {
 	it('needs a YouTube connection', async () => {
 		state.connected = false;
-		expect(await recommend('u1', profile, null)).toBe('not_connected');
+		expect(await recommend('u1', memory)).toBe('not_connected');
 	});
 
-	it('searches CC long videos, adds trending titles, keeps only real candidates', async () => {
-		const r = await recommend('u1', profile, 'IN');
+	it('needs at least one topic', async () => {
+		expect(await recommend('u1', { memory: '', topics: [] })).toBe('no_topics');
+	});
+
+	it('searches CC long videos with brand memory, keeps only real candidates', async () => {
+		const r = await recommend('u1', memory);
 		expect(r).toEqual([
 			expect.objectContaining({
 				videoId: 'dQx1fake001',
 				license: 'Creative Commons',
-				url: 'https://www.youtube.com/watch?v=dQx1fake001'
+				url: 'https://www.youtube.com/watch?v=dQx1fake001',
+				thumbnail: 'https://i.ytimg.com/vi/dQx1fake001/mqdefault.jpg'
 			}),
 			expect.objectContaining({
 				videoId: 'dQx1fake005',
 				reason: 'Habit science fits your audience.'
 			})
 		]);
-		const sent = JSON.parse(state.prompts[0]);
-		expect(sent.trending_in_region).toContain('5 cleaning hacks your mom never told you');
-		expect(sent.candidates).toHaveLength(6); // deduped across the two topic searches
+		expect(state.prompts[0]).toContain('Core topics: hygiene, habits');
+		expect(state.prompts[0]).not.toContain('trending');
 	});
 
-	it('skips trending without a region', async () => {
-		await recommend('u1', profile, null);
-		expect(JSON.parse(state.prompts[0]).trending_in_region).toEqual([]);
-	});
-
-	it('asks YouTube for Creative Commons, long videos (real request shape)', async () => {
+	it('asks YouTube for global Creative Commons, long videos (real request shape)', async () => {
 		state.env.YOUTUBE_FAKE = '';
 		const urls: string[] = [];
 		vi.stubGlobal('fetch', async (u: string) => {
@@ -86,17 +102,23 @@ describe('recommend', () => {
 			return new Response(JSON.stringify({ items: [] }));
 		});
 		try {
-			await searchCandidates('tok', ['hygiene'], 'IN');
+			await searchCandidates('tok', ['hygiene', 'habits']);
 		} finally {
 			vi.unstubAllGlobals();
 			state.env.YOUTUBE_FAKE = 'true';
 		}
+		expect(urls).toHaveLength(2); // one search per topic, no trending call
 		const search = new URL(urls[0]);
 		expect(search.pathname).toBe('/youtube/v3/search');
 		expect(search.searchParams.get('videoLicense')).toBe('creativeCommon');
 		expect(search.searchParams.get('videoDuration')).toBe('long');
 		expect(search.searchParams.get('type')).toBe('video');
-		expect(new URL(urls[1]).searchParams.get('chart')).toBe('mostPopular');
+		expect(search.searchParams.has('regionCode')).toBe(false);
+		expect(search.searchParams.has('relevanceLanguage')).toBe(false);
+	});
+
+	it('dedupes candidates across topic searches', async () => {
+		expect(await searchCandidates('tok', ['hygiene', 'habits'])).toHaveLength(6);
 	});
 
 	it('ignores YOUTUBE_FAKE in a production build (dev=false)', async () => {
@@ -107,7 +129,7 @@ describe('recommend', () => {
 			return new Response(JSON.stringify({ items: [] }));
 		});
 		try {
-			await searchCandidates('tok', ['hygiene'], 'IN');
+			await searchCandidates('tok', ['hygiene']);
 		} finally {
 			vi.unstubAllGlobals();
 			state.dev = true;

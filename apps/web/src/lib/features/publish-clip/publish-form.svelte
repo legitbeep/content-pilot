@@ -1,11 +1,10 @@
 <script lang="ts">
-	import { untrack } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import { toast } from 'svelte-sonner';
 	import CopyIcon from '@lucide/svelte/icons/copy';
-	import SparklesIcon from '@lucide/svelte/icons/sparkles';
-	import { RequiresAI } from '$lib/entities/api-key';
 	import { Button } from '$lib/shared/ui/button';
 	import { Input } from '$lib/shared/ui/input';
 	import { Label } from '$lib/shared/ui/label';
@@ -25,7 +24,7 @@
 	} = $props();
 
 	// Editable copies of the prefilled captions; the parent re-mounts this per clip ({#key}).
-	// "Generate captions" replaces `captions` with LLM copy; edits against it are logged.
+	// On mount, LLM copy replaces `captions` (when an LLM key exists); edits against it are logged.
 	let captions = $state<Record<Platform, Caption>>(untrack(() => clip.captions));
 	const yt = $derived(captions.youtube);
 	let copyText = $state<Record<Platform, string>>({
@@ -54,6 +53,10 @@
 		for (const p of platforms) copyText[p.id] = captions[p.id].description;
 	});
 
+	onMount(() => {
+		if (page.data.ai?.llm) void generate();
+	});
+
 	async function generate() {
 		generating = true;
 		try {
@@ -61,7 +64,6 @@
 				clip_id: clip.id
 			});
 			captions = r.captions;
-			toast.success('Captions written from your brand memory.');
 		} catch (e) {
 			toast.error(e instanceof Error ? e.message : 'Could not write captions.');
 		} finally {
@@ -110,16 +112,11 @@
 </script>
 
 <div class="flex flex-col gap-4">
-	<div>
-		<RequiresAI need="llm">
-			{#snippet children({ disabled })}
-				<Button variant="outline" onclick={generate} disabled={disabled || generating}>
-					<SparklesIcon />
-					{generating ? 'Writing captions…' : 'Generate captions'}
-				</Button>
-			{/snippet}
-		</RequiresAI>
-	</div>
+	{#if generating}
+		<p class="text-xs text-muted-foreground" aria-live="polite">
+			Writing captions from your brand memory…
+		</p>
+	{/if}
 	<div class="flex flex-wrap gap-4">
 		{#each platforms as p (p.id)}
 			<label class="flex items-center gap-2">
@@ -134,13 +131,15 @@
 		{/each}
 	</div>
 
-	{#if enabled.youtube && youtube}
+	{#if enabled.youtube || !youtube}
 		<div class="flex flex-col gap-3 rounded-lg border p-4">
 			<div class="flex items-center justify-between">
 				<span class="font-medium">YouTube</span>
-				<span class="text-xs text-muted-foreground"
-					>as {youtube.account_name ?? 'your channel'}</span
-				>
+				{#if youtube}
+					<span class="text-xs text-muted-foreground"
+						>as {youtube.account_name ?? 'your channel'}</span
+					>
+				{/if}
 			</div>
 			<div class="flex flex-col gap-1.5">
 				<Label for="yt-title">Title</Label>
@@ -154,33 +153,40 @@
 				<Label for="yt-tags">Tags</Label>
 				<Input id="yt-tags" bind:value={tags} placeholder="Comma separated" />
 			</div>
-			<div class="flex flex-wrap items-center gap-4">
-				<label class="flex items-center gap-2">
-					<input type="radio" bind:group={mode} value="now" class="accent-primary" /> Post now
-				</label>
-				<label class="flex items-center gap-2">
-					<input type="radio" bind:group={mode} value="schedule" class="accent-primary" /> Schedule
-				</label>
-				{#if mode === 'schedule'}
-					<Input type="datetime-local" bind:value={at} class="w-auto" aria-label="Date and time" />
-					<span class="text-xs text-muted-foreground">{tz}</span>
-				{/if}
-			</div>
-			<p class="text-xs text-muted-foreground">
-				Uploads are private while our Google app is unverified. Make the video public in YouTube
-				Studio.
-			</p>
-			<div>
-				<Button onclick={submit} disabled={busy || !title.trim()}>
-					{mode === 'now' ? 'Post now' : 'Schedule'}
-				</Button>
-			</div>
+			{#if youtube}
+				<div class="flex flex-wrap items-center gap-4">
+					<label class="flex items-center gap-2">
+						<input type="radio" bind:group={mode} value="now" class="accent-primary" /> Post now
+					</label>
+					<label class="flex items-center gap-2">
+						<input type="radio" bind:group={mode} value="schedule" class="accent-primary" /> Schedule
+					</label>
+					{#if mode === 'schedule'}
+						<Input
+							type="datetime-local"
+							bind:value={at}
+							class="w-auto"
+							aria-label="Date and time"
+						/>
+						<span class="text-xs text-muted-foreground">{tz}</span>
+					{/if}
+				</div>
+				<p class="text-xs text-muted-foreground">
+					Uploads are private while our Google app is unverified. Make the video public in YouTube
+					Studio.
+				</p>
+				<div>
+					<Button onclick={submit} disabled={busy || !title.trim()}>
+						{mode === 'now' ? 'Post now' : 'Schedule'}
+					</Button>
+				</div>
+			{:else}
+				<p class="text-sm text-muted-foreground">
+					Connect YouTube to post or schedule.
+					<a href={resolve('/settings')} class="underline">Open Settings</a>
+				</p>
+			{/if}
 		</div>
-	{:else if !youtube}
-		<p class="rounded-lg border p-4 text-muted-foreground">
-			Connect YouTube to post or schedule.
-			<a href={resolve('/settings')} class="underline">Open Settings</a>
-		</p>
 	{/if}
 
 	{#each platforms.filter((p) => !p.autoPost && enabled[p.id]) as p (p.id)}

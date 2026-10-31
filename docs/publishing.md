@@ -54,7 +54,7 @@ fails at token refresh (no real upload). Clean removes it.
 description (≤ 100 chars, `<`/`>` stripped since YouTube rejects them), description = clip
 description + CTA (default "Follow for more.") + hashtags (default `#shorts #creator`), tags =
 hashtags without `#`. X is cut to 280 chars. `brand` (`{cta?, hashtags?}`) is passed as null until
-brand memory feeds it. Plan 9: the publish page passes the brand's `default_cta` + `default_hashtags`, and "Generate captions" swaps in LLM copy for every platform (`docs/performance.md`).
+brand memory feeds it. Plan 9: the publish page passes the brand's `default_cta` + `default_hashtags`, and LLM copy is generated on page load and swapped in for every platform (`docs/performance.md`).
 
 ## Publish page (`/publish`)
 - Lists clips with `render_path` and no YouTube post in `scheduled|publishing|posted` (RLS).

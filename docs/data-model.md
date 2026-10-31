@@ -21,7 +21,7 @@ orchestrator runs `npx supabase db push --include-all` on main after merging.
 
 ## RLS summary
 - **Own rows** (`user_id = auth.uid()`, all ops): profiles, brand_profile, brand_rules, jobs,
-  clips, clip_feedback, timelines, edit_events, learn_cursor, posts, post_metrics, baseline_seeds, ai_settings. Read-only own rows: llm_calls.
+  clips, clip_feedback, timelines, edit_events, learn_cursor, posts, post_metrics, baseline_seeds, ai_settings, recommendations. Read-only own rows: llm_calls.
 - **Service role only** (RLS on, no policies): `demo_usage`; `user_keys`, `platform_connections` — hold
   ciphertext. Owners read safe columns via views `user_keys_public`
   (provider, last4, validated_at, invalid_at, created_at) and `platform_connections_public`
@@ -58,6 +58,7 @@ orchestrator runs `npx supabase db push --include-all` on main after merging.
 | post_checkpoints | post_id, checkpoint, due_at, claimed_at, attempts, done_at, error | unique (post_id, checkpoint); trigger `posts_create_checkpoints` adds 48h/7d/14d/30d when a post is `posted`. Own rows. `docs/performance.md` |
 | feature_weights | (user_id, feature) pk, weight, samples, updated_at | Learned ranking weights. Own rows. `docs/performance.md` |
 | change_log | kind, feature, message, data jsonb, created_at | Learning events for Home insight cards. Own rows. `docs/performance.md` |
+| recommendations | user_id (pk), items jsonb, created_at | Latest Home long-form recommendations batch (`Recommendation[]`: videoId, title, channel, license, reason, url, thumbnail); a refresh upserts it. Own rows. `docs/performance.md` |
 
 Indexes: `brand_rules_user_status_idx`, `llm_calls_user_created_idx` (usage summary), `jobs_claim_idx` (pending by position), `jobs_user_processing_idx` (per-user processing count), `jobs_cleanup_idx` (done, source not yet deleted), `posts_due_idx` (scheduled by time), `post_checkpoints_due_idx` (open checkpoints by due time), `change_log_user_idx`, `clips_render_queue_idx` (queued renders), `edit_events_clip_idx`.
 

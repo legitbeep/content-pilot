@@ -22,11 +22,15 @@
 
 <PageHeader title="Queue" description="Long videos being transcribed, checked and clipped." />
 
-<div class="flex flex-col gap-6">
+<div class="flex flex-col gap-8">
 	<UploadVideo />
 	{#if data.jobs.length}
 		<JobQueue jobs={data.jobs} />
 	{:else}
-		<EmptyState icon={ListVideoIcon} text="No videos yet. Upload a long video to find clips." />
+		<EmptyState
+			backdrop={false}
+			icon={ListVideoIcon}
+			text="No videos yet. Upload a long video above and we'll transcribe it and find the best clips."
+		/>
 	{/if}
 </div>

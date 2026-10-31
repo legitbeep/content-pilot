@@ -1,20 +1,28 @@
 <script lang="ts">
-	import PlayIcon from '@lucide/svelte/icons/play';
-	import PauseIcon from '@lucide/svelte/icons/pause';
-	import MaximizeIcon from '@lucide/svelte/icons/maximize';
-	import Volume2Icon from '@lucide/svelte/icons/volume-2';
-	import VolumeXIcon from '@lucide/svelte/icons/volume-x';
+	import AudioLinesIcon from '@lucide/svelte/icons/audio-lines';
+	import CaptionsIcon from '@lucide/svelte/icons/captions';
+	import DeleteIcon from '@lucide/svelte/icons/delete';
+	import FilmIcon from '@lucide/svelte/icons/film';
+	import FlagTriangleLeftIcon from '@lucide/svelte/icons/flag-triangle-left';
+	import FlagTriangleRightIcon from '@lucide/svelte/icons/flag-triangle-right';
+	import MicIcon from '@lucide/svelte/icons/mic';
+	import MusicIcon from '@lucide/svelte/icons/music';
+	import ScissorsIcon from '@lucide/svelte/icons/scissors';
+	import TypeIcon from '@lucide/svelte/icons/type';
+	import XIcon from '@lucide/svelte/icons/x';
 	import { captionChunks, type Word } from '$lib/entities/timeline';
-	import { Button } from '$lib/shared/ui/button';
+	import type { EditorAction } from '$lib/shared/config';
 	import { Timecode } from '$lib/shared/ui/timecode';
 	import { cn } from '$lib/shared/lib/utils';
 	import { CLIP_DRAG_TYPE, type EditorState } from './editor-state.svelte';
+	import ToolButton from './tool-button.svelte';
 
 	let {
 		editor,
 		wordsByKey,
 		sourceName,
-		ondrop
+		ondrop,
+		onaction
 	}: {
 		editor: EditorState;
 		wordsByKey: Record<string, Word[]>;
@@ -22,6 +30,7 @@
 		sourceName: string;
 		/** A session clip id or a file dropped at output time `time`; `at` = segment index there. */
 		ondrop: (d: { clipId?: string; file?: File; time: number; at: number }) => void;
+		onaction: (a: EditorAction) => void;
 	} = $props();
 
 	const PX_PER_S = 40; // below this the lanes scroll instead of squeezing
@@ -107,78 +116,81 @@
 		for (const file of e.dataTransfer?.files ?? []) ondrop({ file, time, at });
 	}
 
-	function fullscreen() {
-		const el = document.getElementById('editor-preview');
-		if (document.fullscreenElement) void document.exitFullscreen();
-		else void el?.requestFullscreen();
-	}
-
+	const marked = $derived(editor.markIn !== null || editor.markOut !== null);
 	const laneLabels = $derived([
-		{ label: 'Video', h: 'h-7' },
-		{ label: 'Original audio', h: 'h-7' },
-		...t.audio.map((a) => ({ label: a.id.replace('-', ' '), h: 'h-7' })),
-		{ label: 'Captions', h: 'h-10' },
-		{ label: 'Text and blur', h: 'h-7' }
+		{ label: 'Video', icon: FilmIcon, h: 'h-8' },
+		{ label: 'Original audio', icon: AudioLinesIcon, h: 'h-8' },
+		...t.audio.map((a) => ({
+			label: a.id.replace('-', ' '),
+			icon: a.kind === 'music' ? MusicIcon : MicIcon,
+			h: 'h-8'
+		})),
+		{ label: 'Captions', icon: CaptionsIcon, h: 'h-10' },
+		{ label: 'Text and blur', icon: TypeIcon, h: 'h-8' }
 	]);
+	const selectedSeg = (i: number) =>
+		editor.selected?.kind === 'segment' && editor.selected.index === i;
+	const selectedAudio = (id: string) =>
+		editor.selected?.kind === 'audio' && editor.selected.id === id;
 </script>
 
-<div class="flex flex-col gap-2 rounded-lg border bg-surface p-3">
-	<div class="flex items-center gap-1 text-xs text-muted-foreground">
-		<Button
-			size="icon-sm"
-			variant="ghost"
-			aria-label={editor.playing ? 'Pause' : 'Play'}
-			onclick={() => (editor.playing = !editor.playing)}
+<div class="flex flex-col rounded-xl border bg-surface">
+	<div class="flex h-10 items-center gap-1 border-b px-2 text-xs text-muted-foreground">
+		<ToolButton label="Split at playhead" action="split" onclick={() => onaction('split')}>
+			<ScissorsIcon />
+		</ToolButton>
+		<ToolButton label="Mark in" action="mark_in" onclick={() => onaction('mark_in')}>
+			<FlagTriangleRightIcon />
+		</ToolButton>
+		<ToolButton label="Mark out" action="mark_out" onclick={() => onaction('mark_out')}>
+			<FlagTriangleLeftIcon />
+		</ToolButton>
+		<ToolButton
+			label={marked ? 'Delete marked range' : 'Delete selected segment'}
+			action="delete"
+			disabled={!marked && editor.selected?.kind !== 'segment'}
+			onclick={() => onaction('delete')}
 		>
-			{#if editor.playing}<PauseIcon />{:else}<PlayIcon />{/if}
-		</Button>
-		<span class="font-mono tabular-nums">
-			<Timecode seconds={editor.playhead} /> / <Timecode seconds={editor.total} />
-		</span>
-		{#if editor.markIn !== null || editor.markOut !== null}
-			<span class="ml-2">
+			<DeleteIcon />
+		</ToolButton>
+		{#if marked}
+			<span
+				class="ml-2 inline-flex h-6 animate-in-fade items-center gap-1 rounded-sm bg-elevated pr-0.5 pl-2"
+			>
 				Marked
-				<Timecode seconds={editor.markIn ?? 0} />–<Timecode
-					seconds={editor.markOut ?? editor.total}
-				/>
+				<span class="font-mono text-foreground tabular-nums">
+					<Timecode seconds={editor.markIn ?? 0} />–<Timecode
+						seconds={editor.markOut ?? editor.total}
+					/>
+				</span>
+				<ToolButton
+					label="Clear marks"
+					size="icon-xs"
+					onclick={() => (editor.markIn = editor.markOut = null)}
+				>
+					<XIcon />
+				</ToolButton>
 			</span>
 		{/if}
 		<span class="flex-1"></span>
-		<Button
-			size="icon-sm"
-			variant="ghost"
-			aria-label={editor.previewMuted ? 'Unmute preview' : 'Mute preview'}
-			onclick={() => (editor.previewMuted = !editor.previewMuted)}
-		>
-			{#if editor.previewMuted || editor.volume === 0}<VolumeXIcon />{:else}<Volume2Icon />{/if}
-		</Button>
-		<input
-			type="range"
-			min="0"
-			max="1"
-			step="0.05"
-			class="w-20 accent-primary"
-			aria-label="Preview volume"
-			bind:value={editor.volume}
-			oninput={() => (editor.previewMuted = false)}
-		/>
-		<Button size="icon-sm" variant="ghost" aria-label="Full screen" onclick={fullscreen}>
-			<MaximizeIcon />
-		</Button>
+		<span>Drop clips, video or audio files onto the timeline</span>
 	</div>
 
-	<div class="grid grid-cols-[6rem_minmax(0,1fr)]">
+	<div class="grid grid-cols-[8.5rem_minmax(0,1fr)] gap-2 p-2">
 		<div class="flex flex-col gap-1 pt-5">
 			{#each laneLabels as l (l.label)}
-				<div class="flex {l.h} items-center truncate pr-2 text-xs text-muted-foreground">
-					{l.label}
+				<div
+					class="flex {l.h} items-center gap-2 rounded-md bg-subtle px-2 text-xs text-muted-foreground"
+				>
+					<l.icon class="size-3.5 shrink-0" />
+					<span class="truncate first-letter:uppercase">{l.label}</span>
 				</div>
 			{/each}
 		</div>
 		<!-- Scrolls sideways once the clip is longer than fits; scrollbar sits under the lanes. -->
-		<div bind:this={scroller} class="overflow-x-auto pb-2">
+		<div bind:this={scroller} class="overflow-x-auto pb-1">
 			<div class="flex flex-col gap-1" style:width="max(100%, {total * PX_PER_S}px)">
-				<div class="relative h-4 font-mono text-[11px] text-muted-foreground">
+				<div class="relative h-4 font-mono text-[11px] text-muted-foreground/70 tabular-nums">
 					{#each ticks as s (s)}
 						<span class="absolute -translate-x-1/2 first:translate-x-0" style:left={pct(s)}
 							>{s}s</span
@@ -189,8 +201,8 @@
 				<div
 					bind:this={lanes}
 					class={cn(
-						'relative flex cursor-text touch-none flex-col gap-1 rounded-sm select-none',
-						dropping && 'ring-2 ring-primary'
+						'relative flex cursor-text touch-none flex-col gap-1 rounded-md transition-shadow select-none',
+						dropping && 'bg-accent-subtle ring-2 ring-primary'
 					)}
 					onpointerdown={down}
 					onpointermove={move}
@@ -206,18 +218,22 @@
 					}}
 					ondrop={drop}
 				>
-					<div class="relative h-7">
+					<div class="relative h-8">
 						{#each segs as s (s.i)}
 							<button
 								type="button"
 								data-seg={s.i}
 								class={cn(
-									'absolute inset-y-0 truncate rounded-sm border bg-elevated px-1.5 text-left text-xs',
-									s.merged && 'bg-muted',
-									editor.selected?.kind === 'segment' && editor.selected.index === s.i
-										? 'border-primary'
-										: 'border-border-strong'
+									'absolute inset-y-0 truncate rounded-md border px-2 text-left text-xs font-medium transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
+									selectedSeg(s.i)
+										? 'border-primary bg-accent-subtle ring-1 ring-primary'
+										: cn(
+												'border-border-strong hover:border-muted-foreground/50',
+												s.merged ? 'bg-border' : 'bg-elevated'
+											)
 								)}
+								aria-label="Segment {s.i + 1}"
+								aria-pressed={selectedSeg(s.i)}
 								style:left={pct(s.start)}
 								style:width={pct(s.len)}
 								onclick={() => (editor.selected = { kind: 'segment', index: s.i })}
@@ -226,27 +242,30 @@
 							</button>
 						{/each}
 					</div>
-					<div class="relative h-7">
+					<div class="relative h-8">
 						<div
 							class={cn(
-								'absolute inset-0 rounded-sm border border-border bg-elevated/60',
+								'absolute inset-0 rounded-md border border-border bg-elevated/60',
 								t.originalAudio.muted && 'opacity-40'
 							)}
 						></div>
 					</div>
 					{#each t.audio as a (a.id)}
 						{@const len = Math.min(editor.durations[a.key] ?? total, total - a.start)}
-						<div class="relative h-7">
+						<div class="relative h-8">
 							<button
 								type="button"
 								data-audio={a.id}
-								aria-label={a.id}
+								aria-label={a.id.replace('-', ' ')}
+								aria-pressed={selectedAudio(a.id)}
 								class={cn(
-									'absolute inset-y-0 rounded-sm border',
-									a.kind === 'music' ? 'bg-success/15' : 'bg-info/15',
+									'absolute inset-y-0 rounded-md border transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
+									a.kind === 'music'
+										? 'bg-success/15 hover:bg-success/25'
+										: 'bg-info/15 hover:bg-info/25',
 									a.muted && 'opacity-40',
-									editor.selected?.kind === 'audio' && editor.selected.id === a.id
-										? 'border-primary'
+									selectedAudio(a.id)
+										? 'border-primary ring-1 ring-primary'
 										: a.kind === 'music'
 											? 'border-success/40'
 											: 'border-info/40'
@@ -261,7 +280,7 @@
 					     kept segments, so cutting/reordering the video moves the captions with it. -->
 					<div
 						class={cn(
-							'relative h-10 overflow-hidden rounded-sm border border-caption/50 bg-caption/15',
+							'relative h-10 overflow-hidden rounded-md border border-caption/40 bg-caption/10',
 							!t.captions.enabled && 'opacity-40'
 						)}
 					>
@@ -282,10 +301,10 @@
 							</div>
 						{/each}
 					</div>
-					<div class="relative h-7">
+					<div class="relative h-8">
 						{#each t.textOverlays as o, i (i)}
 							<div
-								class="absolute inset-y-1 truncate rounded-sm border border-border-strong px-1 text-[11px] leading-4"
+								class="absolute inset-y-1 truncate rounded-md border border-border-strong bg-elevated px-1.5 text-[11px] leading-5"
 								style:left={pct(o.start)}
 								style:width={pct(o.end - o.start)}
 							>
@@ -294,7 +313,7 @@
 						{/each}
 						{#each t.blurRegions as b, i (i)}
 							<div
-								class="absolute inset-y-1 rounded-sm border border-dashed border-border-strong px-1 text-[11px] leading-4 text-muted-foreground"
+								class="absolute inset-y-1 rounded-md border border-dashed border-border-strong px-1.5 text-[11px] leading-5 text-muted-foreground"
 								style:left={pct(b.start)}
 								style:width={pct(b.end - b.start)}
 							>
@@ -302,17 +321,22 @@
 							</div>
 						{/each}
 					</div>
-					{#if editor.markIn !== null || editor.markOut !== null}
+					{#if marked}
 						<div
-							class="pointer-events-none absolute inset-y-0 bg-foreground/10"
+							class="pointer-events-none absolute inset-y-0 border-x border-accent/60 bg-accent-subtle"
 							style:left={pct(editor.markIn ?? 0)}
 							style:width={pct((editor.markOut ?? editor.total) - (editor.markIn ?? 0))}
 						></div>
 					{/if}
+					<!-- Playhead: line through the lanes, head on the ruler. -->
 					<div
-						class="pointer-events-none absolute inset-y-0 w-0.5 -translate-x-1/2 bg-primary"
+						class="pointer-events-none absolute -top-5 bottom-0 w-0.5 -translate-x-1/2 bg-primary"
 						style:left={pct(editor.playhead)}
-					></div>
+					>
+						<div
+							class="absolute top-0 left-1/2 h-3 w-2.5 -translate-x-1/2 rounded-b-sm bg-primary"
+						></div>
+					</div>
 				</div>
 			</div>
 		</div>

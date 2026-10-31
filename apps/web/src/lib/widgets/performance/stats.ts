@@ -61,11 +61,17 @@ export function homeStats(posts: HomePost[], metrics: HomeMetric[], now = new Da
 		['> 3x', (s) => s > 3]
 	];
 	const scores = [...latest.values()].map((m) => m.score);
+	const known = scores.filter((s): s is number => s !== null);
 	const scoreDist: Bar[] = buckets.map(([l, f]) => ({
 		label: l,
-		value: scores.filter((s): s is number => s !== null && f(s)).length
+		value: known.filter(f).length
 	}));
 	return {
+		totals: {
+			posts: posts.length,
+			views: posts.reduce((n, p) => n + (latest.get(p.id)?.views ?? 0), 0),
+			avgScore: known.length ? known.reduce((a, b) => a + b, 0) / known.length : null
+		},
 		viewsByWeek,
 		postsByWeek,
 		top,

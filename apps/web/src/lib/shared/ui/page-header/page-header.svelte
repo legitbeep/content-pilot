@@ -5,10 +5,10 @@
 		$props();
 </script>
 
-<header class="flex items-start justify-between gap-4 pb-6">
-	<div class="min-w-0">
-		<h1 class="text-xl font-semibold">{title}</h1>
-		{#if description}<p class="mt-1 text-muted-foreground">{description}</p>{/if}
+<header class="flex animate-in-fade flex-wrap items-start justify-between gap-x-4 gap-y-3 pb-6">
+	<div class="min-w-0 flex-[1_1_16rem]">
+		<h1 class="text-xl font-semibold tracking-tight">{title}</h1>
+		{#if description}<p class="mt-1 max-w-prose text-muted-foreground">{description}</p>{/if}
 	</div>
-	{#if actions}<div class="flex shrink-0 items-center gap-2">{@render actions()}</div>{/if}
+	{#if actions}<div class="flex flex-wrap items-center gap-2">{@render actions()}</div>{/if}
 </header>

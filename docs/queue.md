@@ -43,12 +43,12 @@ queue form action loads the job and checks `can(status, action)` first, then wri
 ## Actions by state (Queue page)
 | State | Actions |
 |---|---|
-| pending | drag to reorder, edit request (details sheet), delete |
+| pending | drag to reorder, edit request (details dialog), delete |
 | processing | stop |
-| needs_input | open question (details sheet): one-click options from `input_request.options`, free text when `allow_text`, flagged time ranges (nsfw); "Cancel" deletes the job; delete |
+| needs_input | open question (details dialog): one-click options from `input_request.options`, free text when `allow_text`, flagged time ranges (nsfw); "Cancel" deletes the job; delete |
 | done | open clips (`/clips/<id>`, the Clip Picker) |
 | stopped | re-queue, delete |
-| failed | retry, delete, error shown in the details sheet (user message + "Show details") |
+| failed | retry, delete, error shown in the details dialog (user message + "Show details") |
 
 Delete removes the row and, best effort, the R2 source and transcript objects.
 
@@ -73,17 +73,31 @@ Video bytes never touch SvelteKit. Three steps, all from the browser:
    `<RequiresAI>` (`docs/llm.md`).
    No job row exists until the upload succeeded.
 
+UI (`upload-video.svelte`, no props): a keyboard-focusable dropzone (`bg-abstract`, dashed; drag-over
+turns it `border-accent bg-accent-subtle`) with formats/limits hint and **Browse files**; a picked
+file shows name, size and duration with Change/Remove; while uploading, a `role="progressbar"`
+bar + percent; errors show inline (`role="alert"`); success shows "Added to the queue" in the
+dropzone until the next pick. There is no cancel (the XHR isn't abortable from the UI yet).
+
 Requires CORS on the R2 bucket allowing `PUT` from the web origin (`docs/env.md`).
 
 ## Queue page (`$lib/widgets/job-queue`)
-Linear-style list (not cards). Row: drag handle (pending only), thumbnail placeholder, file name,
-request snippet, step + progress bar while processing, duration (`Timecode`), `StatusBadge`,
-created time, the state's main action. Pending jobs first in queue order, then the rest newest
-first. Row click / Enter opens the **details sheet**: info, request (editable while pending),
-question + answer (needs_input), error, step history (`jobs.steps`), and the transcript preview
-(utterances with timecodes, and speaker labels when the provider gives them — Groq Whisper doesn't; from `GET /queue/<id>/transcript`).
+Linear-style list in one bordered surface (not cards). Row: drag handle (pending only), film icon
+tile, title + `CopyButton` for the job ID (on hover/focus), a second line (step + progress bar
+while processing, the wait reason, clip count for done (`clips(count)` in the load, `jobs.clip_count`),
+the error for failed, else the request), duration (whole-seconds `Timecode`), created time,
+`StatusBadge` (`aria-live`), the state's main action (icon + label) and an icon delete. The
+selected row gets `bg-elevated` + a violet left bar. Pending jobs first in queue order, then the
+rest newest first. Row click / Enter opens the **details dialog** (`Dialog.Content size="xl"`): fixed header with
+status + truncated job ID + copy, fixed footer with the state's actions, and a scrolling body of
+divided sections: progress (processing), error callout (user message + "Show details"), question
+callout (needs_input), details + steps side by side (`jobs.steps`, status icons), request (editable
+while pending) and the transcript in its own scroll area (from `GET /queue/<id>/transcript`): utterances
+grouped into 5-second paragraphs by `groupTranscript` (`widgets/job-queue/format.ts`, bucket =
+floor(start/5)·5, empty buckets skipped) with whole-seconds times, a search filter and a copy
+button. Speaker labels aren't shown (paragraphs can mix speakers).
 
-Keyboard (in `$lib/shared/config/shortcuts.ts`, shown in the `?` sheet): `J`/`K` move the
+Keyboard (in `$lib/shared/config/shortcuts.ts`, shown in the `?` dialog): `J`/`K` move the
 selection, `Enter` opens details, `Backspace` deletes (with a confirm dialog).
 
 **Live updates**: the page re-runs its load (`invalidate('app:jobs')`) every 3 s while any job is

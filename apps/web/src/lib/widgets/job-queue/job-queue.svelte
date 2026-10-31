@@ -1,11 +1,19 @@
 <script lang="ts">
 	import FilmIcon from '@lucide/svelte/icons/film';
 	import GripVerticalIcon from '@lucide/svelte/icons/grip-vertical';
+	import SquareIcon from '@lucide/svelte/icons/square';
+	import RotateCcwIcon from '@lucide/svelte/icons/rotate-ccw';
+	import ListRestartIcon from '@lucide/svelte/icons/list-restart';
+	import MessageCircleQuestionIcon from '@lucide/svelte/icons/message-circle-question-mark';
+	import ScissorsIcon from '@lucide/svelte/icons/scissors';
+	import TrashIcon from '@lucide/svelte/icons/trash-2';
 	import { invalidate } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { toast } from 'svelte-sonner';
 	import { Button } from '$lib/shared/ui/button';
+	import { CopyButton } from '$lib/shared/ui/copy-button';
 	import * as Dialog from '$lib/shared/ui/dialog';
+	import * as Kbd from '$lib/shared/ui/kbd';
 	import { StatusBadge } from '$lib/shared/ui/status-badge';
 	import { Timecode } from '$lib/shared/ui/timecode';
 	import { queueKeys } from '$lib/shared/config';
@@ -81,89 +89,150 @@
 
 <svelte:window {onkeydown} />
 
-<ul class="divide-y rounded-lg border" aria-label="Jobs" role="listbox">
-	{#each rows as job, i (job.id)}
-		{@const pending = job.status === 'pending'}
-		<li
-			id="job-{job.id}"
-			class={cn(
-				'group flex h-12 cursor-default items-center gap-3 px-3 hover:bg-elevated',
-				i === selected && 'bg-elevated',
-				dragId === job.id && 'opacity-50'
-			)}
-			draggable={pending}
-			ondragstart={() => (dragId = job.id)}
-			ondragend={() => (dragId = null)}
-			ondragover={(e) => pending && dragId && e.preventDefault()}
-			ondrop={() => drop(job.id)}
-			onclick={(e) => {
-				selected = i;
-				// Row buttons (stop, retry, delete…) act on their own; anywhere else opens details.
-				if (!(e.target as HTMLElement).closest('button, a')) openId = job.id;
-			}}
-			onkeydown={() => {}}
-			role="option"
-			tabindex="-1"
-			aria-selected={i === selected}
-		>
-			<GripVerticalIcon
-				class={cn('size-4 shrink-0 text-muted-foreground', pending ? 'cursor-grab' : 'invisible')}
-			/>
-			<div class="flex size-8 shrink-0 items-center justify-center rounded-sm bg-elevated">
-				<FilmIcon class="size-4 text-muted-foreground" />
-			</div>
-			<div class="flex min-w-0 flex-1 items-baseline gap-2">
-				<span class="truncate">{job.title ?? 'Untitled video'}</span>
-				{#if job.request}
-					<span class="truncate text-muted-foreground">{job.request}</span>
+<div class="flex flex-col gap-2">
+	<ul
+		class="animate-in-fade divide-y overflow-hidden rounded-xl border bg-surface bg-gradient-surface"
+		aria-label="Jobs"
+		role="listbox"
+	>
+		{#each rows as job, i (job.id)}
+			{@const pending = job.status === 'pending'}
+			{@const duration = job.media?.duration_s ?? job.duration_s}
+			<li
+				id="job-{job.id}"
+				class={cn(
+					'group relative flex min-h-16 cursor-default items-center gap-3 px-3 py-2.5 transition-colors hover:bg-elevated/60',
+					i === selected && 'bg-elevated',
+					dragId === job.id && 'opacity-50'
+				)}
+				draggable={pending}
+				ondragstart={() => (dragId = job.id)}
+				ondragend={() => (dragId = null)}
+				ondragover={(e) => pending && dragId && e.preventDefault()}
+				ondrop={() => drop(job.id)}
+				onclick={(e) => {
+					selected = i;
+					// Row buttons (stop, retry, copy, delete…) act on their own; anywhere else opens details.
+					if (!(e.target as HTMLElement).closest('button, a')) openId = job.id;
+				}}
+				onkeydown={() => {}}
+				role="option"
+				tabindex="-1"
+				aria-selected={i === selected}
+			>
+				{#if i === selected}
+					<span class="absolute inset-y-2 left-0 w-0.5 rounded-full bg-accent" aria-hidden="true"
+					></span>
 				{/if}
-			</div>
-			{#if pending && processingFull}
-				<span class="hidden shrink-0 text-xs text-muted-foreground sm:block">
-					Waits until one of your {UPLOAD_LIMITS.processingPerUser} processing videos finishes
+				<GripVerticalIcon
+					class={cn('size-4 shrink-0 text-muted-foreground', pending ? 'cursor-grab' : 'invisible')}
+				/>
+				<div
+					class="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-elevated text-muted-foreground"
+				>
+					<FilmIcon />
+				</div>
+
+				<div class="flex min-w-0 flex-1 flex-col gap-1">
+					<div class="flex min-w-0 items-center gap-1">
+						<span class="truncate font-medium">{job.title ?? 'Untitled video'}</span>
+						<CopyButton
+							value={job.id}
+							label="Copy job ID"
+							class="opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+						/>
+					</div>
+					<div class="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
+						{#if job.status === 'processing'}
+							<span class="shrink-0">
+								{job.stop_requested
+									? 'Stopping…'
+									: (stepLabels[job.current_step ?? ''] ?? 'Starting')}
+							</span>
+							<span
+								class="h-1 w-24 shrink-0 overflow-hidden rounded-full bg-elevated"
+								role="progressbar"
+								aria-label="Progress"
+								aria-valuenow={job.progress}
+								aria-valuemin={0}
+								aria-valuemax={100}
+							>
+								<span
+									class="block h-full rounded-full bg-info transition-[width]"
+									style:width="{job.progress}%"
+								></span>
+							</span>
+							<span class="tabular-nums">{job.progress}%</span>
+						{:else if pending && processingFull}
+							<span class="truncate">
+								Waits until one of your {UPLOAD_LIMITS.processingPerUser} processing videos finishes
+							</span>
+						{:else if job.status === 'done' && job.clip_count}
+							<span class="flex shrink-0 items-center gap-1 text-foreground">
+								<ScissorsIcon class="size-3 text-muted-foreground" />
+								{job.clip_count}
+								{job.clip_count === 1 ? 'clip' : 'clips'}
+							</span>
+							{#if job.request}<span class="truncate">· {job.request}</span>{/if}
+						{:else if job.status === 'failed' && job.error}
+							<span class="truncate text-danger">{job.error}</span>
+						{:else if job.request}
+							<span class="truncate">{job.request}</span>
+						{/if}
+					</div>
+				</div>
+
+				<span class="hidden w-14 shrink-0 text-right text-muted-foreground sm:block">
+					{#if duration}<Timecode seconds={duration} whole />{/if}
 				</span>
-			{/if}
-			{#if job.status === 'processing'}
-				<span class="hidden shrink-0 items-center gap-2 text-xs text-muted-foreground sm:flex">
-					{job.stop_requested ? 'Stopping…' : (stepLabels[job.current_step ?? ''] ?? 'Starting')}
-					<span class="h-1 w-16 overflow-hidden rounded-full bg-elevated">
-						<span class="block h-full bg-info" style:width="{job.progress}%"></span>
-					</span>
+				<span class="hidden w-24 shrink-0 text-right text-xs text-muted-foreground md:block">
+					{timeAgo(job.created_at)}
 				</span>
-			{/if}
-			<span class="w-16 shrink-0 text-right text-xs text-muted-foreground">
-				{#if job.media?.duration_s ?? job.duration_s}
-					<Timecode seconds={(job.media?.duration_s ?? job.duration_s)!} />
-				{/if}
-			</span>
-			<span class="w-24 shrink-0"><StatusBadge status={job.status} /></span>
-			<span class="hidden w-24 shrink-0 text-right text-xs text-muted-foreground md:block">
-				{timeAgo(job.created_at)}
-			</span>
-			<div class="flex w-28 shrink-0 justify-end gap-1">
-				{#if can(job.status, 'stop')}
-					<Button
-						size="xs"
-						variant="outline"
-						disabled={job.stop_requested}
-						onclick={() => run('stop', job)}>Stop</Button
-					>
-				{:else if can(job.status, 'retry')}
-					<Button size="xs" variant="outline" onclick={() => run('retry', job)}>Retry</Button>
-				{:else if can(job.status, 'requeue')}
-					<Button size="xs" variant="outline" onclick={() => run('requeue', job)}>Re-queue</Button>
-				{:else if can(job.status, 'answer')}
-					<Button size="xs" variant="outline" onclick={() => (openId = job.id)}>Answer</Button>
-				{:else if can(job.status, 'open_clips')}
-					<Button size="xs" variant="outline" href={resolve(`/clips/${job.id}`)}>Open clips</Button>
-				{/if}
-				{#if can(job.status, 'delete')}
-					<Button size="xs" variant="ghost" onclick={() => (confirmDelete = job)}>Delete</Button>
-				{/if}
-			</div>
-		</li>
-	{/each}
-</ul>
+				<span class="w-24 shrink-0" aria-live="polite"><StatusBadge status={job.status} /></span>
+				<!-- Phones: actions live in the details sheet (tap the row). -->
+				<div class="hidden w-32 shrink-0 justify-end gap-1 sm:flex">
+					{#if can(job.status, 'stop')}
+						<Button
+							size="xs"
+							variant="outline"
+							disabled={job.stop_requested}
+							onclick={() => run('stop', job)}><SquareIcon />Stop</Button
+						>
+					{:else if can(job.status, 'retry')}
+						<Button size="xs" variant="outline" onclick={() => run('retry', job)}
+							><RotateCcwIcon />Retry</Button
+						>
+					{:else if can(job.status, 'requeue')}
+						<Button size="xs" variant="outline" onclick={() => run('requeue', job)}
+							><ListRestartIcon />Re-queue</Button
+						>
+					{:else if can(job.status, 'answer')}
+						<Button size="xs" variant="outline" onclick={() => (openId = job.id)}
+							><MessageCircleQuestionIcon />Answer</Button
+						>
+					{:else if can(job.status, 'open_clips')}
+						<Button size="xs" variant="outline" href={resolve(`/clips/${job.id}`)}
+							><ScissorsIcon />Clips</Button
+						>
+					{/if}
+					{#if can(job.status, 'delete')}
+						<Button
+							size="icon-xs"
+							variant="ghost"
+							aria-label="Delete job"
+							title="Delete job"
+							onclick={() => (confirmDelete = job)}><TrashIcon /></Button
+						>
+					{/if}
+				</div>
+			</li>
+		{/each}
+	</ul>
+	<p class="hidden items-center gap-1.5 self-end text-xs text-muted-foreground sm:flex">
+		<Kbd.Root>J</Kbd.Root><Kbd.Root>K</Kbd.Root> move · <Kbd.Root>Enter</Kbd.Root> details ·
+		<Kbd.Root>⌫</Kbd.Root> delete
+	</p>
+</div>
 
 <JobDetails
 	job={openJob}
@@ -190,7 +259,7 @@
 					confirmDelete = null;
 					if (openId === job.id) openId = null;
 					if (await run('delete', job)) toast('Job deleted');
-				}}>Delete</Button
+				}}><TrashIcon />Delete</Button
 			>
 		</Dialog.Footer>
 	</Dialog.Content>

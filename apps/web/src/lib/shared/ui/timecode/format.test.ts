@@ -9,4 +9,10 @@ describe('formatTimecode', () => {
 		[3723.5, '1:02:03.5'],
 		[-5, '00:00.0']
 	])('%s → %s', (s, out) => expect(formatTimecode(s)).toBe(out));
+
+	it.each([
+		[5, '0:05'],
+		[80.9, '1:20'],
+		[3725, '1:02:05']
+	])('whole %s → %s', (s, out) => expect(formatTimecode(s, { whole: true })).toBe(out));
 });

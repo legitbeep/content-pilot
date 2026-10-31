@@ -113,18 +113,29 @@ and again by the worker).
   applies agent ops with `apply(op, args, 'agent')` (`docs/agent.md`).
 - Actions (`+page.server.ts`): `save` {revision, timeline, events, render?} — zod-validates, checks
   key ownership, `update … where revision = expected` (409 = changed elsewhere), inserts
-  `edit_events`, optionally queues the render; `renderAll` queues every session clip (creates
-  missing timelines); `presignUpload` → `uploads/<user_id>/<uuid>/<name>` PUT + GET URLs.
+  `edit_events`, optionally queues the render; `renderAll` queues each session clip whose render is
+  missing or behind its timeline (skips queued/rendering and `done` with `rendered_revision =
+  revision`; creates missing timelines) and returns the queued ids; `presignUpload` → `uploads/<user_id>/<uuid>/<name>` PUT + GET URLs.
   `GET /editor/[clipId]/renders` → session render status + presigned render URLs (polled by the
-  finish dialog). First open of a clip without a timeline creates `newTimeline(...)`.
+  finish dialog, and by the editor's clip list while any render is queued/rendering). Save queues
+  the render, marks the clip resolved (green check in the clip list) and opens the next unresolved
+  clip. First open of a clip without a timeline creates `newTimeline(...)`.
 - Preview is approximate (CSS crop via `object-position`, ducking = music at 35%, volume capped at
   100%); the render is the truth. The frame always fits the timeline's aspect (letterboxed, never
   stretched to fill); clicking it plays/pauses. Seeks go through one "latest target" slot applied on
   `seeked`/`loadedmetadata`, so fast scrubs never stack stale seeks or source swaps.
-- Tracks (`tracks.svelte`): transport bar (play/pause, time / total, preview mute + volume, full
-  screen; preview-only `EditorState.volume`/`previewMuted`, never saved). Lanes are at least 40px
+- Layout (`editor.svelte`): toolbar (clip title + render badge, save status, undo/redo, Render
+  clip, **Finish all clips** = the one primary button), session clips left, preview centre,
+  tracks bottom, properties + agent chat right. Toolbar/transport/track buttons call the same
+  `run(action)` as the `editorKeys` shortcuts; `tool-button.svelte` = ghost icon button + tooltip
+  with the action's keys from `shortcuts.ts`. Properties: the selected segment/track on top, then
+  tabs (line variant) Format / Audio / Captions / Text.
+- Preview transport (`preview.svelte`): time / total, back 5s, play/pause, preview mute + volume
+  slider, full screen (preview-only `EditorState.volume`/`previewMuted`, never saved).
+- Tracks (`tracks.svelte`): toolbar (split, mark in/out, delete, marked range + clear), lane headers
+  with icons, violet playhead with a head on the ruler, violet selection. Lanes are at least 40px
   per second and scroll sideways. Dragging the playhead pauses, sets `scrubbing` (frames only, one
-  seek per animation frame, audio re-syncs on release). One purple captions lane ("Captions for
+  seek per animation frame, audio re-syncs on release). One pink (`bg-caption`) captions lane ("Captions for
   <job title>") over the original audio, with cut markers; it follows cuts because chunks are
   derived from the segments. Drop targets: a session clip dragged from the left list or a video
   file → `merge_clip` at the nearest cut; an audio file → voiceover starting at the drop time.
@@ -139,12 +150,12 @@ testsrc2 440 Hz, horizontal smptebars 660 Hz, horizontal hue-shifted testsrc2 33
 
 ## Render (`apps/worker/loops/render.py`, `apps/worker/worker/render.py`)
 - **Queue**: Save (or Finish all clips) sets `clips.render_status = 'queued'`,
-  `render_requested_at = now()`. The render loop (its own thread, registered in `main.py`) claims
-  one clip with `FOR UPDATE SKIP LOCKED` → `rendering`, renders, uploads `renders/<clip_id>.mp4`,
+  `render_requested_at = now()`. Render loops (`RENDER_CONCURRENCY` threads, default 2, registered in
+  `main.py`) each claim one clip with `FOR UPDATE SKIP LOCKED` → `rendering`, renders, uploads `renders/<clip_id>.mp4`,
   sets `render_path`, `rendered_at`, `render_status = 'done'` and `timelines.rendered_key /
   rendered_revision`. Failure → `failed` + user-readable `render_error`. Finishing only overwrites
-  `rendering`, so a Save during a render re-queues and wins. On loop start, `rendering` rows go back
-  to `queued` (assumes one worker process). Debug: `python -m worker.run_once render <clip_id>`.
+  `rendering`, so a Save during a render re-queues and wins. On worker start (`requeue_interrupted`, before the
+  render threads), `rendering` rows go back to `queued` (assumes one worker process). Debug: `python -m worker.run_once render <clip_id>`.
 - **Statuses** (`clips.render_status`, text + CHECK): null (never) · queued · rendering · done · failed.
 - The worker refuses any key that isn't one of the user's clip files or under `uploads/<user_id>/`.
 - **Upload safety check**: before rendering, every `uploads/<user_id>/…` key in the timeline goes

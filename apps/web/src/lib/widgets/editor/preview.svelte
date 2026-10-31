@@ -2,12 +2,36 @@
 	// Approximate preview: one <video> plays the segments in order (swapping src between source
 	// files), one <audio> per added track kept in sync, captions/overlays/blur drawn on top, aspect
 	// as a CSS crop. The render is the truth.
+	import MaximizeIcon from '@lucide/svelte/icons/maximize';
+	import PauseIcon from '@lucide/svelte/icons/pause';
+	import PlayIcon from '@lucide/svelte/icons/play';
+	import RewindIcon from '@lucide/svelte/icons/rewind';
+	import Volume2Icon from '@lucide/svelte/icons/volume-2';
+	import VolumeXIcon from '@lucide/svelte/icons/volume-x';
 	import { untrack } from 'svelte';
 	import { captionChunks, locate, segmentKey, type Word } from '$lib/entities/timeline';
+	import type { EditorAction } from '$lib/shared/config';
+	import { Slider } from '$lib/shared/ui/slider';
+	import { Timecode } from '$lib/shared/ui/timecode';
 	import type { EditorState } from './editor-state.svelte';
+	import ToolButton from './tool-button.svelte';
 
-	let { editor, wordsByKey }: { editor: EditorState; wordsByKey: Record<string, Word[]> } =
-		$props();
+	let {
+		editor,
+		wordsByKey,
+		onaction
+	}: {
+		editor: EditorState;
+		wordsByKey: Record<string, Word[]>;
+		onaction: (a: EditorAction) => void;
+	} = $props();
+
+	const muted = $derived(editor.previewMuted || editor.volume === 0);
+	function fullscreen() {
+		const el = document.getElementById('editor-preview');
+		if (document.fullscreenElement) void document.exitFullscreen();
+		else void el?.requestFullscreen();
+	}
 
 	let video: HTMLVideoElement | undefined = $state();
 	const audios: Record<string, HTMLAudioElement> = $state({});
@@ -144,80 +168,126 @@
 </script>
 
 <!-- Fits the chosen aspect inside the available space (letterboxed); fullscreen target. -->
-<div
-	id="editor-preview"
-	class="flex size-full min-h-0 items-center justify-center [&:fullscreen]:bg-black"
-	style:container-type="size"
->
-	<!-- svelte-ignore a11y_click_events_have_key_events (Space toggles play, editorKeys) -->
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div class="min-h-0 flex-1 bg-subtle p-4">
 	<div
-		class="relative cursor-pointer overflow-hidden rounded-lg border bg-black"
-		style:width="min(100cqw, calc(100cqh * {ratio}))"
-		style:aspect-ratio={ratio}
+		id="editor-preview"
+		class="flex size-full min-h-0 items-center justify-center [&:fullscreen]:bg-black"
 		style:container-type="size"
-		onclick={() => (editor.playing = !editor.playing)}
 	>
-		<video
-			bind:this={video}
-			class="size-full object-cover"
-			style:object-position="{t.cropX * 100}% 50%"
-			playsinline
-			preload="auto"
-			onloadedmetadata={pump}
-			onseeked={pump}
-		></video>
-		{#each blurs as b, i (i)}
-			<!-- Soft radial edge, like the render's alpha fade. -->
-			<div
-				class="pointer-events-none absolute backdrop-blur-lg"
-				style:left="{b.x * 100}%"
-				style:top="{b.y * 100}%"
-				style:width="{b.w * 100}%"
-				style:height="{b.h * 100}%"
-				style:mask-image="radial-gradient(closest-side, #000 50%, transparent 100%)"
-			></div>
-		{/each}
-		{#each overlays as o, i (i)}
-			<div
-				class="pointer-events-none absolute inset-x-[6%] text-center font-semibold text-white {place[
-					o.position
-				]}"
-				style:font-size="5cqh"
-				style:text-shadow="0 0.3cqh 1cqh rgb(0 0 0 / 0.8)"
-			>
-				{o.text}
-			</div>
-		{/each}
-		{#if caption}
-			<div
-				class="pointer-events-none absolute inset-x-[6%] text-center leading-tight font-bold {place[
-					t.captions.style.position
-				]}"
-				style:color={t.captions.style.color}
-				style:font-family={t.captions.style.font}
-				style:font-size="{fontSize[t.captions.style.size]}cqh"
-			>
-				<span
-					class="[box-decoration-break:clone]"
-					style:-webkit-text-stroke={look === 'outline' ? '0.15cqh black' : undefined}
-					style:paint-order="stroke fill"
-					style:text-shadow={look === 'shadow' ? '0 0.4cqh 1.2cqh rgb(0 0 0 / 0.85)' : undefined}
-					style:background={look === 'box' ? 'rgb(0 0 0 / 0.65)' : undefined}
-					style:border-radius={look === 'box' ? '1cqh' : undefined}
-					style:padding={look === 'box' ? '0.3cqh 1.2cqh' : undefined}
+		<!-- svelte-ignore a11y_click_events_have_key_events (Space toggles play, editorKeys) -->
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div
+			class="relative cursor-pointer overflow-hidden rounded-lg border bg-black shadow-overlay"
+			style:width="min(100cqw, calc(100cqh * {ratio}))"
+			style:aspect-ratio={ratio}
+			style:container-type="size"
+			onclick={() => (editor.playing = !editor.playing)}
+		>
+			<video
+				bind:this={video}
+				class="size-full object-cover"
+				style:object-position="{t.cropX * 100}% 50%"
+				playsinline
+				preload="auto"
+				onloadedmetadata={pump}
+				onseeked={pump}
+			></video>
+			{#each blurs as b, i (i)}
+				<!-- Soft radial edge, like the render's alpha fade. -->
+				<div
+					class="pointer-events-none absolute backdrop-blur-lg"
+					style:left="{b.x * 100}%"
+					style:top="{b.y * 100}%"
+					style:width="{b.w * 100}%"
+					style:height="{b.h * 100}%"
+					style:mask-image="radial-gradient(closest-side, #000 50%, transparent 100%)"
+				></div>
+			{/each}
+			{#each overlays as o, i (i)}
+				<div
+					class="pointer-events-none absolute inset-x-[6%] text-center font-semibold text-white {place[
+						o.position
+					]}"
+					style:font-size="5cqh"
+					style:text-shadow="0 0.3cqh 1cqh rgb(0 0 0 / 0.8)"
 				>
-					{caption.text}
-				</span>
-			</div>
-		{/if}
+					{o.text}
+				</div>
+			{/each}
+			{#if caption}
+				<div
+					class="pointer-events-none absolute inset-x-[6%] text-center leading-tight font-bold {place[
+						t.captions.style.position
+					]}"
+					style:color={t.captions.style.color}
+					style:font-family={t.captions.style.font}
+					style:font-size="{fontSize[t.captions.style.size]}cqh"
+				>
+					<span
+						class="[box-decoration-break:clone]"
+						style:-webkit-text-stroke={look === 'outline' ? '0.15cqh black' : undefined}
+						style:paint-order="stroke fill"
+						style:text-shadow={look === 'shadow' ? '0 0.4cqh 1.2cqh rgb(0 0 0 / 0.85)' : undefined}
+						style:background={look === 'box' ? 'rgb(0 0 0 / 0.65)' : undefined}
+						style:border-radius={look === 'box' ? '1cqh' : undefined}
+						style:padding={look === 'box' ? '0.3cqh 1.2cqh' : undefined}
+					>
+						{caption.text}
+					</span>
+				</div>
+			{/if}
+		</div>
+		{#each t.audio as tr (tr.id)}
+			<audio
+				bind:this={audios[tr.id]}
+				src={editor.urls[tr.key]}
+				preload="auto"
+				onloadedmetadata={(e) => (editor.durations[tr.key] = e.currentTarget.duration)}
+			></audio>
+		{/each}
 	</div>
-	{#each t.audio as tr (tr.id)}
-		<audio
-			bind:this={audios[tr.id]}
-			src={editor.urls[tr.key]}
-			preload="auto"
-			onloadedmetadata={(e) => (editor.durations[tr.key] = e.currentTarget.duration)}
-		></audio>
-	{/each}
+</div>
+
+<!-- Transport: time on the left, playback in the middle, preview-only volume on the right. -->
+<div class="grid h-12 shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-3 border-t px-3">
+	<span class="font-mono text-xs text-muted-foreground tabular-nums">
+		<span class="text-foreground"><Timecode seconds={editor.playhead} /></span>
+		/ <Timecode seconds={editor.total} />
+	</span>
+	<div class="flex items-center gap-1">
+		<ToolButton label="Back 5 seconds" action="back" onclick={() => onaction('back')}>
+			<RewindIcon />
+		</ToolButton>
+		<ToolButton
+			label={editor.playing ? 'Pause' : 'Play'}
+			action="play"
+			size="icon"
+			class="rounded-full bg-elevated hover:bg-border-strong"
+			onclick={() => onaction('play')}
+		>
+			{#if editor.playing}<PauseIcon />{:else}<PlayIcon />{/if}
+		</ToolButton>
+	</div>
+	<div class="flex items-center justify-end gap-1">
+		<ToolButton
+			label={muted ? 'Unmute preview' : 'Mute preview'}
+			pressed={editor.previewMuted}
+			onclick={() => (editor.previewMuted = !editor.previewMuted)}
+		>
+			{#if muted}<VolumeXIcon />{:else}<Volume2Icon />{/if}
+		</ToolButton>
+		<Slider
+			type="single"
+			class="w-20"
+			aria-label="Preview volume"
+			value={editor.previewMuted ? 0 : editor.volume * 100}
+			max={100}
+			step={5}
+			onValueChange={(v) => {
+				editor.volume = v / 100;
+				editor.previewMuted = false;
+			}}
+		/>
+		<ToolButton label="Full screen" onclick={fullscreen}><MaximizeIcon /></ToolButton>
+	</div>
 </div>

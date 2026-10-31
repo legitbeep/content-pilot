@@ -41,6 +41,7 @@ describe('home stats', () => {
 		expect(s.top.map((t) => t.id)).toEqual(['b', 'a', 'old']);
 		expect(s.scoreDist.map((b) => b.value)).toEqual([1, 0, 0, 1, 0]);
 		expect(s.notEnoughData).toBe(1);
+		expect(s.totals).toEqual({ posts: 3, views: 609, avgScore: 1.1 });
 	});
 	it('nudges surprising unrated 7d scores', () => {
 		expect(ratingNudges(posts, metrics).map((n) => n.post.id)).toEqual(['b']);

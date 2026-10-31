@@ -38,7 +38,7 @@ export const load: PageServerLoad = async ({ locals: { supabase, user } }) => {
 			.maybeSingle(),
 		loadBrand(supabase, user!.id)
 	]);
-	// Instant prefill from brand defaults; "Generate captions" swaps in LLM copy (docs/performance.md).
+	// Instant prefill from brand defaults; the form swaps in LLM copy on mount (docs/performance.md).
 	const defaults = {
 		cta: brand.profile.default_cta || undefined,
 		hashtags: brand.profile.default_hashtags

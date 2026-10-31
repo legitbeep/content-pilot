@@ -52,14 +52,14 @@ Today's slices:
 - `shared/lib/utils.ts` (`cn` + shadcn prop types), `shared/lib/is-typing.ts`, `shared/lib/hooks/`.
 - `shared/config/`: `nav.ts` (one route list for sidebar, palette, breadcrumbs) and
   `shortcuts.ts` (every keyboard shortcut).
-- `widgets/app-shell`: sidebar, top bar, command palette, shortcut sheet, key handler.
+- `widgets/app-shell`: sidebar, top bar, command palette, shortcut dialog, key handler.
 - `entities/api-key`: BYOK provider list, key status, `aiCapabilities`, `<RequiresAI>` gate.
   `features/api-keys`: Settings key row, provider select, AI preferences.
 - `entities/brand`: brand profile zod, rule types, `buildMemoryContext`, `ConflictCard`.
   `features/brand-profile`: profile sections (onboarding + /brand). `features/brand-rules`: rule
   row, draft list, scope select (`docs/brand-memory.md`).
 - `entities/job`: job/transcript types, upload limits, transitions. `features/upload-video`:
-  dropzone + presigned upload. `widgets/job-queue`: queue list + details sheet (`docs/queue.md`).
+  dropzone + presigned upload. `widgets/job-queue`: queue list + details dialog (`docs/queue.md`).
 - `entities/timeline`: timeline ops catalog, history, editor types. `widgets/editor`: the editor
   (`docs/timeline.md`).
 - `entities/post`: post types, platforms, status badge, `canPost` actions.

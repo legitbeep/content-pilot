@@ -1,7 +1,7 @@
 ---
 covers:
   - docs
-last_updated: 2026-10-31
+last_updated: 2026-11-01
 ---
 # Docs index
 
@@ -34,7 +34,7 @@ lists the code paths it describes; if you change one of those paths, update the 
 - `product/spec.md` — condensed product spec and core rules.
 - `product/pages.md` — every page: purpose, data, actions.
 - `architecture.md` — components, diagram, FSD layers, local dev.
-- `design/design-system.md` — tokens, type, radius, yellow budget, components, shell, shortcuts.
+- `design/design-system.md` — tokens, type, radius, accent budget, gradients/motion, components, shell, shortcuts.
 - `data-model.md` — every table, enums, RLS summary.
 - `queue.md` — job states, transitions, claim query, stop/retry.
 - `pipeline.md` — worker steps, inputs/outputs, failure behaviour.

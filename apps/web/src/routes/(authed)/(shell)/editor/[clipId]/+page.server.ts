@@ -22,10 +22,10 @@ type ClipRow = EditorClip;
 async function ensureTimeline(supabase: SupabaseClient, userId: string, clip: ClipRow) {
 	const { data } = await supabase
 		.from('timelines')
-		.select('clip_id, data, revision')
+		.select('clip_id, data, revision, rendered_revision')
 		.eq('clip_id', clip.id)
 		.maybeSingle();
-	if (data) return data as TimelineRow;
+	if (data) return data as TimelineRow & { rendered_revision: number | null };
 	if (!clip.file_key) return null;
 	const offset = clip.file_start_s ?? clip.start_s;
 	const row = {
@@ -135,15 +135,21 @@ export const actions: Actions = {
 		return { revision: saved.revision as number };
 	},
 
-	/** "Finish all clips": queue every clip of the session (timelines created if never opened). */
+	/** "Finish all clips": queue each session clip whose render is missing or older than its
+	 * timeline (timelines created if never opened). Queued/rendering/up-to-date clips are skipped. */
 	renderAll: async ({ params, locals: { supabase, user } }) => {
 		const { clips } = await session(supabase, params.clipId);
-		for (const c of clips) await ensureTimeline(supabase, user!.id, c);
-		await queueRenders(
-			supabase,
-			clips.map((c) => c.id)
+		const stale = await Promise.all(
+			clips.map(async (c) => {
+				const t = await ensureTimeline(supabase, user!.id, c);
+				if (c.render_status === 'queued' || c.render_status === 'rendering') return null;
+				const rendered = t && 'rendered_revision' in t ? t.rendered_revision : null;
+				return c.render_status === 'done' && rendered === t?.revision ? null : c.id;
+			})
 		);
-		return { queued: clips.length };
+		const ids = stale.filter((id) => id !== null);
+		if (ids.length) await queueRenders(supabase, ids);
+		return { queued: ids };
 	},
 
 	/** Presigned PUT (+ GET for the preview) for a voiceover, music track or extra video. */

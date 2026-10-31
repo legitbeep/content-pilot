@@ -32,6 +32,8 @@ export type Job = {
 	transcript_path: string | null;
 	created_at: string;
 	finished_at: string | null;
+	/** Clip candidates found; only set by the Queue page load. */
+	clip_count?: number;
 };
 
 /** What a paused (needs_input) job asks, written by the worker's NeedsInput (docs/pipeline.md).

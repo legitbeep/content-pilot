@@ -13,7 +13,7 @@
 <main class="grid min-h-svh place-items-center px-6">
 	<form method="POST" class="flex w-full max-w-xs flex-col items-center gap-6 text-center">
 		<div>
-			<h1 class="text-xl font-semibold">Clip Studio</h1>
+			<h1 class="text-xl font-semibold tracking-tight">Clip Studio</h1>
 			<p class="mt-1 text-muted-foreground">
 				Turn long videos into short clips that sound like you.
 			</p>

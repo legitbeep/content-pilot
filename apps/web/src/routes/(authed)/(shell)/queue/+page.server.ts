@@ -8,9 +8,13 @@ import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals: { supabase }, depends }) => {
 	depends('app:jobs');
-	const jobs = await supabase.from('jobs').select('*');
+	const jobs = await supabase.from('jobs').select('*, clips(count)');
 	if (jobs.error) console.error('jobs', jobs.error);
-	return { jobs: sortJobs((jobs.data ?? []) as Job[]) };
+	const rows = (jobs.data ?? []).map(({ clips, ...j }) => ({
+		...(j as Job),
+		clip_count: (clips as { count: number }[] | null)?.[0]?.count ?? 0
+	}));
+	return { jobs: sortJobs(rows) };
 };
 
 /** Pending first (queue order), then everything else newest first. */

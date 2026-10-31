@@ -9,19 +9,22 @@
 	let { status }: { status: JobStatus } = $props();
 
 	const styles: Record<JobStatus, { label: string; class: string }> = {
-		pending: { label: 'Pending', class: 'text-muted-foreground border-border' },
-		processing: { label: 'Processing', class: 'text-info border-info/30' },
-		needs_input: { label: 'Needs input', class: 'text-accent border-accent/40' },
-		done: { label: 'Done', class: 'text-success border-success/30' },
-		stopped: { label: 'Stopped', class: 'text-muted-foreground border-border' },
-		failed: { label: 'Failed', class: 'text-danger border-danger/30' }
+		pending: { label: 'Pending', class: 'text-muted-foreground border-border bg-elevated/50' },
+		processing: { label: 'Processing', class: 'text-info border-info/25 bg-info/10' },
+		needs_input: {
+			label: 'Needs input',
+			class: 'text-accent-text border-accent/40 bg-accent-subtle'
+		},
+		done: { label: 'Done', class: 'text-success border-success/25 bg-success/10' },
+		stopped: { label: 'Stopped', class: 'text-muted-foreground border-border bg-elevated/50' },
+		failed: { label: 'Failed', class: 'text-danger border-danger/25 bg-danger/10' }
 	};
 	const s = $derived(styles[status]);
 </script>
 
 <span
 	class={cn(
-		'inline-flex h-5 items-center gap-1.5 rounded-sm border px-1.5 text-xs font-medium',
+		'inline-flex h-5 items-center gap-1.5 rounded-sm border px-1.5 text-xs font-medium transition-colors',
 		s.class
 	)}
 >

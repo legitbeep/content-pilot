@@ -1,15 +1,18 @@
 // Docs: docs/performance.md
-// "Recommended long-form videos": YouTube search (Creative Commons + long) for the creator's core
-// topics, the region's trending titles as a signal, then the LLM (task `recommendations`) picks
-// 3-4 with a reason. Never downloads anything. YOUTUBE_FAKE=true reads recorded responses.
+// "Recommended long-form videos": YouTube search (Creative Commons + long, global, no region or
+// language) for topics from brand memory (core topics + recent clip topics), then the LLM (task
+// `recommendations`) picks 3-4 with a reason using the brand memory block. Never downloads
+// anything. YOUTUBE_FAKE=true reads recorded responses.
 import { z } from 'zod';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { dev } from '$app/environment';
 import { env } from '$env/dynamic/private';
+import { buildMemoryContext, type MemoryRule } from '$lib/entities/brand';
+import { loadBrand } from './brand';
 import { generateJSON } from './llm';
 import { decrypt, fromBytea } from './crypto';
 import { supabaseAdmin } from './supabase-admin';
 import searchFixture from './youtube-fixtures/search_list.json';
-import popularFixture from './youtube-fixtures/videos_most_popular.json';
 
 const API = 'https://www.googleapis.com/youtube/v3';
 
@@ -20,12 +23,24 @@ export type Recommendation = {
 	license: 'Creative Commons';
 	reason: string;
 	url: string;
+	thumbnail: string | null;
 };
 type SearchItem = {
 	id: { videoId?: string };
-	snippet: { title: string; channelTitle: string; description: string };
+	snippet: {
+		title: string;
+		channelTitle: string;
+		description: string;
+		thumbnails?: { medium?: { url: string } };
+	};
 };
-type Candidate = { videoId: string; title: string; channel: string; description: string };
+type Candidate = {
+	videoId: string;
+	title: string;
+	channel: string;
+	description: string;
+	thumbnail: string | null;
+};
 
 export const Picks = z.object({
 	picks: z.array(z.object({ videoId: z.string(), reason: z.string() })).max(4)
@@ -35,7 +50,7 @@ export const Picks = z.object({
 const fake = () => dev && env.YOUTUBE_FAKE === 'true';
 
 async function get(url: string, token: string): Promise<unknown> {
-	if (fake()) return new URL(url).pathname.endsWith('/search') ? searchFixture : popularFixture;
+	if (fake()) return searchFixture;
 	const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
 	if (!res.ok) throw new Error(`YouTube ${res.status}: ${(await res.text()).slice(0, 500)}`);
 	return res.json();
@@ -69,7 +84,48 @@ async function accessToken(userId: string): Promise<string | null> {
 	return ((await res.json()) as { access_token: string }).access_token;
 }
 
-export async function searchCandidates(token: string, topics: string[], region: string | null) {
+/**
+ * Up to 3 search queries from brand memory: core topics first, then the most frequent recent clip
+ * topics, niche when both are empty. Case-insensitive dedupe.
+ */
+export function searchTopics(coreTopics: string[], clipTopics: string[], niche: string): string[] {
+	const counts = new Map<string, number>();
+	for (const t of clipTopics) counts.set(t, (counts.get(t) ?? 0) + 1);
+	const byFreq = [...counts].sort((a, b) => b[1] - a[1]).map(([t]) => t);
+	const seen = new Set<string>();
+	const out: string[] = [];
+	for (const t of [...coreTopics, ...byFreq, niche].map((x) => x.trim()))
+		if (t && !seen.has(t.toLowerCase()) && out.length < 3) {
+			seen.add(t.toLowerCase());
+			out.push(t);
+		}
+	return out;
+}
+
+/** Brand memory for recommendations: prompt block (clip_selection scope) + search topics. */
+export async function loadMemory(supabase: SupabaseClient, userId: string) {
+	const [{ profile }, rules, clips] = await Promise.all([
+		loadBrand(supabase, userId),
+		supabase.from('brand_rules').select('rule, scope, status, evidence_count'),
+		supabase
+			.from('clips')
+			.select('features')
+			.not('features', 'is', null)
+			.order('created_at', { ascending: false })
+			.limit(30)
+	]);
+	const clipTopics = ((clips.data ?? []) as { features: { topic?: string } | null }[])
+		.map((c) => c.features?.topic ?? '')
+		.filter(Boolean);
+	const topics = searchTopics(profile.core_topics, clipTopics, profile.niche);
+	const memory = buildMemoryContext(profile, (rules.data ?? []) as MemoryRule[], {
+		scope: 'clip_selection',
+		topics
+	});
+	return { memory, topics };
+}
+
+export async function searchCandidates(token: string, topics: string[]) {
 	const params = (q: string) =>
 		new URLSearchParams({
 			part: 'snippet',
@@ -77,12 +133,9 @@ export async function searchCandidates(token: string, topics: string[], region: 
 			videoLicense: 'creativeCommon',
 			videoDuration: 'long',
 			maxResults: '10',
-			q,
-			...(region ? { regionCode: region } : {})
+			q
 		});
-	const lists = await Promise.all(
-		topics.slice(0, 3).map((t) => get(`${API}/search?${params(t)}`, token))
-	);
+	const lists = await Promise.all(topics.map((t) => get(`${API}/search?${params(t)}`, token)));
 	const seen = new Map<string, Candidate>();
 	for (const l of lists)
 		for (const i of (l as { items?: SearchItem[] }).items ?? [])
@@ -91,49 +144,35 @@ export async function searchCandidates(token: string, topics: string[], region: 
 					videoId: i.id.videoId,
 					title: i.snippet.title,
 					channel: i.snippet.channelTitle,
-					description: i.snippet.description.slice(0, 200)
+					description: i.snippet.description.slice(0, 200),
+					thumbnail: i.snippet.thumbnails?.medium?.url ?? null
 				});
-	let trending: string[] = [];
-	if (region) {
-		const p = new URLSearchParams({
-			part: 'snippet',
-			chart: 'mostPopular',
-			regionCode: region,
-			maxResults: '10'
-		});
-		const pop = (await get(`${API}/videos?${p}`, token)) as {
-			items?: { snippet: { title: string } }[];
-		};
-		trending = (pop.items ?? []).map((i) => i.snippet.title);
-	}
-	return { candidates: [...seen.values()], trending };
+	return [...seen.values()];
 }
 
 const SYSTEM = `You help a short-form creator choose long-form source videos to cut clips from.
-Pick the 3 or 4 candidates that best fit the creator's topics and audience and have clip-worthy moments. Use the region's trending titles only as a signal of what people watch now.
+Pick the 3 or 4 candidates that best fit the creator's brand memory (topics, audience, rules) and have clip-worthy moments. Skip anything the memory says to never cover.
 For each pick give a one-sentence reason specific to this creator. Only use videoId values from the candidates.
 Return JSON: {"picks": [{"videoId": "...", "reason": "..."}]}`;
 
 export async function recommend(
 	userId: string,
-	profile: { niche: string; audience: string; core_topics: string[] },
-	region: string | null
-): Promise<Recommendation[] | 'not_connected'> {
+	{ memory, topics }: { memory: string; topics: string[] }
+): Promise<Recommendation[] | 'not_connected' | 'no_topics'> {
+	if (!topics.length) return 'no_topics';
 	const token = await accessToken(userId);
 	if (!token) return 'not_connected';
-	const topics = profile.core_topics.length ? profile.core_topics : [profile.niche].filter(Boolean);
-	const { candidates, trending } = await searchCandidates(token, topics, region);
+	const candidates = await searchCandidates(token, topics);
 	if (!candidates.length) return [];
 	const { data } = await generateJSON({
 		userId,
 		task: 'recommendations',
 		schema: Picks,
 		system: SYSTEM,
-		prompt: JSON.stringify({
-			creator: { niche: profile.niche, audience: profile.audience, core_topics: topics },
-			trending_in_region: trending,
-			candidates
-		})
+		prompt: [
+			`Brand memory:\n${memory || '(none yet)'}`,
+			`Candidates:\n${JSON.stringify(candidates.map((c) => ({ ...c, thumbnail: undefined })))}`
+		].join('\n\n')
 	});
 	const byId = new Map(candidates.map((c) => [c.videoId, c]));
 	return data.picks
@@ -146,7 +185,8 @@ export async function recommend(
 				channel: c.channel,
 				license: 'Creative Commons' as const,
 				reason: p.reason,
-				url: `https://www.youtube.com/watch?v=${c.videoId}`
+				url: `https://www.youtube.com/watch?v=${c.videoId}`,
+				thumbnail: c.thumbnail
 			};
 		});
 }
