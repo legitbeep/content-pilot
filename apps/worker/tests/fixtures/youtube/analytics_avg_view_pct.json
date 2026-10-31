@@ -1,0 +1,15 @@
+{
+ "kind": "youtubeAnalytics#resultTable",
+ "columnHeaders": [
+  {
+   "name": "averageViewPercentage",
+   "columnType": "METRIC",
+   "dataType": "FLOAT"
+  }
+ ],
+ "rows": [
+  [
+   63.4
+  ]
+ ]
+}

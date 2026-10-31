@@ -109,7 +109,7 @@ is client side (`$lib/widgets/post-calendar/calendar.ts`, tested).
 
 ## Checkpoints
 At 48h, 7d, 14d, 30d after `posted_at`: fetch stats → insert `post_metrics`
-(unique `(post_id, checkpoint)` makes it idempotent).
+(unique `(post_id, checkpoint)` makes it idempotent). Built in plan 9: `docs/performance.md`.
 
 ## Baseline and score
 - **Samples** per checkpoint = the creator's own `post_metrics` rows ∪ `baseline_seeds` rows at

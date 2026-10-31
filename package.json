@@ -18,6 +18,9 @@
 		"seed:editor": "uv run --directory apps/worker --env-file .env python -m seeds.editor",
 		"seed:editor:clean": "uv run --directory apps/worker --env-file .env python -m seeds.editor --clean",
 		"seed:publish": "uv run --directory apps/worker --env-file .env python seed_publish.py",
-		"seed:publish:clean": "uv run --directory apps/worker --env-file .env python seed_publish.py clean"
+		"seed:publish:clean": "uv run --directory apps/worker --env-file .env python seed_publish.py clean",
+		"checkpoints:run-now": "YOUTUBE_FAKE=true uv run --directory apps/worker --env-file .env python -m worker.run_once checkpoint",
+		"seed:performance": "YOUTUBE_FAKE=true uv run --directory apps/worker --env-file .env python -m seeds.performance",
+		"seed:performance:clean": "uv run --directory apps/worker --env-file .env python -m seeds.performance --clean"
 	}
 }
