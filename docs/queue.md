@@ -10,7 +10,7 @@ covers:
   - apps/web/src/lib/shared/lib/form-action.ts
   - apps/web/src/routes/(authed)/(shell)/queue
   - supabase/migrations
-last_updated: 2026-10-31
+last_updated: 2026-11-01
 ---
 # Queue
 
@@ -123,7 +123,8 @@ root) processes one item and exits. Needs `DATABASE_URL` etc. in the environment
 (e.g. `set -a; . ./.env; set +a`). Kind `job` claims that id with the loop's claim query
 (`claim_job(job_id)`: still must be `pending` and under the per-user limit), runs `process`, prints
 `job <id>: <status>`, and exits 1 if the job failed or could not be claimed, 2 on bad arguments.
-Later kinds (render, post, checkpoint) add one entry to `HANDLERS` in `worker/run_once.py`.
+Kind `render` claims that clip if `render_status = 'queued'` and renders it (`loops/render.py`,
+`docs/timeline.md`). Later kinds (post, checkpoint) add one entry to `HANDLERS` in `worker/run_once.py`.
 Like every worker module, it starts with `# Docs: docs/queue.md`.
 
 ## Stop

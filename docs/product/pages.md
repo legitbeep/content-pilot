@@ -16,7 +16,7 @@ Route → purpose / data / actions.
 | `/` | Home | Overview + next steps | `posts`, `post_metrics`, `jobs` | CTAs: **Generate clips** (→ upload → `/queue`), **Recommended long-form videos** |
 | `/queue` | Queue | Ingestion jobs | `jobs` | Upload (presigned R2) with optional request, Linear-style list, details sheet (steps, error, transcript), actions per state (`docs/queue.md`), J/K/Enter/Backspace, 3s polling |
 | `/clips` | Clip Picker | Review clips of a finished job, with reasons | `clips`, `timelines`, `jobs` | Select clips (`clips.selected`), **Proceed with editing** (sets `jobs.proceeded_at` → source + unselected clip files deleted; otherwise after 48h) |
-| `/editor` | Editor | Edit one clip | `timelines`, `brand_rules` | Manual timeline edits, agent chat (+ Wispr voice), pick export ratio, save → render |
+| `/editor/[clipId]` | Editor | Edit one clip | `clips` (session = selected clips of the job), `timelines`, `edit_events` | Left: session clips + render status, "Add here" merges another clip. Centre: preview (segments from presigned GETs, audio tracks, caption/overlay/blur overlay, CSS crop). Bottom: tracks with yellow playhead, marks. Right: properties (trim, reorder, delete, aspect, crop, audio, ducking, uploads, captions, text, blur) + agent chat slot (plan 7). Autosave, undo/redo, Save = render, Finish all clips → render summary + link to `/publish`. `/editor` alone is an empty state |
 | `/publish` | Publish | Post or schedule a rendered clip | `posts`, `platform_connections_public` | Generate captions (4 platforms), post to YouTube (private), copy others, schedule |
 | `/calendar` | Calendar | Scheduled + posted content | `posts`, `post_metrics`, `baseline_seeds` | Calendar view, table view, details modal, reschedule |
 | `/brand` | Brand Memory | See/curate rules | `brand_rules`, `brand_profile` | Rules by scope (filter scope/source, pin/edit/archive/restore, add manual), edit profile sections, regenerate rules from profile → accept/reject diff, learned (candidate) list (`docs/brand-memory.md`) |
@@ -28,4 +28,4 @@ Non-product routes: `/login` (Continue with Google), `/auth/callback` (code → 
 Sidebar: Home, Queue, Calendar, Brand Memory, Settings. Clip Picker, Editor and Publish are
 reached from Queue (breadcrumb parent = Queue). Nav config: `$lib/shared/config/nav.ts`.
 
-Expected params later: `/clips?job=<id>`, `/editor?clip=<id>` (or `[id]` segments — decide when built).
+Expected params later: `/clips?job=<id>`. Editor: `/editor/<clipId>`.

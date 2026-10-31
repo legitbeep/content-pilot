@@ -14,6 +14,8 @@
 		"check:secrets": "sh scripts/check-secrets.sh",
 		"gen:llm-registry": "cp packages/llm-registry/registry.json apps/worker/worker/llm/registry.json",
 		"check:ai": "node scripts/check-ai-imports.ts",
-		"llm:smoke": "uv run --directory apps/worker --env-file .env python -m worker.llm.smoke"
+		"llm:smoke": "uv run --directory apps/worker --env-file .env python -m worker.llm.smoke",
+		"seed:editor": "uv run --directory apps/worker --env-file .env python -m seeds.editor",
+		"seed:editor:clean": "uv run --directory apps/worker --env-file .env python -m seeds.editor --clean"
 	}
 }

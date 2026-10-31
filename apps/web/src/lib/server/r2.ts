@@ -33,8 +33,8 @@ async function presign(method: 'PUT' | 'GET', key: string, expires: number): Pro
 
 /** Presigned PUT URL, valid for `expires` seconds. */
 export const presignPut = (key: string, expires = 3600) => presign('PUT', key, expires);
-/** Presigned GET URL (e.g. to show the brand logo), valid for `expires` seconds. */
-export const presignGet = (key: string, expires = 3600) => presign('GET', key, expires);
+/** Presigned GET URL (brand logo, editor preview, rendered clips), valid for `expires` seconds. */
+export const presignGet = (key: string, expires = 6 * 3600) => presign('GET', key, expires);
 
 /** Object size in bytes, or null if it doesn't exist. */
 export async function headSize(key: string): Promise<number | null> {

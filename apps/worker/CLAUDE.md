@@ -6,9 +6,11 @@ timelines, publish scheduled posts, collect metric checkpoints. Read `docs/queue
 
 ## Layout
 - `main.py` — loop + job claiming (`docs/queue.md`); `worker/run_once.py` runs one item and exits.
+- `loops/` — extra worker loops, one module each (`render.py`: timeline renders, `docs/timeline.md`).
+- `seeds/` — `pnpm seed:<plan>` scripts (`editor.py`).
 - `pipeline/` — one module per step, ordered in `pipeline/__init__.py` `STEPS` (`docs/pipeline.md`).
 - `worker/` — shared helpers: `db.py` (Postgres), `r2.py`, `crypto.py` + `keys.py` (BYOK),
-  `transcript.py` (our transcript format), `timeline.py` (pydantic timeline mirror).
+  `transcript.py` (our transcript format), `timeline.py` (pydantic timeline mirror), `render.py` (timeline → ffmpeg).
 - `worker/llm/` — the LLM adapter (`generate_text` / `generate_json`); every AI call goes through it (`docs/llm.md`).
 - `tests/` — pytest; timeline fixtures come from `packages/timeline-schema/fixtures/`.
 

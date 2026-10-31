@@ -1,0 +1,41 @@
+{
+	"description": "captionChunks / caption_chunks shared case: midpoint rule, mapping through segments, a merged source, chunks never cross a cut",
+	"timeline": {
+		"version": 2,
+		"sourceKey": "A",
+		"aspect": "9:16",
+		"cropX": 0.5,
+		"segments": [
+			{ "start": 1, "end": 4 },
+			{ "start": 0.5, "end": 2.5, "sourceKey": "B" }
+		],
+		"originalAudio": { "muted": false, "volume": 1 },
+		"audio": [],
+		"ducking": false,
+		"captions": {
+			"enabled": true,
+			"style": { "font": "Sans", "color": "#FFFFFF", "position": "bottom", "size": "medium", "wordsPerChunk": 2 }
+		},
+		"textOverlays": [],
+		"blurRegions": []
+	},
+	"wordsByKey": {
+		"A": [
+			{ "w": "a1", "start": 0.2, "end": 0.6 },
+			{ "w": "a2", "start": 1.0, "end": 1.4 },
+			{ "w": "a3", "start": 1.5, "end": 1.9 },
+			{ "w": "a4", "start": 2.0, "end": 2.5 },
+			{ "w": "a5", "start": 3.8, "end": 4.4 }
+		],
+		"B": [
+			{ "w": "b1", "start": 0.4, "end": 0.8 },
+			{ "w": "b2", "start": 1.0, "end": 1.3 },
+			{ "w": "b3", "start": 2.3, "end": 2.9 }
+		]
+	},
+	"expected": [
+		{ "start": 0, "end": 0.9, "text": "a2 a3" },
+		{ "start": 1, "end": 1.5, "text": "a4" },
+		{ "start": 3, "end": 3.8, "text": "b1 b2" }
+	]
+}
