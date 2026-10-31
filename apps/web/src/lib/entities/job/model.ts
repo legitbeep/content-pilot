@@ -32,12 +32,13 @@ export type Job = {
 	finished_at: string | null;
 };
 
-/** Normalised transcript in R2 at transcripts/<job_id>.json (docs/pipeline.md). */
+/** Normalised transcript in R2 at transcripts/<job_id>.json (docs/pipeline.md).
+ * speaker is null when the provider has no speaker labels (Groq Whisper). */
 export type Transcript = {
 	provider: string;
 	duration_s: number;
-	words: { w: string; start: number; end: number; speaker: number }[];
-	utterances: { speaker: number; start: number; end: number; text: string }[];
+	words: { w: string; start: number; end: number; speaker: number | null }[];
+	utterances: { speaker: number | null; start: number; end: number; text: string }[];
 };
 
 /** Upload limits, checked in the browser and again on the server. */

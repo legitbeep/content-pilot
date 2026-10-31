@@ -1,12 +1,10 @@
 ---
-covers:
-  - apps/web/src/lib/server/claude.ts
-  - apps/worker/worker/claude.py
+covers: []
 last_updated: 2026-10-31
 ---
 # 0007 — Server-wide Claude OAuth token for AI steps
 
-**Status:** accepted (supersedes the Anthropic part of 0004)
+**Status:** superseded by 0008 (the token and the `claude()` helpers were removed)
 
 **Context.** Asking every user for an Anthropic key adds onboarding friction. The project owner
 has a Claude OAuth token (`claude setup-token`) and has confirmed this use is permitted for them.

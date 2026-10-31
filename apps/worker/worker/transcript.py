@@ -1,5 +1,6 @@
 # Docs: docs/pipeline.md
-"""Our transcript format. Everything after `transcribe` reads this, never a provider's shape."""
+"""Our transcript format. Everything after `transcribe` reads this, never a provider's shape.
+speaker is None when the provider has no speaker labels (Groq Whisper)."""
 
 from pydantic import BaseModel
 
@@ -8,11 +9,11 @@ class Word(BaseModel):
     w: str
     start: float  # source seconds
     end: float
-    speaker: int = 0
+    speaker: int | None = None
 
 
 class Utterance(BaseModel):
-    speaker: int
+    speaker: int | None = None
     start: float
     end: float
     text: str

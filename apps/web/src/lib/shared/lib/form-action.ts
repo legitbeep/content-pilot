@@ -12,5 +12,8 @@ export async function formAction<T = unknown>(
 	const result = deserialize(await res.text());
 	if (result.type === 'success') return result.data as T;
 	if (result.type === 'failure') throw new Error(String(result.data?.message ?? 'Request failed.'));
+	// Thrown `error(409, msg)` (e.g. requireAIKeys) arrives as type 'error' with a readable message.
+	if (result.type === 'error' && result.error?.message)
+		throw new Error(String(result.error.message));
 	throw new Error('Request failed.');
 }

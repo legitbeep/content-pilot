@@ -1,0 +1,269 @@
+{
+	"_comment": "Key resolution (docs/llm.md): own key -> demo server key if allowlisted -> missing_key (null). Run by apps/web/src/lib/server/llm/llm.test.ts and apps/worker/tests/test_llm.py.",
+	"cases": [
+		{
+			"name": "no keys, not allowlisted",
+			"keys": [],
+			"settings": {
+				"llm_provider": null,
+				"transcription_provider": null,
+				"task_overrides": {}
+			},
+			"demo": false,
+			"task": "extract_clips",
+			"llm": null,
+			"transcription": null
+		},
+		{
+			"name": "no keys, allowlisted -> demo defaults",
+			"keys": [],
+			"settings": {
+				"llm_provider": null,
+				"transcription_provider": null,
+				"task_overrides": {}
+			},
+			"demo": true,
+			"task": "extract_clips",
+			"llm": {
+				"provider": "gemini",
+				"source": "demo"
+			},
+			"transcription": {
+				"provider": "groq",
+				"source": "demo"
+			}
+		},
+		{
+			"name": "allowlisted with own keys uses own",
+			"keys": [
+				{
+					"provider": "anthropic"
+				},
+				{
+					"provider": "deepgram"
+				}
+			],
+			"settings": {
+				"llm_provider": null,
+				"transcription_provider": null,
+				"task_overrides": {}
+			},
+			"demo": true,
+			"task": "captions",
+			"llm": {
+				"provider": "anthropic",
+				"source": "user"
+			},
+			"transcription": {
+				"provider": "deepgram",
+				"source": "user"
+			}
+		},
+		{
+			"name": "allowlisted, own transcription only",
+			"keys": [
+				{
+					"provider": "deepgram"
+				}
+			],
+			"settings": {
+				"llm_provider": null,
+				"transcription_provider": null,
+				"task_overrides": {}
+			},
+			"demo": true,
+			"task": "captions",
+			"llm": {
+				"provider": "gemini",
+				"source": "demo"
+			},
+			"transcription": {
+				"provider": "deepgram",
+				"source": "user"
+			}
+		},
+		{
+			"name": "single groq key covers both",
+			"keys": [
+				{
+					"provider": "groq"
+				}
+			],
+			"settings": {
+				"llm_provider": null,
+				"transcription_provider": null,
+				"task_overrides": {}
+			},
+			"demo": false,
+			"task": "plan_edits",
+			"llm": {
+				"provider": "groq",
+				"source": "user"
+			},
+			"transcription": {
+				"provider": "groq",
+				"source": "user"
+			}
+		},
+		{
+			"name": "first usable LLM in order anthropic, gemini, groq",
+			"keys": [
+				{
+					"provider": "groq"
+				},
+				{
+					"provider": "gemini"
+				}
+			],
+			"settings": {
+				"llm_provider": null,
+				"transcription_provider": null,
+				"task_overrides": {}
+			},
+			"demo": false,
+			"task": "brand_fit",
+			"llm": {
+				"provider": "gemini",
+				"source": "user"
+			},
+			"transcription": {
+				"provider": "groq",
+				"source": "user"
+			}
+		},
+		{
+			"name": "default provider wins",
+			"keys": [
+				{
+					"provider": "anthropic"
+				},
+				{
+					"provider": "gemini"
+				}
+			],
+			"settings": {
+				"llm_provider": "gemini",
+				"transcription_provider": null,
+				"task_overrides": {}
+			},
+			"demo": false,
+			"task": "brand_fit",
+			"llm": {
+				"provider": "gemini",
+				"source": "user"
+			},
+			"transcription": null
+		},
+		{
+			"name": "task override wins",
+			"keys": [
+				{
+					"provider": "anthropic"
+				},
+				{
+					"provider": "groq"
+				}
+			],
+			"settings": {
+				"llm_provider": "anthropic",
+				"transcription_provider": null,
+				"task_overrides": {
+					"captions": "groq"
+				}
+			},
+			"demo": false,
+			"task": "captions",
+			"llm": {
+				"provider": "groq",
+				"source": "user"
+			},
+			"transcription": {
+				"provider": "groq",
+				"source": "user"
+			}
+		},
+		{
+			"name": "override without a key falls back to default",
+			"keys": [
+				{
+					"provider": "anthropic"
+				}
+			],
+			"settings": {
+				"llm_provider": "anthropic",
+				"transcription_provider": null,
+				"task_overrides": {
+					"captions": "gemini"
+				}
+			},
+			"demo": false,
+			"task": "captions",
+			"llm": {
+				"provider": "anthropic",
+				"source": "user"
+			},
+			"transcription": null
+		},
+		{
+			"name": "rejected key does not count",
+			"keys": [
+				{
+					"provider": "groq",
+					"invalid": true
+				}
+			],
+			"settings": {
+				"llm_provider": null,
+				"transcription_provider": null,
+				"task_overrides": {}
+			},
+			"demo": false,
+			"task": "captions",
+			"llm": null,
+			"transcription": null
+		},
+		{
+			"name": "chosen transcription provider",
+			"keys": [
+				{
+					"provider": "deepgram"
+				},
+				{
+					"provider": "groq"
+				}
+			],
+			"settings": {
+				"llm_provider": null,
+				"transcription_provider": "groq",
+				"task_overrides": {}
+			},
+			"demo": false,
+			"task": "captions",
+			"llm": {
+				"provider": "groq",
+				"source": "user"
+			},
+			"transcription": {
+				"provider": "groq",
+				"source": "user"
+			}
+		},
+		{
+			"name": "wispr alone is not an AI key",
+			"keys": [
+				{
+					"provider": "wispr"
+				}
+			],
+			"settings": {
+				"llm_provider": null,
+				"transcription_provider": null,
+				"task_overrides": {}
+			},
+			"demo": false,
+			"task": "captions",
+			"llm": null,
+			"transcription": null
+		}
+	]
+}

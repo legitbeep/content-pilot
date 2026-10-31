@@ -29,7 +29,8 @@ additive changes (see rules 2 and 3).
      `drop policy if exists` before `create policy`, `create or replace` for
      functions and views.
    - On a feature branch, apply your migration to the shared DB with
-     `psql "$DATABASE_URL" -f <file>`. Never run `supabase db push` on a branch
+     `psql "$DATABASE_URL" -f <file>` (no psql: psycopg fallback in docs/data-model.md).
+     Never run `supabase db push` on a branch
      (it fails when the remote has other branches' migrations).
    - The orchestrator runs `npx supabase db push --include-all` on main after merging.
 2. **Missing column on a table you don't own:** add it as nullable in your own

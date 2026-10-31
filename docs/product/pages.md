@@ -20,7 +20,7 @@ Route → purpose / data / actions.
 | `/publish` | Publish | Post or schedule a rendered clip | `posts`, `platform_connections_public` | Generate captions (4 platforms), post to YouTube (private), copy others, schedule |
 | `/calendar` | Calendar | Scheduled + posted content | `posts`, `post_metrics`, `baseline_seeds` | Calendar view, table view, details modal, reschedule |
 | `/brand` | Brand Memory | See/curate rules | `brand_rules`, `brand_profile` | Accept/reject proposed rules, resolve conflicts, edit stated rules |
-| `/settings` | Settings | Keys + platforms | `user_keys_public`, `platform_connections_public` | API keys: Deepgram (required), Wispr (optional); save = validate → encrypt → store; status valid/unverified/invalid, last 4, validated date, Replace/Remove. Connect/disconnect YouTube (later) |
+| `/settings` | Settings | AI providers + platforms | `user_keys_public`, `ai_settings`, `llm_calls`, `platform_connections_public` | AI providers: Groq, Claude, Gemini, Deepgram, Wispr keys ("Only have one key? A Groq key covers everything."); save = validate → encrypt → store; status valid/unverified/invalid, last 4, validated date, Replace/Remove. Default AI provider + transcription provider pickers, Advanced per-task overrides, 7-day usage per provider. Demo accounts see "Using shared demo keys" (`docs/llm.md`). Connect/disconnect YouTube (later) |
 
 Non-product routes: `/login` (Continue with Google), `/auth/callback` (code → session),
 `/auth/signout` (POST), `/dev/ui` (dev-only design system review, `docs/design/design-system.md`).

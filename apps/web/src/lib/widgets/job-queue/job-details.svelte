@@ -172,7 +172,7 @@
 								{#each utterances.slice(0, 200) as u, i (i)}
 									<li>
 										<div class="flex gap-2 text-xs text-muted-foreground">
-											<span>Speaker {u.speaker + 1}</span>
+											{#if u.speaker !== null}<span>Speaker {u.speaker + 1}</span>{/if}
 											<Timecode seconds={u.start} />
 										</div>
 										<p>{u.text}</p>

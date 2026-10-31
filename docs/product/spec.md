@@ -34,7 +34,7 @@ Details per page: `docs/product/pages.md`.
   the channel's last 20 videos on connect). Repeated patterns → proposed rules. → `docs/publishing.md`
 - **Export ratios**: 9:16 (Shorts, Reels, TikTok), 1:1 (Instagram feed, LinkedIn, X),
   16:9 (YouTube, LinkedIn, X).
-- **Claude**: all AI steps use one server-wide Claude OAuth token (`CLAUDE_OAUTH_TOKEN`, ADR 0007).
+- **AI keys**: every AI step runs on the user's own key (Claude, Gemini or Groq for LLM; Deepgram or Groq for transcription). Allowlisted demo accounts fall back to shared demo keys (ADR 0008, `docs/llm.md`).
 - **BYOK**: users supply transcription (Deepgram/AssemblyAI/Groq) and optional Wispr
   keys. Encrypted (AES-GCM, server secret), never returned to the browser (last 4 only),
   validated on save. → `docs/auth-and-keys.md`

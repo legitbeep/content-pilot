@@ -22,6 +22,7 @@ each one's `covers:` frontmatter names the code it describes.
 - `apps/web/` — UI, server routes, editor agent, BYOK + OAuth handling.
 - `apps/worker/` — job loop, pipeline steps, rendering, scheduler, metrics.
 - `packages/timeline-schema/` — timeline contract + shared fixtures.
+- `packages/llm-registry/` — model registry + provider fixtures for the AI adapters (`docs/llm.md`).
 - `supabase/` — config and SQL migrations (schema + RLS).
 - `docs/` — product, architecture and per-area docs; ADRs in `docs/decisions/`.
 - `fixtures/` — cross-language test fixtures (`crypto.json`).

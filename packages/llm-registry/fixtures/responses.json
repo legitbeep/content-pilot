@@ -1,0 +1,498 @@
+{
+	"_comment": "Provider HTTP responses -> expected result. Run by apps/web/src/lib/server/llm/llm.test.ts AND apps/worker/tests/test_llm.py. Shapes from provider docs, checked 2026-10-31 (see docs/llm.md).",
+	"missing_key_message": "Add an AI provider key in Settings to use this.",
+	"cases": [
+		{
+			"name": "anthropic ok",
+			"provider": "anthropic",
+			"status": 200,
+			"headers": {},
+			"body": {
+				"id": "msg_1",
+				"type": "message",
+				"role": "assistant",
+				"model": "claude-haiku-5-5",
+				"content": [
+					{
+						"type": "thinking",
+						"thinking": "…"
+					},
+					{
+						"type": "text",
+						"text": "{\"ok\": true}"
+					}
+				],
+				"stop_reason": "end_turn",
+				"usage": {
+					"input_tokens": 12,
+					"output_tokens": 5
+				}
+			},
+			"expect": {
+				"text": "{\"ok\": true}",
+				"input_tokens": 12,
+				"output_tokens": 5
+			}
+		},
+		{
+			"name": "anthropic refusal",
+			"provider": "anthropic",
+			"status": 200,
+			"headers": {},
+			"body": {
+				"content": [],
+				"stop_reason": "refusal",
+				"usage": {
+					"input_tokens": 12,
+					"output_tokens": 0
+				}
+			},
+			"expect": {
+				"kind": "content_blocked",
+				"retry_after": null,
+				"message": "Claude refused this content. Try different wording or switch provider in Settings."
+			}
+		},
+		{
+			"name": "anthropic bad key",
+			"provider": "anthropic",
+			"status": 401,
+			"headers": {},
+			"body": {
+				"type": "error",
+				"error": {
+					"type": "authentication_error",
+					"message": "invalid x-api-key"
+				},
+				"request_id": "req_1"
+			},
+			"expect": {
+				"kind": "invalid_key",
+				"retry_after": null,
+				"message": "Your Claude key was rejected. Update it in Settings."
+			}
+		},
+		{
+			"name": "anthropic rate limit",
+			"provider": "anthropic",
+			"status": 429,
+			"headers": {
+				"retry-after": "30"
+			},
+			"body": {
+				"type": "error",
+				"error": {
+					"type": "rate_limit_error",
+					"message": "Number of request tokens has exceeded your per-minute rate limit"
+				},
+				"request_id": "req_1"
+			},
+			"expect": {
+				"kind": "rate_limited",
+				"retry_after": 30,
+				"message": "Your Claude key hit its rate limit. Try again in 30s or switch provider in Settings."
+			}
+		},
+		{
+			"name": "anthropic overloaded",
+			"provider": "anthropic",
+			"status": 529,
+			"headers": {},
+			"body": {
+				"type": "error",
+				"error": {
+					"type": "overloaded_error",
+					"message": "Overloaded"
+				},
+				"request_id": "req_1"
+			},
+			"expect": {
+				"kind": "overloaded",
+				"retry_after": null,
+				"message": "Claude is overloaded right now. Try again in a minute or switch provider in Settings."
+			}
+		},
+		{
+			"name": "anthropic too long",
+			"provider": "anthropic",
+			"status": 400,
+			"headers": {},
+			"body": {
+				"type": "error",
+				"error": {
+					"type": "invalid_request_error",
+					"message": "prompt is too long: 1200000 tokens > 1000000 maximum"
+				},
+				"request_id": "req_1"
+			},
+			"expect": {
+				"kind": "context_too_long",
+				"retry_after": null,
+				"message": "This is too long for Claude. Try a shorter input or switch provider in Settings."
+			}
+		},
+		{
+			"name": "anthropic server error",
+			"provider": "anthropic",
+			"status": 500,
+			"headers": {},
+			"body": {
+				"type": "error",
+				"error": {
+					"type": "api_error",
+					"message": "Internal server error"
+				},
+				"request_id": "req_1"
+			},
+			"expect": {
+				"kind": "unknown",
+				"retry_after": null,
+				"message": "Claude returned an error. Try again or switch provider in Settings."
+			}
+		},
+		{
+			"name": "gemini ok",
+			"provider": "gemini",
+			"status": 200,
+			"headers": {},
+			"body": {
+				"candidates": [
+					{
+						"content": {
+							"role": "model",
+							"parts": [
+								{
+									"text": "thinking…",
+									"thought": true
+								},
+								{
+									"text": "{\"ok\": true}"
+								}
+							]
+						},
+						"finishReason": "STOP"
+					}
+				],
+				"usageMetadata": {
+					"promptTokenCount": 12,
+					"candidatesTokenCount": 5,
+					"thoughtsTokenCount": 3,
+					"totalTokenCount": 20
+				}
+			},
+			"expect": {
+				"text": "{\"ok\": true}",
+				"input_tokens": 12,
+				"output_tokens": 8
+			}
+		},
+		{
+			"name": "gemini prompt blocked",
+			"provider": "gemini",
+			"status": 200,
+			"headers": {},
+			"body": {
+				"promptFeedback": {
+					"blockReason": "PROHIBITED_CONTENT"
+				},
+				"usageMetadata": {
+					"promptTokenCount": 12
+				}
+			},
+			"expect": {
+				"kind": "content_blocked",
+				"retry_after": null,
+				"message": "Gemini refused this content. Try different wording or switch provider in Settings."
+			}
+		},
+		{
+			"name": "gemini safety finish",
+			"provider": "gemini",
+			"status": 200,
+			"headers": {},
+			"body": {
+				"candidates": [
+					{
+						"finishReason": "SAFETY"
+					}
+				],
+				"usageMetadata": {
+					"promptTokenCount": 12
+				}
+			},
+			"expect": {
+				"kind": "content_blocked",
+				"retry_after": null,
+				"message": "Gemini refused this content. Try different wording or switch provider in Settings."
+			}
+		},
+		{
+			"name": "gemini bad key 400",
+			"provider": "gemini",
+			"status": 400,
+			"headers": {},
+			"body": {
+				"error": {
+					"code": 400,
+					"message": "API key not valid. Please pass a valid API key.",
+					"status": "INVALID_ARGUMENT",
+					"details": [
+						{
+							"@type": "type.googleapis.com/google.rpc.ErrorInfo",
+							"reason": "API_KEY_INVALID"
+						}
+					]
+				}
+			},
+			"expect": {
+				"kind": "invalid_key",
+				"retry_after": null,
+				"message": "Your Gemini key was rejected. Update it in Settings."
+			}
+		},
+		{
+			"name": "gemini permission denied",
+			"provider": "gemini",
+			"status": 403,
+			"headers": {},
+			"body": {
+				"error": {
+					"code": 403,
+					"message": "Permission denied.",
+					"status": "PERMISSION_DENIED"
+				}
+			},
+			"expect": {
+				"kind": "invalid_key",
+				"retry_after": null,
+				"message": "Your Gemini key was rejected. Update it in Settings."
+			}
+		},
+		{
+			"name": "gemini rate limit",
+			"provider": "gemini",
+			"status": 429,
+			"headers": {},
+			"body": {
+				"error": {
+					"code": 429,
+					"message": "Resource has been exhausted.",
+					"status": "RESOURCE_EXHAUSTED",
+					"details": [
+						{
+							"@type": "type.googleapis.com/google.rpc.RetryInfo",
+							"retryDelay": "16.4s"
+						}
+					]
+				}
+			},
+			"expect": {
+				"kind": "rate_limited",
+				"retry_after": 17,
+				"message": "Your Gemini key hit its rate limit. Try again in 17s or switch provider in Settings."
+			}
+		},
+		{
+			"name": "gemini unavailable",
+			"provider": "gemini",
+			"status": 503,
+			"headers": {},
+			"body": {
+				"error": {
+					"code": 503,
+					"message": "The model is overloaded. Please try again later.",
+					"status": "UNAVAILABLE"
+				}
+			},
+			"expect": {
+				"kind": "overloaded",
+				"retry_after": null,
+				"message": "Gemini is overloaded right now. Try again in a minute or switch provider in Settings."
+			}
+		},
+		{
+			"name": "gemini too long",
+			"provider": "gemini",
+			"status": 400,
+			"headers": {},
+			"body": {
+				"error": {
+					"code": 400,
+					"message": "The input token count (2000000) exceeds the maximum number of tokens allowed (1048576).",
+					"status": "INVALID_ARGUMENT"
+				}
+			},
+			"expect": {
+				"kind": "context_too_long",
+				"retry_after": null,
+				"message": "This is too long for Gemini. Try a shorter input or switch provider in Settings."
+			}
+		},
+		{
+			"name": "groq ok",
+			"provider": "groq",
+			"status": 200,
+			"headers": {},
+			"body": {
+				"id": "chatcmpl-1",
+				"object": "chat.completion",
+				"model": "openai/gpt-oss-20b",
+				"choices": [
+					{
+						"index": 0,
+						"message": {
+							"role": "assistant",
+							"content": "{\"ok\": true}"
+						},
+						"finish_reason": "stop"
+					}
+				],
+				"usage": {
+					"prompt_tokens": 12,
+					"completion_tokens": 5,
+					"total_tokens": 17
+				}
+			},
+			"expect": {
+				"text": "{\"ok\": true}",
+				"input_tokens": 12,
+				"output_tokens": 5
+			}
+		},
+		{
+			"name": "groq bad key",
+			"provider": "groq",
+			"status": 401,
+			"headers": {},
+			"body": {
+				"error": {
+					"message": "Invalid API Key",
+					"type": "invalid_request_error",
+					"code": "invalid_api_key"
+				}
+			},
+			"expect": {
+				"kind": "invalid_key",
+				"retry_after": null,
+				"message": "Your Groq key was rejected. Update it in Settings."
+			}
+		},
+		{
+			"name": "groq rate limit",
+			"provider": "groq",
+			"status": 429,
+			"headers": {
+				"retry-after": "7"
+			},
+			"body": {
+				"error": {
+					"message": "Rate limit reached for model `openai/gpt-oss-20b` on tokens per minute (TPM)",
+					"type": "tokens",
+					"code": "rate_limit_exceeded"
+				}
+			},
+			"expect": {
+				"kind": "rate_limited",
+				"retry_after": 7,
+				"message": "Your Groq key hit its rate limit. Try again in 7s or switch provider in Settings."
+			}
+		},
+		{
+			"name": "groq rate limit no header",
+			"provider": "groq",
+			"status": 429,
+			"headers": {},
+			"body": {
+				"error": {
+					"message": "Rate limit reached",
+					"type": "tokens",
+					"code": "rate_limit_exceeded"
+				}
+			},
+			"expect": {
+				"kind": "rate_limited",
+				"retry_after": null,
+				"message": "Your Groq key hit its rate limit. Try again in a minute or switch provider in Settings."
+			}
+		},
+		{
+			"name": "groq flex capacity",
+			"provider": "groq",
+			"status": 498,
+			"headers": {},
+			"body": {
+				"error": {
+					"message": "Flex tier capacity exceeded",
+					"type": "capacity_exceeded"
+				}
+			},
+			"expect": {
+				"kind": "overloaded",
+				"retry_after": null,
+				"message": "Groq is overloaded right now. Try again in a minute or switch provider in Settings."
+			}
+		},
+		{
+			"name": "groq unavailable",
+			"provider": "groq",
+			"status": 503,
+			"headers": {},
+			"body": {
+				"error": {
+					"message": "Service Unavailable",
+					"type": "internal_server_error"
+				}
+			},
+			"expect": {
+				"kind": "overloaded",
+				"retry_after": null,
+				"message": "Groq is overloaded right now. Try again in a minute or switch provider in Settings."
+			}
+		},
+		{
+			"name": "groq too long",
+			"provider": "groq",
+			"status": 400,
+			"headers": {},
+			"body": {
+				"error": {
+					"message": "Please reduce the length of the messages or completion.",
+					"type": "invalid_request_error",
+					"code": "context_length_exceeded"
+				}
+			},
+			"expect": {
+				"kind": "context_too_long",
+				"retry_after": null,
+				"message": "This is too long for Groq. Try a shorter input or switch provider in Settings."
+			}
+		},
+		{
+			"name": "groq content filter",
+			"provider": "groq",
+			"status": 200,
+			"headers": {},
+			"body": {
+				"choices": [
+					{
+						"index": 0,
+						"message": {
+							"role": "assistant",
+							"content": ""
+						},
+						"finish_reason": "content_filter"
+					}
+				],
+				"usage": {
+					"prompt_tokens": 12,
+					"completion_tokens": 0
+				}
+			},
+			"expect": {
+				"kind": "content_blocked",
+				"retry_after": null,
+				"message": "Groq refused this content. Try different wording or switch provider in Settings."
+			}
+		}
+	]
+}
