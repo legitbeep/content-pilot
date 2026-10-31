@@ -1,20 +1,14 @@
 import { fail } from '@sveltejs/kit';
-import { missingRequired, type ApiKey } from '$lib/entities/api-key';
 import { can, UPLOAD_LIMITS, type Job, type JobAction } from '$lib/entities/job';
+import { requireAIKeys, requireDemoJobQuota } from '$lib/server/llm';
 import { deleteObject, headSize, presignPut } from '$lib/server/r2';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals: { supabase }, depends }) => {
 	depends('app:jobs');
-	const [jobs, keys] = await Promise.all([
-		supabase.from('jobs').select('*'),
-		supabase.from('user_keys_public').select('*')
-	]);
+	const jobs = await supabase.from('jobs').select('*');
 	if (jobs.error) console.error('jobs', jobs.error);
-	return {
-		jobs: sortJobs((jobs.data ?? []) as Job[]),
-		missingKeys: missingRequired((keys.data ?? []) as ApiKey[]).map((p) => p.name)
-	};
+	return { jobs: sortJobs((jobs.data ?? []) as Job[]) };
 };
 
 /** Pending first (queue order), then everything else newest first. */
@@ -53,11 +47,18 @@ async function nextPosition({ locals: { supabase } }: Ctx) {
 	return (data?.position ?? 0) + 1;
 }
 
+/** A job needs transcription today (LLM steps join with plan 5; switch to 'both' then).
+ * 409 missing_key / 429 demo cap, thrown so formAction shows the message. */
+async function requireUploadKeys(userId: string) {
+	const { demo } = await requireAIKeys(userId, 'transcription');
+	if (demo) await requireDemoJobQuota(userId);
+}
+
 const safeName = (name: string) => name.replace(/[^\w.-]+/g, '_').slice(-100) || 'video';
 
 export const actions: Actions = {
 	/** Step 1 of upload: check limits + keys, return a presigned PUT URL. No job row yet. */
-	presign: async ({ request, locals: { supabase, user } }) => {
+	presign: async ({ request, locals: { user } }) => {
 		const form = await request.formData();
 		const name = String(form.get('name') ?? '');
 		const type = String(form.get('type') ?? '');
@@ -67,12 +68,7 @@ export const actions: Actions = {
 		if (!(size > 0) || size > UPLOAD_LIMITS.maxBytes)
 			return fail(400, { message: 'Videos must be 2 GB or smaller.' });
 
-		const { data: keys } = await supabase.from('user_keys_public').select('*');
-		const missing = missingRequired((keys ?? []) as ApiKey[]);
-		if (missing.length)
-			return fail(400, {
-				message: `Add your ${missing.map((p) => p.name).join(' and ')} key to start.`
-			});
+		await requireUploadKeys(user!.id);
 
 		const uploadId = crypto.randomUUID();
 		const key = `uploads/${user!.id}/${uploadId}/${safeName(name)}`;
@@ -84,6 +80,7 @@ export const actions: Actions = {
 		const { request, locals } = ctx;
 		const form = await request.formData();
 		const key = String(form.get('key') ?? '');
+		await requireUploadKeys(locals.user!.id);
 		if (!key.startsWith(`uploads/${locals.user!.id}/`))
 			return fail(400, { message: 'Upload not found.' });
 		const size = await headSize(key);
@@ -180,6 +177,7 @@ export const actions: Actions = {
 		const form = await ctx.request.formData();
 		const { job, error } = await jobFor(ctx, form.get('id'), 'answer');
 		if (error) return error;
+		await requireAIKeys(ctx.locals.user!.id, 'transcription');
 		const answer = String(form.get('answer') ?? '').trim();
 		if (!answer) return fail(400, { message: 'Write an answer first.' });
 		await ctx.locals.supabase
@@ -198,6 +196,7 @@ export const actions: Actions = {
 async function backToPending(ctx: Ctx, action: 'requeue' | 'retry') {
 	const { job, error } = await jobFor(ctx, (await ctx.request.formData()).get('id'), action);
 	if (error) return error;
+	await requireAIKeys(ctx.locals.user!.id, 'transcription'); // re-runs AI steps
 	await ctx.locals.supabase
 		.from('jobs')
 		.update({

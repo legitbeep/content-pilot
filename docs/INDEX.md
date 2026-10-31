@@ -21,9 +21,11 @@ lists the code paths it describes; if you change one of those paths, update the 
 | Editor agent, agent tools | `agent.md`, `timeline.md`, `brand-memory.md` |
 | Brand rules, onboarding, learned rules | `brand-memory.md`, `data-model.md` |
 | Publishing, YouTube, scheduler, metrics | `publishing.md`, `auth-and-keys.md` |
-| Login, route protection, BYOK keys, Claude token, encryption | `auth-and-keys.md`, `env.md` |
+| Login, route protection, BYOK keys, demo allowlist, encryption | `auth-and-keys.md`, `env.md`, `llm.md` |
+| Any AI call (LLM, transcription), model registry, AI buttons/guards | `llm.md` |
 | A migration / table / RLS | `data-model.md` |
 | Env vars, Docker, local setup | `env.md`, `architecture.md` |
+| Deploying the web app (Vercel) | `deploy.md`, `env.md` |
 | A big decision | `decisions/` (add one with the `new-adr` skill) |
 | Unsure what a term means | `glossary.md` |
 
@@ -39,7 +41,9 @@ lists the code paths it describes; if you change one of those paths, update the 
 - `agent.md` — editor agent: planner, todo format, tools, memory proposals.
 - `brand-memory.md` — stated vs learned rules, promotion, conflicts.
 - `publishing.md` — YouTube OAuth, scheduler, checkpoints, scoring.
-- `auth-and-keys.md` — Google login, Claude token, BYOK encryption and validation.
+- `auth-and-keys.md` — Google login, BYOK encryption and validation.
+- `llm.md` — LLM + transcription adapters, model registry, key resolution, demo allowlist, AI gating.
+- `deploy.md` — Vercel deploy and its env vars.
 - `env.md` — every env var and where it's used.
 - `glossary.md` — domain terms.
 - `decisions/0001-monorepo.md` — pnpm monorepo + uv worker.
@@ -48,4 +52,5 @@ lists the code paths it describes; if you change one of those paths, update the 
 - `decisions/0004-byok.md` — users bring their own API keys.
 - `decisions/0005-lint-choice.md` — ESLint + Prettier (web), ruff + pyright (worker).
 - `decisions/0006-sveltekit-2.md` — stay on SvelteKit 2 + adapter-vercel; migrate to 3 later.
-- `decisions/0007-claude-oauth-token.md` — one server-wide Claude OAuth token for all AI steps.
+- `decisions/0007-claude-oauth-token.md` — (superseded by 0008) one server-wide Claude OAuth token.
+- `decisions/0008-byok-only-ai-with-demo-allowlist.md` — AI uses the user's own keys; demo allowlist exception.

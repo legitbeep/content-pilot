@@ -34,7 +34,7 @@ not in `STEPS` yet, so a job is `done` right after transcription with
 | 1 | `transcribe` | presigned GET URL, user's Deepgram key (`worker/keys.py`) | R2 `transcripts/<job_id>.json` (our format) + `transcripts/<job_id>.deepgram.json` (raw); `jobs.transcript_path` | missing key / 401-403 (key marked `invalid_at`) / 402 / other → failed with a user message |
 | 2 | `nsfw_check` | transcript (+ sampled frames later) | pass/fail | **hard block** → failed, source deleted immediately |
 | 3 | `brand_fit` | transcript, `brand_profile`, active `brand_rules` | pass or question | **soft** → `NeedsInput(question, "extract_clips")` |
-| 4 | `extract_clips` | transcript, brand memory, server-wide Claude client (`worker/claude.py`) | per candidate: clip file in R2, `clips` row (reason, word slice), initial `timelines` row | LLM/FFmpeg error → failed (retry resumes here) |
+| 4 | `extract_clips` | transcript, brand memory, `generate_json` (`worker/llm`, task `extract_clips`, `docs/llm.md`) | per candidate: clip file in R2, `clips` row (reason, word slice), initial `timelines` row | LLM/FFmpeg error → failed (retry resumes here) |
 
 ## Transcripts
 - Deepgram call (checked 2026-10-31): `POST https://api.deepgram.com/v1/listen?model=nova-3&smart_format=true&diarize_model=latest&utterances=true`,

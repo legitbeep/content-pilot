@@ -9,7 +9,6 @@ covers:
   - apps/web/src/lib/entities/api-key
   - apps/web/src/lib/features/api-keys
   - apps/web/src/routes/(authed)/(shell)/settings
-  - apps/worker/worker/claude.py
   - apps/worker/worker/crypto.py
   - apps/worker/worker/keys.py
   - fixtures/crypto.json
@@ -62,20 +61,18 @@ exists via the secret-key admin API (`createUser`, email pre-confirmed; existing
 
 YouTube connect is a **separate** OAuth flow: `docs/publishing.md`.
 
-## Claude (server-wide, not BYOK)
-All AI steps (editor agent in web, brand fit + clip extraction in the worker) share one Claude
-OAuth token, `CLAUDE_OAUTH_TOKEN` (from `claude setup-token`), set in both `.env` files. ADR 0007.
-- Web: `claude()` in `$lib/server/claude.ts`; worker: `claude()` in `apps/worker/worker/claude.py`.
-  Both send it as `Authorization: Bearer` with `anthropic-beta: oauth-2025-04-20`, model
-  `CLAUDE_MODEL` (`claude-opus-5-5`). Missing token → the call throws with the env file to fix.
-- Server only: same ESLint guard as `SUPABASE_SECRET_KEY` (it lives in `$lib/server`).
-- Users never enter a Claude key; usage and limits are the token owner's.
+## AI keys: BYOK only (ADR 0008)
+There is no server-wide AI credential. Every AI call (LLM and transcription) runs on the user's
+own key through the adapters in `docs/llm.md`. The only exception is the demo allowlist
+(`DEMO_ALLOWED_EMAILS`: shared `GEMINI_API_KEY` / `GROQ_API_KEY`, verified email read server side,
+daily job cap), also in `docs/llm.md`. Missing key → "Add an AI provider key in Settings to use this."
 
 ## BYOK
-Settings → API keys lists the providers in `$lib/entities/api-key/providers.ts`: **deepgram**
-(required: transcription) and **wispr** (optional: voice input in the editor). There is no
-Anthropic key: Claude is the server-wide token above. The `key_provider` enum also has
-`assemblyai`/`groq` for later; they are not offered yet.
+Settings → AI providers lists the providers in `$lib/entities/api-key/providers.ts`: **groq**
+(LLM + transcription; one Groq key covers everything), **anthropic** (Claude, LLM), **gemini**
+(LLM), **deepgram** (transcription with speaker labels) and **wispr** (optional voice input).
+Uploading needs a transcription key (later also an LLM key); see "Gating AI actions" in
+`docs/llm.md`. The `key_provider` enum also has `assemblyai`, not offered.
 
 - **Storage format** (one format, both languages): AES-256-GCM, key = base64 `ENCRYPTION_KEY`
   (32 bytes). `user_keys.iv` = 12 random bytes per write; `user_keys.ciphertext` = encrypted
@@ -85,20 +82,23 @@ Anthropic key: Claude is the server-wide token above. The `key_provider` enum al
   encrypted by each side; `crypto.test.ts` (vitest) and `tests/test_crypto.py` (pytest) each
   decrypt the other's.
 - **Save** (`settings/+page.server.ts` → `saveKey` in `$lib/server/keys.ts`): validate with one
-  cheap authenticated call → encrypt → upsert with the secret-key client
+  cheap authenticated call (`$lib/server/llm/validate.ts`) → encrypt → upsert with the secret-key client
   (`$lib/server/supabase-admin.ts`; the table has no RLS policies). Saving clears `invalid_at`.
-- **Validate** (checked 2026-10-31): deepgram `GET https://api.deepgram.com/v1/projects` with
-  `Authorization: Token <key>` · wispr: see below. 2xx → `validated_at = now()`;
+- **Validate** (checked 2026-10-31, no tokens used): anthropic `GET /v1/models?limit=1`
+  (`x-api-key`, `anthropic-version: 2023-06-01`) · gemini `GET /v1beta/models?pageSize=1`
+  (`x-goog-api-key`; a bad key is a 400, so 400 rejects too) · groq `GET /openai/v1/models`
+  (Bearer) · deepgram `GET https://api.deepgram.com/v1/projects` (`Token <key>`) · wispr: below. 2xx → `validated_at = now()`;
   401/403 → save rejected with a message; network error / 5xx / timeout → saved as unverified.
 - **Status** shown in Settings (`keyStatus()`): `valid` = `validated_at` set · `unverified` =
   `validated_at` null · `invalid` = `invalid_at` set (the worker got 401/403 using a saved key;
-  the job fails with "Deepgram rejected the API key. Update it in Settings."). Plus last 4 chars,
+  the job fails with e.g. "Your Deepgram key was rejected. Update it in Settings."). Plus last 4 chars,
   the validated/saved date, and Replace / Remove. The full key never goes back to the browser.
 - **Read for UI**: `user_keys_public` view → provider, last4, validated_at, invalid_at, created_at.
 - **Worker use**: `worker/keys.py` `get_key(user_id, provider)` decrypts; `mark_valid` /
   `mark_invalid` set `validated_at` / `invalid_at` after the first real call.
-- **Upload gate**: Queue shows "Add your Deepgram key to start." with a link to Settings while a
-  required key is missing (`missingRequired()`); the presign route refuses too.
+- **Upload gate**: the Queue's Upload button is wrapped in `<RequiresAI need="transcription">`
+  (disabled + tooltip + "Add a key in Settings"); the presign/create/retry actions call
+  `requireAIKeys` (409 with the missing_key message). `docs/llm.md`.
 
 ### Wispr (optional, never blocks the user)
 Voice is optional and typing always works, so a Wispr problem never blocks onboarding or saving.

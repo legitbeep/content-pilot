@@ -1,0 +1,16 @@
+{
+	"name": "@clip-studio/llm-registry",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts",
+		"./registry.json": "./registry.json"
+	},
+	"scripts": {
+		"check": "tsc --noEmit"
+	},
+	"devDependencies": {
+		"@types/node": "^24.19.2",
+		"typescript": "^6.0.3"
+	}
+}

@@ -1,0 +1,82 @@
+{
+	"checked": "2026-10-31",
+	"tasks": {
+		"extract_clips": "smart",
+		"brand_fit": "smart",
+		"plan_edits": "smart",
+		"learn_rules": "smart",
+		"stated_rules": "smart",
+		"recommendations": "smart",
+		"moderate_text": "fast",
+		"understand_request": "fast",
+		"captions": "fast"
+	},
+	"llm": {
+		"anthropic": {
+			"name": "Claude",
+			"json_mode": "instructions",
+			"tiers": {
+				"smart": {
+					"model": "claude-opus-5-5",
+					"max_input_tokens": 968000,
+					"max_output_tokens": 32000
+				},
+				"fast": {
+					"model": "claude-haiku-5-5",
+					"max_input_tokens": 992000,
+					"max_output_tokens": 8000
+				}
+			}
+		},
+		"gemini": {
+			"name": "Gemini",
+			"json_mode": "mime_type",
+			"tiers": {
+				"smart": {
+					"model": "gemini-4-argon",
+					"max_input_tokens": 1048576,
+					"max_output_tokens": 32000
+				},
+				"fast": {
+					"model": "gemini-3.8-flash",
+					"max_input_tokens": 1048576,
+					"max_output_tokens": 8000
+				}
+			}
+		},
+		"groq": {
+			"name": "Groq",
+			"json_mode": "json_schema",
+			"tiers": {
+				"smart": {
+					"model": "openai/gpt-oss-120b",
+					"max_input_tokens": 115072,
+					"max_output_tokens": 16000
+				},
+				"fast": {
+					"model": "openai/gpt-oss-20b",
+					"max_input_tokens": 123072,
+					"max_output_tokens": 8000
+				}
+			}
+		}
+	},
+	"transcription": {
+		"deepgram": {
+			"name": "Deepgram",
+			"model": "nova-3"
+		},
+		"groq": {
+			"name": "Groq",
+			"model": "whisper-large-v3-turbo",
+			"max_file_bytes": 25000000
+		}
+	},
+	"sources": {
+		"anthropic": "https://platform.claude.com/docs/en/about-claude/models/overview",
+		"gemini": "https://ai.google.dev/gemini-api/docs/models",
+		"groq": "https://console.groq.com/docs/models",
+		"groq_whisper": "https://console.groq.com/docs/speech-to-text",
+		"deepgram": "https://developers.deepgram.com/docs/models-languages-overview"
+	}
+}

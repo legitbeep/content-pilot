@@ -23,7 +23,7 @@
 <PageHeader title="Queue" description="Long videos being transcribed, checked and clipped." />
 
 <div class="flex flex-col gap-6">
-	<UploadVideo missingKeys={data.missingKeys} />
+	<UploadVideo />
 	{#if data.jobs.length}
 		<JobQueue jobs={data.jobs} />
 	{:else}

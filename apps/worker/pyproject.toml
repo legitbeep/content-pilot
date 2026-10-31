@@ -4,7 +4,6 @@ version = "0.1.0"
 description = "Clip Studio worker: job queue, pipeline, FFmpeg render, scheduler"
 requires-python = ">=3.12"
 dependencies = [
-    "anthropic>=2.3.0",
     "boto3>=1.43.123",
     "cryptography>=50.0.2",
     "psycopg[binary]>=3.3.6",

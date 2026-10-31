@@ -38,3 +38,6 @@ export async function decrypt(
 
 /** Postgres bytea literal for PostgREST writes. */
 export const toBytea = (b: Uint8Array) => '\\x' + Buffer.from(b).toString('hex');
+
+/** PostgREST returns bytea as a `\x<hex>` string. */
+export const fromBytea = (s: string) => new Uint8Array(Buffer.from(s.replace(/^\\x/, ''), 'hex'));

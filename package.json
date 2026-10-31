@@ -11,6 +11,9 @@
 		"worker": "docker compose up --build worker",
 		"worker:once": "uv run --directory apps/worker python -m worker.run_once",
 		"check:docs": "node scripts/check-docs.ts",
-		"check:secrets": "sh scripts/check-secrets.sh"
+		"check:secrets": "sh scripts/check-secrets.sh",
+		"gen:llm-registry": "cp packages/llm-registry/registry.json apps/worker/worker/llm/registry.json",
+		"check:ai": "node scripts/check-ai-imports.ts",
+		"llm:smoke": "node --env-file=apps/web/.env scripts/llm-smoke.ts"
 	}
 }

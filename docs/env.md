@@ -13,8 +13,10 @@ last_updated: 2026-10-31
 Each app has its own env file: copy `apps/web/.env.example` → `apps/web/.env` and
 `apps/worker/.env.example` → `apps/worker/.env` (both gitignored, never commit). Vite/SvelteKit
 reads `apps/web/.env`; the worker container gets `apps/worker/.env` via `docker-compose.yml`
-`env_file`. On Vercel, set the web vars in project settings. Users' own transcription/Wispr keys are **not** env
-vars (BYOK, `docs/auth-and-keys.md`); Claude is the one server-wide AI credential (ADR 0007).
+`env_file`. On Vercel, set the web vars in project settings (`docs/deploy.md`). Users' AI keys are **not** env
+vars (BYOK, ADR 0008). The only AI keys in env are the shared **demo** keys, used solely for
+allowlisted accounts (`docs/llm.md`). `ANTHROPIC_API_KEY`, `CLAUDE_OAUTH_TOKEN` and
+`DEEPGRAM_API_KEY` must not exist in app code (`pnpm check:ai`).
 
 ## apps/web/.env
 
@@ -24,7 +26,10 @@ vars (BYOK, `docs/auth-and-keys.md`); Claude is the one server-wide AI credentia
 | `PUBLIC_SUPABASE_PUBLISHABLE_KEY` | browser + server | Publishable key (`sb_publishable_…`); RLS applies |
 | `SUPABASE_SECRET_KEY` | **server only** | Secret key (`sb_secret_…`), bypasses RLS: `user_keys`, `platform_connections` writes. Lint fails if a client-reachable module references it |
 | `ENCRYPTION_KEY` | server | AES-GCM key (base64, 32 bytes) for BYOK keys + OAuth refresh tokens. Same value as worker |
-| `CLAUDE_OAUTH_TOKEN` | **server only** | Claude OAuth token (`claude setup-token`) for the editor agent. Same value as worker |
+| `DEMO_ALLOWED_EMAILS` | **server only** | Comma-separated verified emails that may use the shared demo keys when they have no own key. Same value as worker. Empty = no demo |
+| `DEMO_DAILY_JOB_LIMIT` | server | Jobs per UTC day for a demo user on the shared keys (default 10) |
+| `GEMINI_API_KEY` | **server only** | Shared demo LLM key (allowlisted users only, never sent to the browser). Read only in `$lib/server/llm/keys.ts` |
+| `GROQ_API_KEY` | **server only** | Shared demo transcription key (same rules). Read only in `$lib/server/llm/keys.ts` |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | server | Presign browser uploads, HEAD/GET/DELETE objects. The bucket needs a CORS rule allowing `PUT` from the web origin(s) with any header |
 | `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET` | server | YouTube connect OAuth |
 | `YOUTUBE_REDIRECT_URI` | server | YouTube OAuth callback URL |
@@ -43,7 +48,8 @@ Web code reads public vars through `$env/dynamic/public` (so a missing `.env` do
 | `DATABASE_URL` | Postgres for `FOR UPDATE SKIP LOCKED` claims. Use the Session pooler string from Supabase → Connect if your network has no IPv6 (the direct `db.` host is IPv6-only) |
 | `WORKER_CONCURRENCY` | Jobs processed at once (threads), default 1. Per-user cap of 2 is in the claim query |
 | `ENCRYPTION_KEY` | Same value as web; decrypts BYOK keys + refresh tokens |
-| `CLAUDE_OAUTH_TOKEN` | Claude OAuth token for AI pipeline steps (brand fit, clip extraction). Same value as web |
+| `DEMO_ALLOWED_EMAILS`, `DEMO_DAILY_JOB_LIMIT` | Same values as web; the worker checks the job owner's email in `auth.users` |
+| `GEMINI_API_KEY`, `GROQ_API_KEY` | Shared demo keys (allowlisted users only). Read only in `worker/llm/keys.py` |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | Read sources, write renders |
 | `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET` | Token refresh, uploads, stats (Data + Analytics APIs) |
 
