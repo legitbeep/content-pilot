@@ -56,12 +56,17 @@ Video bytes never touch SvelteKit. Three steps, all from the browser:
 1. **Client checks**: `video/*` only, ≤ 2 GB, ≤ 60 min (duration read from a `<video>` element's
    metadata; if the browser can't read it, the worker's probe enforces the limit). Limits:
    `UPLOAD_LIMITS` in `$lib/entities/job`.
-2. **`?/presign`** form action: re-checks type/size, refuses if a required BYOK key is missing,
+2. **`?/presign`** form action: re-checks type/size, calls `requireAIKeys(user, 'both')` (LLM + transcription key, own
+   or demo; 409 if missing) and, for demo users, `requireDemoJobQuota` (429 at the daily cap),
    returns `{ uploadId, key, url }` with key `uploads/<user_id>/<uploadId>/<safe name>` and a
    presigned R2 PUT URL (`$lib/server/r2.ts`, `aws4fetch`, 1 h).
 3. Browser **PUTs** the file to R2 (XHR for the progress bar), then **`?/create`**: checks the key
    is under the user's prefix and the object exists (HEAD, size ≤ 2 GB), then inserts the job as
    `pending` at the end of the queue (`position = max + 1`) with `title`, `request`, `duration_s`.
+   It repeats the key/quota check first and, for demo users, `recordDemoJob` after the insert.
+   Answer and retry also call `requireAIKeys` (they re-run AI steps). Thrown errors reach the UI
+   through `formAction`, which surfaces `error(...)` messages as-is; the upload button is gated by
+   `<RequiresAI>` (`docs/llm.md`).
    No job row exists until the upload succeeded.
 
 Requires CORS on the R2 bucket allowing `PUT` from the web origin (`docs/env.md`).
@@ -72,7 +77,7 @@ request snippet, step + progress bar while processing, duration (`Timecode`), `S
 created time, the state's main action. Pending jobs first in queue order, then the rest newest
 first. Row click / Enter opens the **details sheet**: info, request (editable while pending),
 question + answer (needs_input), error, step history (`jobs.steps`), and the transcript preview
-(utterances with speaker labels and timecodes, from `GET /queue/<id>/transcript`).
+(utterances with timecodes, and speaker labels when the provider gives them — Groq Whisper doesn't; from `GET /queue/<id>/transcript`).
 
 Keyboard (in `$lib/shared/config/shortcuts.ts`, shown in the `?` sheet): `J`/`K` move the
 selection, `Enter` opens details, `Backspace` deletes (with a confirm dialog).

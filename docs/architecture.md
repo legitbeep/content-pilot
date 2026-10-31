@@ -15,11 +15,11 @@ flowchart LR
   B -->|PUT via presigned URL| R2[(Cloudflare R2)]
   W -->|publishable key + user JWT, RLS| DB[(Supabase Postgres)]
   W -->|secret key: keys, tokens| DB
-  W -->|Claude OAuth token| A[Claude: editor agent + pipeline AI]
-  K -->|Claude OAuth token| A
+  W -->|user's BYOK or demo key| A[LLM: Anthropic / Gemini / Groq]
+  K -->|user's BYOK or demo key| A
   K[apps/worker in Docker] -->|claim jobs FOR UPDATE SKIP LOCKED| DB
   K -->|read source, write renders| R2
-  K -->|transcription BYOK| T[Deepgram / AssemblyAI / Groq]
+  K -->|transcription BYOK or demo| T[Deepgram / Groq Whisper]
   K -->|upload + stats| Y[YouTube Data API]
   W -->|OAuth connect| Y
   B -->|Google login| S[Supabase Auth]
@@ -32,6 +32,8 @@ flowchart LR
 - **apps/worker** (Python, Docker, FFmpeg): one loop that claims queue jobs, runs the pipeline,
   renders timelines, publishes scheduled posts, collects metric checkpoints.
 - **packages/timeline-schema**: the contract between editor and renderer.
+- **packages/llm-registry**: model registry + response fixtures shared by both LLM adapters
+  (`docs/llm.md`).
 - **Supabase**: Postgres (data + queue) and Google login. Hosted even in local dev.
 - **R2**: all video. Browser uploads directly via presigned URLs.
 
@@ -39,7 +41,7 @@ flowchart LR
 Layers (import only downward): `widgets → features → entities → shared`. Routes (`src/routes`)
 compose widgets/features. `src/lib/server` is SvelteKit's server-only folder (`$lib/server`),
 outside FSD layering: secrets, Supabase service client (`supabase-admin.ts`), crypto, keys,
-R2 presign, agent.
+R2 presign, dev login, and `llm/` (the web LLM adapter, key resolution, AI guards; `docs/llm.md`).
 Each layer has an `index.ts` with a `// Docs:` header; slices go in `src/lib/<layer>/<slice>/`.
 
 Today's slices:
@@ -50,7 +52,8 @@ Today's slices:
 - `shared/config/`: `nav.ts` (one route list for sidebar, palette, breadcrumbs) and
   `shortcuts.ts` (every keyboard shortcut).
 - `widgets/app-shell`: sidebar, top bar, command palette, shortcut sheet, key handler.
-- `entities/api-key`: BYOK provider list, key status. `features/api-keys`: Settings key row.
+- `entities/api-key`: BYOK provider list, key status, `aiCapabilities`, `<RequiresAI>` gate.
+  `features/api-keys`: Settings key row, provider select, AI preferences.
 - `entities/job`: job/transcript types, upload limits, transitions. `features/upload-video`:
   dropzone + presigned upload. `widgets/job-queue`: queue list + details sheet (`docs/queue.md`).
 - `shared/lib/form-action.ts` (`formAction()`: call a page's form action from JS).
