@@ -9,8 +9,10 @@ const config = {
 		runes: ({ filename }) => (filename.split(/[/\\]/).includes('node_modules') ? undefined : true)
 	},
 	kit: {
-		// Explicit runtime: builds don't depend on the local Node version.
-		adapter: adapter({ runtime: 'nodejs24.x' })
+		// Explicit runtime: builds don't depend on the local Node version. maxDuration 60 s covers
+		// the AI routes (agent SSE = up to 3 LLM calls) and is allowed on every Vercel plan
+		// (docs/deploy.md "Function duration").
+		adapter: adapter({ runtime: 'nodejs24.x', maxDuration: 60 })
 	}
 };
 
