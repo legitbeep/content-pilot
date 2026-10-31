@@ -30,6 +30,14 @@ Parallelism cap: 3 subagents (Opus).
 9. Checkpoint B (end of Wave 1) checklist must include deferred A2, in order: (a) demo account glorytoharsh@gmail.com, no own keys: onboarding -> upload -> transcript; (b) second account, Groq key only: onboarding -> upload -> Groq transcript; llm:smoke ok incl JSON; (c) same account, Gemini default: llm:smoke rows provider = gemini; (d) no keys: upload disabled with tooltip + Settings link. Skip Claude + Deepgram.
 10. psql installed (brew libpq): psql is primary for migrations, psycopg kept as fallback.
 
+## Decisions (2026-10-31, resume)
+7. Permissions in .claude/settings.json are final (denied: pnpm dlx, git push, git reset --hard, git clean, supabase db push/link, rm outside repo).
+8. AI keys: users' own keys only, except demo allowlist (DEMO_ALLOWED_EMAILS, currently glorytoharsh@gmail.com) using server GROQ_API_KEY + GEMINI_API_KEY with daily job cap. ADR 0008 (on feat/llm-adapter).
+9. psql is installed and connects; use it for migrations (supersedes psycopg note).
+10. Checkpoint A2 DEFERRED to Wave 1 checkpoint B (needs onboarding, plan 4). After plan-llm merges the adapter interface is frozen; bug fixes from real-key testing allowed. A2 items for checkpoint B: demo account e2e; Groq-only e2e + llm:smoke incl JSON; Gemini default (llm_calls shows gemini); no keys -> upload disabled. Skip Claude + Deepgram.
+11. Dev login test user must have a completed brand_profile (dev-only, DEV_LOGIN guard) so subagents reach signed-in pages. Plan 4 must keep this working.
+12. Worker runs locally until plan 10 deploys it.
+
 ## Log
 - Step 0 done. Step 1 prep launched.
 - Checkpoint A (permissions diff) pending user OK.
@@ -42,3 +50,4 @@ Parallelism cap: 3 subagents (Opus).
 - User: ADR 0007 replaced by user-keys + demo allowlist (DEMO_ALLOWED_EMAILS, DEMO_DAILY_JOB_LIMIT, key_source), docs/deploy.md Vercel env section. Sent to running subagent. Keep gitleaks allow.
 - Scanner test: staged fake postgres URL + api key -> 2 leaks, pnpm check exit 1; file removed.
 - plan-llm done (4 commits, ec72f2f). Orchestrator re-ran check+test in worktree: pass (web 63, schema 6, worker 76). Migration applied via psycopg (psql not installed). Risks: Groq JSON mode untested, plan 5 must switch upload guard to 'both', deleting jobs frees demo cap. Checkpoint A2 pending.
+- Resumed (new session). llm branch at 737c3e2 has fix round; decision 11 still missing. Status report to user, awaiting OK.
