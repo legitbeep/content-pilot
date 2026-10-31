@@ -15,7 +15,7 @@ Parallelism cap: 3 subagents (Opus).
 | 5 | 2 | feat/clips | - | merged | f616ecb; check+test pass (web 94, schema 11, worker 132) |
 | 7 | 2 | feat/agent | - | merged | eee4450; check+test pass (web 121, schema 11, worker 102) |
 | 9 | 2 | feat/performance | - | merged | 478a654; check+test pass (web 104, schema 11, worker 114) |
-| 10 | 3 | feat/integration | - | todo | |
+| 10 | 3 | feat/integration | .worktrees/integration | in progress | Phase 1+2; no merge before user's prod results (checkpoint D) |
 
 ## Decisions (2026-10-31, from user)
 1. Permissions: allow pnpm, uv, docker compose, ffmpeg/ffprobe, psql, git add/commit/status/diff/log/worktree. Blocked: git push, supabase db push, git reset --hard, git clean, rm outside repo.
@@ -96,6 +96,15 @@ Shared surfaces and the single owner of each:
 **Merge order:** 5 -> 9 -> 7 (9 replaces 5's apply_weights stub; 7 consumes 5's clip_feedback and
 9's caption_edit events + performance candidates in its review UI).
 
+## Wave 3 rules (from user, 2026-11-01)
+1. No merge of feat/integration until user sends production test results; their bug list is fixed on feat/integration in Phase 1.
+2. No hotfixes on main unless user says "hotfix"; then fix on main and rebase feat/integration.
+3. Never start the long-running worker or any worker container (user's laptop worker serves prod). run_once on own seed rows only.
+4. No demo server keys or user's keys; mocks + seed only.
+5. Phase 2: prepare scripts/deploy-worker.sh + docs/deploy.md only; user runs everything on VM/Vercel/Supabase.
+6. Phase 1+2 done + checks pass in worktree -> stop at checkpoint D, wait for prod results; then fix, merge, final deploy checklist.
+Note: plans/plan10.md on main still says Oracle Cloud/HF Spaces; user says target is a Google Cloud VM -> follow user.
+
 ## Log
 - Step 0 done. Step 1 prep launched.
 - Checkpoint A (permissions diff) pending user OK.
@@ -143,3 +152,4 @@ Shared surfaces and the single owner of each:
 - docker compose build worker on main: OK; nsfw.onnx sha256 matches, onnxruntime loads it; yt_stats.fake() False inside image even with YOUTUBE_FAKE=true. Running worker container still old image (not restarted).
 - Env diff vs last deploy (d291f6f): only YOUTUBE_FAKE (web+worker, dev-only, don't set) and NSFW_MODEL_PATH (worker, optional). No new required vars.
 - Wave 2 worktrees removed; stray agent.py.tmp deleted. WAVE 2 MERGED. Checkpoint C moved to production testing after deploy. Waiting on user: db push (p5, p7, p9 migrations), web deploy, worker restart.
+- Wave 3 start: worktree .worktrees/integration (feat/integration from main 700f20d), env sanitized (AI keys, DEMO_ALLOWED_EMAILS, YOUTUBE_CLIENT_SECRET blank; DEV_LOGIN_EMAIL=dev-integration@clip-studio.test), deps installed. Plan 10 subagent launched.
