@@ -8,7 +8,7 @@ Parallelism cap: 3 subagents (Opus).
 | plan | wave | branch | worktree | state | last note |
 |---|---|---|---|---|---|
 | prep | 0 | main | - | merged | committed 87c6da8 (check+test pass) |
-| llm | 0 | feat/llm-adapter | .worktrees/llm | todo | worktree ready (no commits yet); waiting on settings.json OK |
+| llm | 0 | feat/llm-adapter | .worktrees/llm | running | subagent launched (port 5173) |
 | 4 | 1 | feat/brand | .worktrees/brand | todo | |
 | 6 | 1 | feat/editor | .worktrees/editor | todo | |
 | 8 | 1 | feat/publish | .worktrees/publish | todo | |
@@ -31,3 +31,5 @@ Parallelism cap: 3 subagents (Opus).
 - Note: .claude/settings.json denies `npx supabase db push`; orchestrator's post-merge push needs human or deny removal.
 - Prep committed 87c6da8. Leaked DB password found in worker .env.example (history, commit 6dbaf5e) -> placeholder; user must rotate.
 - llm worktree created + deps installed. Subagent launch denied by auto-mode classifier; waiting on user.
+- Settings.json approved + committed with secret scanning (12be9a7). Full-history gitleaks: 2 findings (rotated DB pw in 6dbaf5e via custom postgres rule; test key in fixtures/crypto.json), both fingerprinted in .gitleaksignore.
+- llm worktree ff'd to 12be9a7, rotated .env copied, DEV_LOGIN=true. plan-llm subagent launched.
