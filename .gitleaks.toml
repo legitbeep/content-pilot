@@ -1,0 +1,13 @@
+# Docs: docs/env.md
+[extend]
+useDefault = true
+
+[[rules]]
+id = "postgres-url-password"
+description = "Postgres connection string with a password"
+regex = '''postgres(?:ql)?://[^:\s/]+:([^@\s]+)@'''
+secretGroup = 1
+keywords = ["postgres"]
+[[rules.allowlists]]
+regexTarget = "secret"
+regexes = ['''(?i)^(\[?your[-_a-z]*\]?|password|<[^>]*>|\$\{?[A-Z_]+\}?|postgres|x+)$''']

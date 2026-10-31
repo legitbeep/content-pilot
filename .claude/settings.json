@@ -4,17 +4,31 @@
 			"Bash(pnpm *)",
 			"Bash(uv *)",
 			"Bash(docker compose *)",
-			"Bash(npx supabase *)",
+			"Bash(npx supabase migration new *)",
+			"Bash(npx supabase gen types *)",
 			"Bash(node scripts/check-docs.ts *)",
 			"Bash(git status *)",
 			"Bash(git diff *)",
-			"Bash(git log *)"
+			"Bash(git log *)",
+			"Bash(git add *)",
+			"Bash(git commit *)",
+			"Bash(git worktree *)",
+			"Bash(ffmpeg *)",
+			"Bash(ffprobe *)",
+			"Bash(psql *)",
+			"Bash(gitleaks *)"
 		],
 		"deny": [
-			"Bash(npx supabase link *)",
 			"Bash(npx supabase db push *)",
-			"Bash(npx supabase functions deploy *)",
-			"Bash(npx supabase secrets *)"
+			"Bash(npx supabase link *)",
+			"Bash(pnpm dlx *)",
+			"Bash(git push *)",
+			"Bash(git reset --hard *)",
+			"Bash(git clean *)",
+			"Bash(rm /*)",
+			"Bash(rm * /*)",
+			"Bash(rm *~*)",
+			"Bash(rm *../*)"
 		]
 	},
 	"hooks": {

@@ -1,0 +1,5 @@
+# Known findings (no values here). Rotated or test-only; history not rewritten.
+# Rotated Supabase DB password, removed in 87c6da8.
+6dbaf5e8cea3989ac86107a1fc20221fb4482373:apps/worker/.env.example:postgres-url-password:7
+# Test-only AES key for the cross-language crypto fixture.
+c705751ba5ea084764997222cb2fb3251c2d1600:fixtures/crypto.json:generic-api-key:3

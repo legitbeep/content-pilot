@@ -3,6 +3,9 @@ covers:
   - apps/web/.env.example
   - apps/worker/.env.example
   - docker-compose.yml
+  - .gitleaks.toml
+  - .gitleaksignore
+  - scripts/check-secrets.sh
 last_updated: 2026-10-31
 ---
 # Environment variables
@@ -45,3 +48,9 @@ Web code reads public vars through `$env/dynamic/public` (so a missing `.env` do
 | `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET` | Token refresh, uploads, stats (Data + Analytics APIs) |
 
 Adding a var: add it to the right `.env.example` (placeholder + comment) and this doc in the same change.
+
+## Secret scanning
+`pnpm check` runs `scripts/check-secrets.sh`: gitleaks over staged and uncommitted changes only
+(skips with a warning if gitleaks isn't installed). `.gitleaks.toml` extends the default rules
+with a Postgres-URL-password rule; `.gitleaksignore` lists known rotated or test-only findings
+by fingerprint. Full-history scan: `gitleaks git --redact .`.
