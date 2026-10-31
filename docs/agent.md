@@ -4,6 +4,7 @@ covers:
   - apps/web/src/lib/server/agent
   - apps/web/src/lib/features/editor-agent
   - apps/web/src/routes/api/editor
+  - apps/worker/seeds/agent.py
 last_updated: 2026-11-01
 ---
 # Editor agent
@@ -68,6 +69,13 @@ them. All AI goes through `generateJSON` (`docs/llm.md`) on the user's own key (
 The agent never writes active rules (CLAUDE.md hard rule 4). `propose_memory_update` goes through
 the same learned-rule pipeline as edits (`docs/brand-memory.md` → Learned rules): a `candidate` the
 user reviews on Brand memory.
+
+## Seed
+`pnpm seed:agent` / `pnpm seed:agent:clean` (`apps/worker/seeds/agent.py`): the editor seed (3 clips,
+timelines, `uploads/<user>/seed-editor/{voiceover,music}.m4a`) for `dev-agent@clip-studio.test`
+(`SEED_EMAIL`), tagged `seed:agent`, plus manual trim events on clips one and two, a caption_edit
+event, a clip_feedback row, a stated rule with a conflicting learned candidate and a ready
+`performance` candidate (`docs/brand-memory.md`).
 
 ## Tests
 `model.test.ts` (executor with fixed plans, incl. the acceptance message's plan; sandbox; refs) and

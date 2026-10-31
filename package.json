@@ -18,6 +18,8 @@
 		"seed:editor": "uv run --directory apps/worker --env-file .env python -m seeds.editor",
 		"seed:editor:clean": "uv run --directory apps/worker --env-file .env python -m seeds.editor --clean",
 		"seed:publish": "uv run --directory apps/worker --env-file .env python seed_publish.py",
+		"seed:agent": "uv run --directory apps/worker --env-file .env python -m seeds.agent",
+		"seed:agent:clean": "uv run --directory apps/worker --env-file .env python -m seeds.agent --clean",
 		"seed:publish:clean": "uv run --directory apps/worker --env-file .env python seed_publish.py clean"
 	}
 }

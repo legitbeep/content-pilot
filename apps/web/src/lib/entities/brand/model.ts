@@ -96,6 +96,9 @@ export function profileToRow(p: BrandProfile) {
 	return { answers, example_posts };
 }
 
+/** A learned candidate with this much evidence is shown as "ready to review" (never auto-activated). */
+export const READY_AT = 3;
+
 export type BrandRule = {
 	id: string;
 	rule: string;
@@ -106,6 +109,8 @@ export type BrandRule = {
 	evidence: unknown[];
 	created_at: string;
 	updated_at: string;
+	/** A learned candidate that goes against this active/pinned rule (plan 7). */
+	conflicts_with?: string | null;
 };
 
 /** What the stated_rules task returns and what the review/regenerate lists edit. */

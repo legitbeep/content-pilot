@@ -209,9 +209,9 @@ the user has a voice key; hold V to talk. -->
 />
 
 <section data-slot="agent-chat" class="mt-auto flex min-h-72 flex-col gap-2 border-t pt-3">
-	<div class="flex items-baseline justify-between">
+	<div>
 		<h2 class="text-xs font-medium text-muted-foreground">Editor agent</h2>
-		<span class="text-xs text-muted-foreground">Finds moments by what's said, not visuals</span>
+		<p class="text-xs text-muted-foreground">Finds moments by what's said, not by visuals.</p>
 	</div>
 
 	<div bind:this={list} class="flex max-h-96 min-h-0 flex-1 flex-col gap-3 overflow-y-auto">

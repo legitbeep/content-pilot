@@ -17,7 +17,8 @@
 	import Properties from './properties.svelte';
 	import FinishDialog from './finish-dialog.svelte';
 	import { renderBadge } from './render-badge';
-	import { AgentChat } from '$lib/features/editor-agent';
+	import { page } from '$app/state';
+	import { AgentChat, learnFromEdits } from '$lib/features/editor-agent';
 
 	let {
 		clip,
@@ -34,14 +35,17 @@
 	} = $props();
 
 	// svelte-ignore state_referenced_locally (the route re-creates this component per clip)
-	const editor = new EditorState(timeline, revision, urls, (f) =>
-		formAction<{ revision: number }>('save', {
+	const editor = new EditorState(timeline, revision, urls, async (f) => {
+		const r = await formAction<{ revision: number }>('save', {
 			revision: f.revision,
 			timeline: JSON.stringify(f.timeline),
 			events: JSON.stringify(f.events),
 			render: f.render ? '1' : ''
-		})
-	);
+		});
+		// Learning from edits (plan 7): the server only runs it every 25 new events.
+		if (f.events.length && page.data.ai?.llm) void learnFromEdits();
+		return r;
+	});
 	// svelte-ignore state_referenced_locally
 	for (const c of clips)
 		if (c.file_key && c.file_end_s !== null && c.file_start_s !== null)
@@ -118,6 +122,7 @@
 			if (!(await editor.flush())) return;
 			await formAction('renderAll', {});
 			finishOpen = true;
+			if (page.data.ai?.llm) void learnFromEdits(true);
 		} catch (e) {
 			toast.error(e instanceof Error ? e.message : 'Could not start the renders.');
 		} finally {

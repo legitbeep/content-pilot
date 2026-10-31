@@ -16,7 +16,9 @@ export const load: PageServerLoad = async ({ locals: { supabase, user } }) => {
 		loadBrand(supabase, user!.id),
 		supabase
 			.from('brand_rules')
-			.select('id, rule, scope, source, status, evidence_count, evidence, created_at, updated_at')
+			.select(
+				'id, rule, scope, source, status, evidence_count, evidence, created_at, updated_at, conflicts_with'
+			)
 			.order('created_at')
 	]);
 	if (rules.error) console.error('brand_rules load failed', rules.error);
@@ -126,5 +128,55 @@ export const actions: Actions = {
 			if (upd.error) return fail(500, { message: 'Could not archive the old rules.' });
 		}
 		return { applied: adds.length + removes.length };
+	},
+	/** Learned candidates (plan 7 edits, plan 9 performance). The user's explicit choice is the only
+	 * thing that activates one. op=apply: activate (ids) → active, dismiss (ids) → archived.
+	 * op=keep (id): keep the stated rule, archive the candidate. op=update (id): archive the stated
+	 * rule the candidate conflicts with and activate the candidate. */
+	learned: async ({ request, locals: { supabase } }) => {
+		const form = await request.formData();
+		const op = String(form.get('op'));
+		const now = new Date().toISOString();
+		const set = (ids: string[], status: string) =>
+			ids.length
+				? supabase
+						.from('brand_rules')
+						.update({ status, conflicts_with: null, updated_at: now })
+						.in('id', ids)
+						.eq('status', 'candidate')
+				: Promise.resolve({ error: null });
+		const failed = (r: { error: unknown }[]) =>
+			r.some((x) => x.error)
+				? fail(500, { message: 'Could not update the rules. Try again.' })
+				: null;
+
+		if (op === 'apply') {
+			const r = await Promise.all([
+				set(form.getAll('activate').map(String), 'active'),
+				set(form.getAll('dismiss').map(String), 'archived')
+			]);
+			return failed(r) ?? { learnedSaved: true };
+		}
+		const id = String(form.get('id') ?? '');
+		if (op === 'keep') return failed([await set([id], 'archived')]) ?? { learnedSaved: true };
+		if (op === 'update') {
+			const { data: cand } = await supabase
+				.from('brand_rules')
+				.select('conflicts_with')
+				.eq('id', id)
+				.eq('status', 'candidate')
+				.maybeSingle();
+			if (!cand) return fail(404, { message: 'That suggestion is gone. Reload the page.' });
+			const r = [await set([id], 'active')];
+			if (cand.conflicts_with)
+				r.push(
+					await supabase
+						.from('brand_rules')
+						.update({ status: 'archived', updated_at: now })
+						.eq('id', cand.conflicts_with)
+				);
+			return failed(r) ?? { learnedSaved: true };
+		}
+		return fail(400, { message: 'Unknown action.' });
 	}
 };
