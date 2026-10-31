@@ -94,7 +94,7 @@ Called by extract_clips (plan 5). Each candidate has `scores` (dict/list of numb
 `features`. `ranking_score = mean(scores) × Π clamp(weight[f], 0.5, 2.0)` (unknown features = 1).
 Returns the candidates ordered by it, except every 7th slot starting at index 2 (2, 9, 16, …,
 ~15%) is an exploration pick: a random remaining candidate regardless of weights, marked
-`explore: true`. Weights load from `feature_weights` unless passed (tests).
+`explore: true`. Weights load from `feature_weights` unless passed (tests); a malformed row (missing feature, non-numeric weight) is skipped with a warning.
 
 ## Seed
 `pnpm seed:performance` (user `SEED_EMAIL`, default `dev-perf@clip-studio.test`; sign in once via

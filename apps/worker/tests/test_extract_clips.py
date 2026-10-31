@@ -76,11 +76,6 @@ def test_wanted():
     assert ex.wanted("50 short clips") == 15
 
 
-def test_ranking_stub_mean_desc():
-    out = ranking.apply_weights("u", [{"scores": {"a": 0.2, "b": 0.4}}, {"scores": {"a": 1}}])
-    assert [c["ranking_score"] for c in out] == [1, 0.3]
-
-
 def test_timeline_is_valid_v2():
     t = Timeline.model_validate(ex.timeline("clips/x/source.mp4", 5, 20.5))
     assert t.version == 2 and t.segments[0].end == 20.5
@@ -93,8 +88,9 @@ def test_word_slice_rebased_with_handles():
 
 
 class FakeConn:
-    def __init__(self, log):
+    def __init__(self, log, weights=()):
         self.log = log
+        self.weights = list(weights)  # feature_weights rows; none = a new user
 
     def __enter__(self):
         return self
@@ -110,10 +106,15 @@ class FakeConn:
         return {"id": self.log[-1][1]["id"]}
 
     def fetchall(self):
+        if "feature_weights" in self.log[-1][0]:
+            return self.weights
         return [{"file_key": "clips/old/source.mp4", "thumb_key": None}]
 
 
-def test_run_cuts_uploads_and_writes_rows(monkeypatch, tmp_path):
+def run_job(monkeypatch, tmp_path, weights=()):
+    """Run extract_clips on a 120s test video with two LLM candidates:
+    tip at 0-20s (scores 0.6) and story at 50-70s (scores 0.9). Returns (sql, uploads,
+    deleted, prompts)."""
     src = str(tmp_path / "src.mp4")
     subprocess.run(
         ["ffmpeg", "-y", "-v", "error", "-f", "lavfi", "-i", "testsrc2=size=320x568:rate=30",
@@ -129,7 +130,7 @@ def test_run_cuts_uploads_and_writes_rows(monkeypatch, tmp_path):
     monkeypatch.setattr(ex.r2, "presigned_get", lambda key: src)
     monkeypatch.setattr(ex.r2, "upload_file", lambda p, k, ct: uploads.append(k))
     monkeypatch.setattr(ex.r2, "delete", deleted.append)
-    monkeypatch.setattr(ex.db, "connect", lambda: FakeConn(sql))
+    monkeypatch.setattr(ex.db, "connect", lambda: FakeConn(sql, weights))
 
     def gen(**kw):
         prompts.append(kw["prompt"])
@@ -146,12 +147,21 @@ def test_run_cuts_uploads_and_writes_rows(monkeypatch, tmp_path):
         "request": None,
     }
     ex.run(job)
+    return sql, uploads, deleted, prompts
 
+
+def inserted_starts(sql) -> list:
+    return [p["start_s"] for s, p in sql if s.strip().startswith("insert into clips")]
+
+
+def test_run_cuts_uploads_and_writes_rows(monkeypatch, tmp_path):
+    sql, uploads, deleted, prompts = run_job(monkeypatch, tmp_path)  # no learned weights
+    assert any("feature_weights" in s for s, _ in sql)  # plan 9's ranking read the weights
     assert "Creator's intent for this video: Critique or contrast it" in prompts[0]
     assert "Core topics: hygiene" in prompts[0]
     assert deleted == ["clips/old/source.mp4"]
     inserts = [p for s, p in sql if s.strip().startswith("insert into clips")]
-    assert [p["start_s"] for p in inserts] == [50, 0]  # best ranked first; one per window overlap
+    assert [p["start_s"] for p in inserts] == [50, 0]  # default ranking: higher scores first
     first = inserts[0]
     assert (first["fs"], first["fe"]) == (45, 74.8)
     assert first["features"].obj == {
@@ -166,8 +176,22 @@ def test_run_cuts_uploads_and_writes_rows(monkeypatch, tmp_path):
         and uploads[0].endswith("/source.mp4")
         and uploads[1].endswith("/thumb.jpg")
     )
-    out = subprocess.run(
-        ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", src],
-        capture_output=True, text=True,
-    )  # fmt: skip
-    assert float(out.stdout) > 0
+
+
+def test_run_ranks_with_learned_weights(monkeypatch, tmp_path):
+    """A boosted feature (hook:tip x2) lifts the weaker tip clip above the story clip."""
+    sql, *_ = run_job(monkeypatch, tmp_path, [{"feature": "hook:tip", "weight": 2.0}])
+    assert inserted_starts(sql) == [0, 50]
+
+
+def test_load_weights_skips_malformed_rows(monkeypatch, caplog):
+    rows = [
+        {"feature": "hook:tip", "weight": "2"},
+        {"feature": None, "weight": 1},
+        {"weight": 2},
+        {"feature": "topic:x", "weight": "abc"},
+        {"feature": "topic:y", "weight": None},
+    ]
+    monkeypatch.setattr(ex.db, "connect", lambda: FakeConn([], rows))
+    assert ranking.load_weights("u1") == {"hook:tip": 2.0}
+    assert len([r for r in caplog.records if r.name == "ranking"]) == 4

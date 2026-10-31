@@ -2,9 +2,12 @@
 """Performance scoring + learned ranking. Pure helpers (score, verdict, weights) plus
 `apply_weights`, which extract_clips (plan 5) calls to order candidates."""
 
+import logging
 import random
 import statistics
 from typing import Any
+
+log = logging.getLogger("ranking")
 
 MIN_SAMPLES = 5  # below this a checkpoint has no baseline: score null, no verdict
 SAMPLE_WINDOW = 20  # newest samples (own posts + baseline seeds) per checkpoint
@@ -135,7 +138,18 @@ def load_weights(user_id: str) -> dict[str, float]:
         rows = c.execute(
             "select feature, weight from feature_weights where user_id = %s", (user_id,)
         ).fetchall()
-    return {r["feature"]: float(r["weight"]) for r in rows}
+    out: dict[str, float] = {}
+    for r in rows:
+        try:
+            feature, weight = r["feature"], float(r["weight"])
+        except (KeyError, TypeError, ValueError):
+            log.warning("feature_weights %s: skipping malformed row %r", user_id, r)
+            continue
+        if isinstance(feature, str) and feature:
+            out[feature] = weight
+        else:
+            log.warning("feature_weights %s: skipping row without feature %r", user_id, r)
+    return out
 
 
 def apply_weights(
