@@ -11,7 +11,10 @@ description: Add a Supabase migration — new table, column, enum, index, view o
    security`, owner policy `for all using (user_id = (select auth.uid())) with check (same)`.
    Secret columns: RLS with no policies + a `<table>_public` view of safe columns filtered by
    `auth.uid()`, `revoke ... from public, anon`, `grant select ... to authenticated`.
-5. Optional local sanity check: apply to a throwaway `postgres:17-alpine` container with stub
+5. Apply it to the shared DB: `psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/<file>`
+   (`DATABASE_URL` from `apps/worker/.env`; no psql → psycopg fallback in `docs/data-model.md`).
+   Never `supabase db push` on a branch.
+6. Optional local sanity check: apply to a throwaway `postgres:17-alpine` container with stub
    `auth` schema, `auth.users`, `auth.uid()`, `anon`/`authenticated` roles.
-6. Update `docs/data-model.md` (tables, enums, RLS summary) and any area doc that uses the table.
-7. Update affected docs + run `pnpm check`.
+7. Update `docs/data-model.md` (tables, enums, RLS summary) and any area doc that uses the table.
+8. Update affected docs + run `pnpm check`.

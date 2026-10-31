@@ -1,3 +1,4 @@
+-- Docs: docs/data-model.md
 -- Plan llm: append-only log of demo-key usage (ADR 0008, docs/llm.md). The daily demo cap counts
 -- these rows, so deleting a job never frees a slot. No FK to jobs on purpose. Idempotent.
 create table if not exists demo_usage (

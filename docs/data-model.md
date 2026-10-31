@@ -6,7 +6,17 @@ last_updated: 2026-10-31
 ---
 # Data model
 
-Source: `supabase/migrations/`. Every table has `user_id → auth.users` (profiles uses `id`),
+Source: `supabase/migrations/`. Migrations are idempotent (`if not exists`, `create or replace`,
+`drop policy if exists` first).
+
+**Applying a migration** (feature branch, shared DB): `psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f
+supabase/migrations/<file>` with `DATABASE_URL` from `apps/worker/.env`. Fallback when `psql`
+isn't installed: run the file through psycopg from the worker venv:
+`uv run --directory apps/worker --env-file .env python -c "import os, psycopg; psycopg.connect(os.environ['DATABASE_URL'], autocommit=True).execute(open('../../supabase/migrations/<file>').read())"`
+(multi-statement SQL without parameters is fine). Never `supabase db push` on a branch; the
+orchestrator runs `npx supabase db push --include-all` on main after merging.
+
+ Every table has `user_id → auth.users` (profiles uses `id`),
 `on delete cascade`. RLS on everywhere.
 
 ## RLS summary
