@@ -12,9 +12,9 @@ Parallelism cap: 3 subagents (Opus).
 | 4 | 1 | feat/brand | .worktrees/brand | merged | tests on main pending (option 2) |
 | 6 | 1 | feat/editor | .worktrees/editor | merged | tests on main pending (option 2) |
 | 8 | 1 | feat/publish | .worktrees/publish | merged | tests on main pending (option 2) |
-| 5 | 2 | feat/clips | .worktrees/clips | merged | f616ecb; check+test pass (web 94, schema 11, worker 132) |
-| 7 | 2 | feat/agent | .worktrees/agent | ready-to-merge | eee4450; check+test pass (web 121, schema 11, worker 102) |
-| 9 | 2 | feat/performance | .worktrees/performance | merged (tests fail) | 478a654; check+test pass (web 104, schema 11, worker 114) |
+| 5 | 2 | feat/clips | - | merged | f616ecb; check+test pass (web 94, schema 11, worker 132) |
+| 7 | 2 | feat/agent | - | merged | eee4450; check+test pass (web 121, schema 11, worker 102) |
+| 9 | 2 | feat/performance | - | merged | 478a654; check+test pass (web 104, schema 11, worker 114) |
 | 10 | 3 | feat/integration | - | todo | |
 
 ## Decisions (2026-10-31, from user)
@@ -136,3 +136,10 @@ Shared surfaces and the single owner of each:
 - All 3 Wave 2 plans ready-to-merge. No new required env vars (optional: NSFW_MODEL_PATH, YOUTUBE_FAKE dev-only; Wispr is a per-user Settings key). Checkpoint C issued; waiting on user results. Merge order 5 -> 9 -> 7.
 - User: test Wave 2 on prod instead; checkpoint C deferred to after deploy. Tagged pre-wave2 (561662a, local).
 - Merged 5 (check+test pass: web 94, schema 11, worker 132). Merged 9: conflicts main.py/run_once.py/env.md/package.json kept both; ranking.py took p9's. check pass; test FAIL 2 worker tests in plan 5's tests/test_extract_clips.py: test_ranking_stub_mean_desc (asserts the old stub) + test_run_cuts_uploads_and_writes_rows (fake DB doesn't answer p9's feature_weights query -> KeyError 'feature'). Test-side only. STOPPED per user, plan 7 not merged.
+- User OK'd test fix: f0d9898 (stub test replaced by test_run_ranks_with_learned_weights; FakeConn returns zero weight rows -> default ranking; load_weights skips+logs malformed rows, tested). Main pass (worker 145).
+- Merged 7 (data-model.md + package.json conflicts kept both). Main: check pass, web 133, schema 11, worker 145.
+- Seed cleans run: clips (5 jobs incl 2 placeholder processing), agent (1 job, 3 clips, 3 rules), performance (1 job, 10 posts, 6 rules), editor (1 job), publish (1 job, 3 renders). All dev-*@clip-studio.test users now 0 jobs/clips/posts. Left: dev-brand 8 rules + R2 brand/<dev-brand>/logo.png (plan 4, UI-made, no seed clean). R2 total 4 objects.
+- Safety: main .env files have no YOUTUBE_FAKE/DEV_LOGIN. DEV_LOGIN already `dev &&` guarded. YOUTUBE_FAKE was runtime-only -> eca5a82: web `dev &&` guard, worker ignores it in Docker (/.dockerenv); tests added. Main: check pass, web 134, worker 146.
+- docker compose build worker on main: OK; nsfw.onnx sha256 matches, onnxruntime loads it; yt_stats.fake() False inside image even with YOUTUBE_FAKE=true. Running worker container still old image (not restarted).
+- Env diff vs last deploy (d291f6f): only YOUTUBE_FAKE (web+worker, dev-only, don't set) and NSFW_MODEL_PATH (worker, optional). No new required vars.
+- Wave 2 worktrees removed; stray agent.py.tmp deleted. WAVE 2 MERGED. Checkpoint C moved to production testing after deploy. Waiting on user: db push (p5, p7, p9 migrations), web deploy, worker restart.
