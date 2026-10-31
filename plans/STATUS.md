@@ -8,7 +8,7 @@ Parallelism cap: 3 subagents (Opus).
 | plan | wave | branch | worktree | state | last note |
 |---|---|---|---|---|---|
 | prep | 0 | main | - | merged | committed 87c6da8 (check+test pass) |
-| llm | 0 | feat/llm-adapter | .worktrees/llm | ready-to-merge | ec72f2f; check+test pass (orchestrator verified); awaiting checkpoint A2 |
+| llm | 0 | feat/llm-adapter | .worktrees/llm | needs-fix | fix round a-d running; then merge (A2 deferred to checkpoint B) |
 | 4 | 1 | feat/brand | .worktrees/brand | todo | |
 | 6 | 1 | feat/editor | .worktrees/editor | todo | |
 | 8 | 1 | feat/publish | .worktrees/publish | todo | |
@@ -24,6 +24,11 @@ Parallelism cap: 3 subagents (Opus).
 4. Prod web: https://clip-studio-pi.vercel.app. Google login works there + locally. Supabase redirects: Vercel URL + localhost 5173/5174/5175.
 5. plan6/8/10 committed in plans/.
 6. Order: plan-llm (Wave 0 alone) -> Wave 1 (4, 6, 8) -> Wave 2 (5, 7, 9) -> Wave 3 (10). Plan 4 was NOT started before plan-llm, so no adapter move needed.
+
+7. (later) Checkpoint A2 deferred until plan 4 is merged (placeholder onboarding blocks sign-in). Fixes before llm merge: upload guard 'both'; demo cap from record surviving job deletion; llm:smoke runs generateJSON per provider; dev-login test user gets completed onboarding (dev-only, DEV_LOGIN guard; plan 4 must keep it working).
+8. Freeze rule: after llm merge the adapter interface is frozen; bug fixes found in real-key testing are allowed.
+9. Checkpoint B (end of Wave 1) checklist must include deferred A2, in order: (a) demo account glorytoharsh@gmail.com, no own keys: onboarding -> upload -> transcript; (b) second account, Groq key only: onboarding -> upload -> Groq transcript; llm:smoke ok incl JSON; (c) same account, Gemini default: llm:smoke rows provider = gemini; (d) no keys: upload disabled with tooltip + Settings link. Skip Claude + Deepgram.
+10. psql installed (brew libpq): psql is primary for migrations, psycopg kept as fallback.
 
 ## Log
 - Step 0 done. Step 1 prep launched.

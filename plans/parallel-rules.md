@@ -11,7 +11,7 @@ additive changes (see rules 2 and 3).
 
 | Plan | Branch | Owns |
 |---|---|---|
-| llm (wave 0) | feat/llm-adapter | lib/server/llm, worker/llm, transcription adapter, packages/llm-registry, llm_calls, AI providers settings, docs/llm.md. Frozen during waves 1-2: other plans use it, never change it |
+| llm (wave 0) | feat/llm-adapter | lib/server/llm, worker/llm, transcription adapter, packages/llm-registry, llm_calls, AI providers settings, docs/llm.md. Frozen during waves 1-2: other plans use it, never change its interface; bug fixes found in real-key testing are allowed (call them out in your handoff) |
 | 4 brand | feat/brand | brand_profile, brand_rules, entities/brand, onboarding + brand routes, docs/brand-memory.md |
 | 5 clips | feat/clips | worker steps nsfw_check, brand_fit, extract_clips, cleanup_source; clip candidate columns; clip_feedback; clips picker route; docs/pipeline.md |
 | 6 editor | feat/editor | packages/timeline-schema, timelines, edit_events, clip render columns, entities/timeline, widgets/editor, editor route, worker render loop; docs/timeline.md |
