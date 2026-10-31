@@ -1,10 +1,7 @@
 import { goKeys, type NavRoute } from '$lib/shared/config';
+import { isTyping } from '$lib/shared/lib/is-typing';
 
 type Handlers = { palette: () => void; help: () => void; go: (href: NavRoute['href']) => void };
-
-const isTyping = (t: EventTarget | null) =>
-	t instanceof HTMLElement &&
-	(t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName));
 
 /**
  * One keydown handler for the shell: Mod+K, "G then X" (1s window), and "?".

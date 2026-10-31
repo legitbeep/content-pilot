@@ -14,7 +14,7 @@ Route → purpose / data / actions.
 |---|---|---|---|---|
 | `/onboarding` | Onboarding | Capture stated brand rules | `brand_profile`, `brand_rules` (source=stated) | Answer brand questions, paste example posts |
 | `/` | Home | Overview + next steps | `posts`, `post_metrics`, `jobs` | CTAs: **Generate clips** (→ upload → `/queue`), **Recommended long-form videos** |
-| `/queue` | Queue | Ingestion jobs | `jobs` | Upload (presigned R2), reorder pending, stop processing, answer `needs_input`, retry failed |
+| `/queue` | Queue | Ingestion jobs | `jobs` | Upload (presigned R2) with optional request, Linear-style list, details sheet (steps, error, transcript), actions per state (`docs/queue.md`), J/K/Enter/Backspace, 3s polling |
 | `/clips` | Clip Picker | Review clips of a finished job, with reasons | `clips`, `timelines`, `jobs` | Select clips (`clips.selected`), **Proceed with editing** (sets `jobs.proceeded_at` → source + unselected clip files deleted; otherwise after 48h) |
 | `/editor` | Editor | Edit one clip | `timelines`, `brand_rules` | Manual timeline edits, agent chat (+ Wispr voice), pick export ratio, save → render |
 | `/publish` | Publish | Post or schedule a rendered clip | `posts`, `platform_connections_public` | Generate captions (4 platforms), post to YouTube (private), copy others, schedule |

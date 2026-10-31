@@ -32,7 +32,7 @@ Source: `supabase/migrations/`. Every table has `user_id → auth.users` (profil
 | user_keys | provider, ciphertext, iv, last4, validated_at, invalid_at | unique (user_id, provider). `docs/auth-and-keys.md` |
 | brand_profile | user_id (pk), answers jsonb, example_posts jsonb | Onboarding output |
 | brand_rules | source, status, rule, evidence jsonb, conflicts_with | `docs/brand-memory.md` |
-| jobs | status, position, source_key, current_step, stop_requested, input_request, resume_from_step, error, attempts, claimed_at, transcript_path, finished_at, proceeded_at, source_deleted_at | `docs/queue.md`; transcript + cleanup: `docs/pipeline.md` |
+| jobs | status, position, source_key, title, request, duration_s, media jsonb, current_step, progress, steps jsonb, stop_requested, input_request, resume_from_step, error, error_detail, note, attempts, claimed_at, transcript_path, finished_at, proceeded_at, source_deleted_at | `error` is user-readable, `error_detail` technical. `media` = probe output. `docs/queue.md`; transcript + cleanup: `docs/pipeline.md` |
 | clips | job_id, start_s, end_s, reason, score, file_key, file_start_s, file_end_s, words jsonb, selected | `start_s/end_s/file_*` in source seconds; `words` relative to the clip file (handles included). unique (job_id, start_s, end_s). `file_key` null once deleted |
 | timelines | clip_id (unique), data jsonb, revision, rendered_key, rendered_revision | `data` validates against timeline-schema. Render needed when `rendered_revision < revision` |
 | posts | clip_id, platform, caption, status, scheduled_at, posted_at, external_id, error | One row per platform caption |
@@ -40,6 +40,7 @@ Source: `supabase/migrations/`. Every table has `user_id → auth.users` (profil
 | platform_connections | platform, refresh_token_ciphertext, iv, account_name | unique (user_id, platform) |
 | baseline_seeds | platform, external_id, checkpoint, views, published_at | Pre-existing channel videos seeding the baseline. unique (user_id, platform, external_id, checkpoint). `docs/publishing.md` |
 
-Indexes: `jobs_claim_idx` (pending by position), `jobs_cleanup_idx` (done, source not yet deleted), `posts_due_idx` (scheduled by time).
+Indexes: `jobs_claim_idx` (pending by position), `jobs_user_processing_idx` (per-user processing count), `jobs_cleanup_idx` (done, source not yet deleted), `posts_due_idx` (scheduled by time).
 
-R2 objects (not tables): `uploads/…` source video, `transcripts/<job_id>.json`, `clips/<clip_id>/source.mp4`.
+R2 objects (not tables): `uploads/<user_id>/<upload_id>/<name>` source video,
+`transcripts/<job_id>.json` (normalised) + `transcripts/<job_id>.deepgram.json` (raw), `clips/<clip_id>/source.mp4`.

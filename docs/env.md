@@ -22,7 +22,7 @@ vars (BYOK, `docs/auth-and-keys.md`); Claude is the one server-wide AI credentia
 | `SUPABASE_SECRET_KEY` | **server only** | Secret key (`sb_secret_…`), bypasses RLS: `user_keys`, `platform_connections` writes. Lint fails if a client-reachable module references it |
 | `ENCRYPTION_KEY` | server | AES-GCM key (base64, 32 bytes) for BYOK keys + OAuth refresh tokens. Same value as worker |
 | `CLAUDE_OAUTH_TOKEN` | **server only** | Claude OAuth token (`claude setup-token`) for the editor agent. Same value as worker |
-| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | server | Presign browser uploads |
+| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | server | Presign browser uploads, HEAD/GET/DELETE objects. The bucket needs a CORS rule allowing `PUT` from the web origin(s) with any header |
 | `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET` | server | YouTube connect OAuth |
 | `YOUTUBE_REDIRECT_URI` | server | YouTube OAuth callback URL |
 

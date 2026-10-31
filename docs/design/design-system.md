@@ -89,7 +89,9 @@ Toasts: `toast()` from `svelte-sonner`; `<Toaster />` is mounted in the root lay
 - Command palette (⌘/Ctrl+K): every nav route, "New job", "Open settings".
 - Shortcuts, defined only in `$lib/shared/config/shortcuts.ts`: ⌘K palette · ⌘B sidebar ·
   `?` shortcut sheet · `G` then `H/Q/C/B/S` → Home/Queue/Calendar/Brand memory/Settings.
-  Ignored while typing in inputs.
+  Page-scoped entries (`page: '/queue'`) are handled by that page but listed here so the sheet
+  shows them: Queue `J`/`K`/`Enter`/`Backspace` (`queueKeys`). All ignored while typing
+  (`isTyping` in `$lib/shared/lib/is-typing.ts`).
 
 ## Do / don't
 - Do use tokens and shared components; check `/dev/ui` before building something new.

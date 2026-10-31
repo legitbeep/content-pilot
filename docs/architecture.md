@@ -45,11 +45,14 @@ Today's slices:
 - `shared/ui/*`: shadcn-svelte components (generated, aliases in `components.json`) plus ours
   (page-header, empty-state, status-badge, timecode, data-table, topbar-actions). See
   `docs/design/design-system.md`.
-- `shared/lib/utils.ts` (`cn` + shadcn prop types) and `shared/lib/hooks/`.
+- `shared/lib/utils.ts` (`cn` + shadcn prop types), `shared/lib/is-typing.ts`, `shared/lib/hooks/`.
 - `shared/config/`: `nav.ts` (one route list for sidebar, palette, breadcrumbs) and
   `shortcuts.ts` (every keyboard shortcut).
 - `widgets/app-shell`: sidebar, top bar, command palette, shortcut sheet, key handler.
 - `entities/api-key`: BYOK provider list, key status. `features/api-keys`: Settings key row.
+- `entities/job`: job/transcript types, upload limits, transitions. `features/upload-video`:
+  dropzone + presigned upload. `widgets/job-queue`: queue list + details sheet (`docs/queue.md`).
+- `shared/lib/form-action.ts` (`formAction()`: call a page's form action from JS).
 
 Routes: `(authed)/(shell)/*` render inside `AppShell`; `(authed)/onboarding` is protected but
 full-screen; `login` and `auth/*` are public. Auth flow: `docs/auth-and-keys.md`.
