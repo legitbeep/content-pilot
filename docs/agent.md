@@ -1,0 +1,43 @@
+---
+covers:
+  - apps/web/src/lib/server
+last_updated: 2026-10-31
+---
+# Editor agent
+
+Not built yet. Lives in `apps/web/src/lib/server/agent/` and is called from an editor server
+route (e.g. `src/routes/editor/+page.server.ts` action or `src/routes/api/agent/+server.ts`).
+Uses the user's Anthropic key (BYOK, decrypted server-side only).
+
+## Flow
+1. User message (typed, or Wispr voice → text) + current timeline + active brand rules.
+2. **Planner**: model returns a todo list for multi-step requests.
+3. Executor runs each todo via tool calls; each tool returns a *new* timeline.
+4. Final timeline validated with zod → returned to the editor (unsaved). Save = bump
+   `timelines.revision` → worker renders.
+
+## Todo list format
+```json
+[{ "id": "t1", "text": "Cut the intro before 3s", "status": "pending" }]
+```
+`status`: `pending | in_progress | done | failed`. Streamed to the UI so the user sees progress.
+
+## Tools (planned signatures)
+All timeline tools are **pure**: `(timeline: Timeline, args) => Timeline`. No I/O, no DB. Unit-test
+each one. Live in `src/lib/server/agent/tools/` (or `src/lib/entities/timeline/` if the manual
+editor reuses them — preferred).
+| Tool | Args |
+|---|---|
+| `trimSegment` | `{ index, start?, end? }` |
+| `splitSegment` | `{ index, at }` |
+| `removeSegment` | `{ index }` |
+| `reorderSegments` | `{ order: number[] }` |
+| `setAspect` | `{ aspect: '9:16' \| '1:1' \| '16:9' }` |
+| `addCaption` / `updateCaption` / `removeCaption` | `{ start, end, text }` / `{ index, ...patch }` / `{ index }` |
+| `addTextOverlay` / `removeTextOverlay` | `{ start, end, text, position }` / `{ index }` |
+| `proposeMemoryUpdate` | `{ rule, evidence }` → returns a proposal, **not** a timeline |
+
+## Memory proposals
+The agent may never write `brand_rules`. `proposeMemoryUpdate` returns a proposal the UI shows;
+on user accept, a normal server action inserts the rule (`source=learned`, `status=active`).
+See `docs/brand-memory.md`.

@@ -1,0 +1,33 @@
+{
+	"permissions": {
+		"allow": [
+			"Bash(pnpm *)",
+			"Bash(uv *)",
+			"Bash(docker compose *)",
+			"Bash(npx supabase *)",
+			"Bash(node scripts/check-docs.ts *)",
+			"Bash(git status *)",
+			"Bash(git diff *)",
+			"Bash(git log *)"
+		],
+		"deny": [
+			"Bash(npx supabase link *)",
+			"Bash(npx supabase db push *)",
+			"Bash(npx supabase functions deploy *)",
+			"Bash(npx supabase secrets *)"
+		]
+	},
+	"hooks": {
+		"Stop": [
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "node \"$CLAUDE_PROJECT_DIR/scripts/check-docs.ts\" --hook",
+						"timeout": 30
+					}
+				]
+			}
+		]
+	}
+}
