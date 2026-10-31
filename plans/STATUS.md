@@ -12,9 +12,9 @@ Parallelism cap: 3 subagents (Opus).
 | 4 | 1 | feat/brand | .worktrees/brand | merged | tests on main pending (option 2) |
 | 6 | 1 | feat/editor | .worktrees/editor | merged | tests on main pending (option 2) |
 | 8 | 1 | feat/publish | .worktrees/publish | merged | tests on main pending (option 2) |
-| 5 | 2 | feat/clips | .worktrees/clips | ready-to-merge | f616ecb; check+test pass (web 94, schema 11, worker 132) |
+| 5 | 2 | feat/clips | .worktrees/clips | merged | f616ecb; check+test pass (web 94, schema 11, worker 132) |
 | 7 | 2 | feat/agent | .worktrees/agent | ready-to-merge | eee4450; check+test pass (web 121, schema 11, worker 102) |
-| 9 | 2 | feat/performance | .worktrees/performance | ready-to-merge | 478a654; check+test pass (web 104, schema 11, worker 114) |
+| 9 | 2 | feat/performance | .worktrees/performance | merged (tests fail) | 478a654; check+test pass (web 104, schema 11, worker 114) |
 | 10 | 3 | feat/integration | - | todo | |
 
 ## Decisions (2026-10-31, from user)
@@ -134,3 +134,5 @@ Shared surfaces and the single owner of each:
 - Plan 9 done (478a654). Orch re-ran check+test: pass (web 104, schema 11, worker 114). Deviations: hand-built charts (no layerchart dep), rule text templated (learn_rules unused), ratings stored not weighted, 14d checkpoint kept. YOUTUBE_FAKE opt-in (default off, documented dev-only). p9 migration also adds clips.features if not exists (no-op). Touched $lib/server/youtube.ts (reconnect resets baselines). Merge: take p9 ranking.py.
 - Plan 5 done (f616ecb). Orch re-ran check+test: pass (web 94, schema 11, worker 132). NSFW model Falconsai (Apache-2.0, ONNX int8) via ADD --checksum; Docker build not run. Main's Docker worker (old code) claimed a dev-clips seed job; seed leaves 2 placeholder `processing` jobs for dev-clips user to block it (removed by seed:clips:clean). nsfw_check ~15-20 min per 60-min video on CPU. Picker shortcuts page-local.
 - All 3 Wave 2 plans ready-to-merge. No new required env vars (optional: NSFW_MODEL_PATH, YOUTUBE_FAKE dev-only; Wispr is a per-user Settings key). Checkpoint C issued; waiting on user results. Merge order 5 -> 9 -> 7.
+- User: test Wave 2 on prod instead; checkpoint C deferred to after deploy. Tagged pre-wave2 (561662a, local).
+- Merged 5 (check+test pass: web 94, schema 11, worker 132). Merged 9: conflicts main.py/run_once.py/env.md/package.json kept both; ranking.py took p9's. check pass; test FAIL 2 worker tests in plan 5's tests/test_extract_clips.py: test_ranking_stub_mean_desc (asserts the old stub) + test_run_cuts_uploads_and_writes_rows (fake DB doesn't answer p9's feature_weights query -> KeyError 'feature'). Test-side only. STOPPED per user, plan 7 not merged.
