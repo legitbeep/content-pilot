@@ -24,6 +24,9 @@ Route → purpose / data / actions.
 
 Non-product routes: `/login` (Continue with Google), `/auth/callback` (code → session),
 `/auth/signout` (POST), `/dev/ui` (dev-only design system review, `docs/design/design-system.md`).
+Errors (any route): `routes/+error.svelte`: "Error <status>" + an `EmptyState` with the thrown
+message (404 → "This page doesn't exist, or it isn't yours."; unexpected → a generic line) and
+**Go home**.
 
 Sidebar: Home, Queue, Calendar, Brand Memory, Settings. Clip Picker, Editor and Publish are
 reached from Queue (breadcrumb parent = Queue). Nav config: `$lib/shared/config/nav.ts`.
