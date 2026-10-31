@@ -34,3 +34,5 @@ Parallelism cap: 3 subagents (Opus).
 - Settings.json approved + committed with secret scanning (12be9a7). Full-history gitleaks: 2 findings (rotated DB pw in 6dbaf5e via custom postgres rule; test key in fixtures/crypto.json), both fingerprinted in .gitleaksignore.
 - llm worktree ff'd to 12be9a7, rotated .env copied, DEV_LOGIN=true. plan-llm subagent launched.
 - User added 5 plan-llm requirements (missing_key error, BYOK-only no env fallback -> supersedes ADR 0007, requireAIKeys 409 guard, client capability helper + disabled AI actions, worker missing_key fail/retry). Included in subagent brief.
+- User: ADR 0007 replaced by user-keys + demo allowlist (DEMO_ALLOWED_EMAILS, DEMO_DAILY_JOB_LIMIT, key_source), docs/deploy.md Vercel env section. Sent to running subagent. Keep gitleaks allow.
+- Scanner test: staged fake postgres URL + api key -> 2 leaks, pnpm check exit 1; file removed.
