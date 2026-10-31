@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { invalidateAll } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { toast } from 'svelte-sonner';
 	import CopyIcon from '@lucide/svelte/icons/copy';
@@ -83,7 +83,8 @@
 				before: JSON.stringify(yt)
 			});
 			toast.success(
-				mode === 'now' ? 'Posting to YouTube within a minute.' : 'Scheduled. See it in Calendar.'
+				mode === 'now' ? 'Posting to YouTube within a minute.' : 'Scheduled. See it in Calendar.',
+				{ action: { label: 'Open calendar', onClick: () => goto(resolve('/calendar')) } }
 			);
 			await invalidateAll();
 		} catch (e) {
