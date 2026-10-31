@@ -122,7 +122,7 @@
 				{Math.floor(progress)}%
 			</span>
 		{/if}
-		<RequiresAI need="transcription">
+		<RequiresAI need={['llm', 'transcription']}>
 			{#snippet children({ disabled })}
 				<Button onclick={upload} disabled={disabled || !file || progress !== null}>
 					{progress !== null ? 'Uploading…' : 'Upload'}

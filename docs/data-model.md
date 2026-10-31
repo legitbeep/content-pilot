@@ -12,7 +12,7 @@ Source: `supabase/migrations/`. Every table has `user_id → auth.users` (profil
 ## RLS summary
 - **Own rows** (`user_id = auth.uid()`, all ops): profiles, brand_profile, brand_rules, jobs,
   clips, timelines, posts, post_metrics, baseline_seeds, ai_settings. Read-only own rows: llm_calls.
-- **Service role only** (RLS on, no policies): `user_keys`, `platform_connections` — hold
+- **Service role only** (RLS on, no policies): `demo_usage`; `user_keys`, `platform_connections` — hold
   ciphertext. Owners read safe columns via views `user_keys_public`
   (provider, last4, validated_at, invalid_at, created_at) and `platform_connections_public`
   (platform, account_name, connected_at). Views run as owner and filter on `auth.uid()`;
@@ -40,6 +40,7 @@ Source: `supabase/migrations/`. Every table has `user_id → auth.users` (profil
 | platform_connections | platform, refresh_token_ciphertext, iv, account_name | unique (user_id, platform) |
 | ai_settings | user_id (pk), llm_provider, transcription_provider, task_overrides jsonb | AI provider choices; no row = defaults. Own rows. `docs/llm.md` |
 | llm_calls | provider, key_source (user\|demo), model, task, input_tokens, output_tokens, latency_ms, ok, error_kind | One row per adapter call. Owners read; server/worker write. `docs/llm.md` |
+| demo_usage | user_id, kind (`job`), created_at | Append-only log of demo-key jobs; the daily demo cap counts it. No FK to jobs (deleting a job never frees a slot). RLS on, no policies (server only). `docs/llm.md` |
 | baseline_seeds | platform, external_id, checkpoint, views, published_at | Pre-existing channel videos seeding the baseline. unique (user_id, platform, external_id, checkpoint). `docs/publishing.md` |
 
 Indexes: `llm_calls_user_created_idx` (usage summary), `jobs_claim_idx` (pending by position), `jobs_user_processing_idx` (per-user processing count), `jobs_cleanup_idx` (done, source not yet deleted), `posts_due_idx` (scheduled by time).

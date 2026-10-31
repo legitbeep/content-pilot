@@ -1,6 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import { can, UPLOAD_LIMITS, type Job, type JobAction } from '$lib/entities/job';
-import { requireAIKeys, requireDemoJobQuota } from '$lib/server/llm';
+import { recordDemoJob, requireAIKeys, requireDemoJobQuota } from '$lib/server/llm';
 import { deleteObject, headSize, presignPut } from '$lib/server/r2';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -47,11 +47,12 @@ async function nextPosition({ locals: { supabase } }: Ctx) {
 	return (data?.position ?? 0) + 1;
 }
 
-/** A job needs transcription today (LLM steps join with plan 5; switch to 'both' then).
- * 409 missing_key / 429 demo cap, thrown so formAction shows the message. */
+/** A job needs an LLM and a transcription key (own or demo).
+ * 409 missing_key / 429 demo cap, thrown so formAction shows the message. Returns `demo`. */
 async function requireUploadKeys(userId: string) {
-	const { demo } = await requireAIKeys(userId, 'transcription');
+	const { demo } = await requireAIKeys(userId, 'both');
 	if (demo) await requireDemoJobQuota(userId);
+	return demo;
 }
 
 const safeName = (name: string) => name.replace(/[^\w.-]+/g, '_').slice(-100) || 'video';
@@ -80,7 +81,7 @@ export const actions: Actions = {
 		const { request, locals } = ctx;
 		const form = await request.formData();
 		const key = String(form.get('key') ?? '');
-		await requireUploadKeys(locals.user!.id);
+		const demo = await requireUploadKeys(locals.user!.id);
 		if (!key.startsWith(`uploads/${locals.user!.id}/`))
 			return fail(400, { message: 'Upload not found.' });
 		const size = await headSize(key);
@@ -106,6 +107,7 @@ export const actions: Actions = {
 			console.error('jobs insert', error);
 			return fail(500, { message: 'Could not create the job.' });
 		}
+		if (demo) await recordDemoJob(locals.user!.id);
 		return { created: true };
 	},
 
@@ -177,7 +179,7 @@ export const actions: Actions = {
 		const form = await ctx.request.formData();
 		const { job, error } = await jobFor(ctx, form.get('id'), 'answer');
 		if (error) return error;
-		await requireAIKeys(ctx.locals.user!.id, 'transcription');
+		await requireAIKeys(ctx.locals.user!.id, 'both');
 		const answer = String(form.get('answer') ?? '').trim();
 		if (!answer) return fail(400, { message: 'Write an answer first.' });
 		await ctx.locals.supabase
@@ -196,7 +198,7 @@ export const actions: Actions = {
 async function backToPending(ctx: Ctx, action: 'requeue' | 'retry') {
 	const { job, error } = await jobFor(ctx, (await ctx.request.formData()).get('id'), action);
 	if (error) return error;
-	await requireAIKeys(ctx.locals.user!.id, 'transcription'); // re-runs AI steps
+	await requireAIKeys(ctx.locals.user!.id, 'both'); // re-runs AI steps
 	await ctx.locals.supabase
 		.from('jobs')
 		.update({

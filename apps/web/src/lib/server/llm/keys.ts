@@ -124,16 +124,17 @@ export async function requireAIKeys(userId: string, needs: Needs): Promise<{ dem
 	return { demo: lacking.length > 0 };
 }
 
-/** DEMO_DAILY_JOB_LIMIT (default 10) jobs per UTC day for users on the shared demo keys. */
+/** DEMO_DAILY_JOB_LIMIT (default 10) jobs per UTC day for users on the shared demo keys.
+ * Counts the append-only demo_usage log, so deleting a job never frees a slot. */
 export async function requireDemoJobQuota(userId: string): Promise<void> {
 	const limit = Number(env.DEMO_DAILY_JOB_LIMIT) || 10;
 	const since = new Date();
 	since.setUTCHours(0, 0, 0, 0);
-	// ponytail: counts jobs that still exist; deleting a job frees a slot. Add a counter if abused.
 	const { count, error: err } = await supabaseAdmin()
-		.from('jobs')
+		.from('demo_usage')
 		.select('id', { count: 'exact', head: true })
 		.eq('user_id', userId)
+		.eq('kind', 'job')
 		.gte('created_at', since.toISOString());
 	if (err) throw new Error(`jobs count failed: ${err.message}`);
 	if ((count ?? 0) >= limit)
@@ -141,4 +142,12 @@ export async function requireDemoJobQuota(userId: string): Promise<void> {
 			429,
 			`You've used today's ${limit} demo videos on the shared keys. Add your own key in Settings to keep going, or try again tomorrow.`
 		);
+}
+
+/** Append one row to demo_usage after a demo-keyed job is created (counted by the cap). */
+export async function recordDemoJob(userId: string): Promise<void> {
+	const { error: err } = await supabaseAdmin()
+		.from('demo_usage')
+		.insert({ user_id: userId, kind: 'job' });
+	if (err) throw new Error(`demo_usage insert failed: ${err.message}`);
 }

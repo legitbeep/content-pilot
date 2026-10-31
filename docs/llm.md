@@ -94,7 +94,9 @@ BYOK only, with one demo exception. Same logic in `$lib/server/llm/keys.ts` and
    `DEMO_ALLOWED_EMAILS`: `GEMINI_API_KEY` for LLM, `GROQ_API_KEY` for transcription. The email is
    read server side only: web from the verified session (`locals.user`, `isDemoUser`) or the admin
    API by user id; worker from `auth.users` by user id. Never from the client.
-   Cap: `DEMO_DAILY_JOB_LIMIT` (default 10) jobs per UTC day (`requireDemoJobQuota`, 429).
+   Cap: `DEMO_DAILY_JOB_LIMIT` (default 10) jobs per UTC day (`requireDemoJobQuota`, 429). It counts
+   today's rows in the append-only `demo_usage` table (`recordDemoJob`, written when a demo-keyed
+   job is created; no FK to jobs, no client access), so deleting a job never frees a slot.
 3. Otherwise `AIError('missing_key')`: **"Add an AI provider key in Settings to use this."**
 
 Server keys never reach the browser, logs or Settings (not even last 4). `llm_calls.key_source`
@@ -138,7 +140,9 @@ JSON call per saved LLM key on both tiers; prints status, tokens, latency, never
 - **Server:** every route that starts AI work calls
   `await requireAIKeys(userId, 'llm' | 'transcription' | 'both')` from `$lib/server/llm`. It
   throws `error(409, MISSING_KEY_MESSAGE)` and returns `{ demo }`; routes that create jobs also
-  call `requireDemoJobQuota(userId)` when `demo`. `formAction` shows thrown error messages as-is.
+  call `requireDemoJobQuota(userId)` when `demo`, and `recordDemoJob(userId)` after the insert.
+  Upload (presign/create) and retry/requeue/answer require `'both'`; the Upload button uses
+  `<RequiresAI need={['llm', 'transcription']}>`. `formAction` shows thrown error messages as-is.
 - **Client:** `aiCapabilities(keys, demo)` in `$lib/entities/api-key` → `{ llm, transcription,
   voice, demo }`. The shell layout puts it in `page.data.ai`. Wrap every AI button in
   `<RequiresAI need="llm">{#snippet children({ disabled })}<Button {disabled}>…</Button>{/snippet}</RequiresAI>`:

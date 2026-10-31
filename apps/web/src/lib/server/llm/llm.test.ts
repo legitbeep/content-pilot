@@ -16,7 +16,8 @@ const state = vi.hoisted(() => ({
 	keys: [] as { provider: string; invalid_at: string | null; ciphertext?: string; iv?: string }[],
 	user: null as any,
 	inserts: [] as any[],
-	updates: [] as any[]
+	updates: [] as any[],
+	jobs: [] as string[]
 }));
 vi.mock('$env/dynamic/private', () => ({ env: state.env }));
 vi.mock('$env/dynamic/public', () => ({ env: {} }));
@@ -33,7 +34,12 @@ vi.mock('../supabase-admin', () => ({
 				single: async () => ({ data: state.keys.find((k) => k.provider === provider) ?? null }),
 				insert: async (row: any) => (state.inserts.push({ table, ...row }), { error: null }),
 				update: (row: any) => (state.updates.push({ table, ...row }), q),
-				then: (res: any) => res({ data: table === 'user_keys' ? state.keys : [], error: null })
+				then: (res: any) =>
+					res({
+						data: table === 'user_keys' ? state.keys : [],
+						count: state.inserts.filter((i) => i.table === table).length,
+						error: null
+					})
 			};
 			return q;
 		}
@@ -42,7 +48,8 @@ vi.mock('../supabase-admin', () => ({
 
 const { interpret } = await import('./providers');
 const { AIError, messageFor, providerName } = await import('./errors');
-const { resolveLLM, resolveTranscription, requireAIKeys } = await import('./keys');
+const { recordDemoJob, resolveLLM, resolveTranscription, requireAIKeys, requireDemoJobQuota } =
+	await import('./keys');
 const { generateJSON, generateText, timing } = await import('./index');
 const { encrypt, toBytea } = await import('../crypto');
 
@@ -79,6 +86,7 @@ beforeEach(() => {
 	state.user = { email: 'someone@example.com', email_confirmed_at: '2026-10-31' };
 	state.inserts = [];
 	state.updates = [];
+	state.jobs = [];
 	fetchMock.mockReset();
 	sleep.mockClear();
 });
@@ -215,5 +223,21 @@ describe('requireAIKeys', () => {
 		await expect(requireAIKeys('u1', 'both')).rejects.toMatchObject({ status: 409 });
 		state.user = { email: 'demo@example.com', email_confirmed_at: '2026-10-31' };
 		expect(await requireAIKeys('u1', 'both')).toEqual({ demo: true });
+	});
+});
+
+describe('demo daily cap', () => {
+	it('deleting a job does not free a slot', async () => {
+		state.env.DEMO_DAILY_JOB_LIMIT = '2';
+		for (const id of ['j1', 'j2']) {
+			await requireDemoJobQuota('u1');
+			state.jobs.push(id);
+			await recordDemoJob('u1');
+		}
+		const err = await requireDemoJobQuota('u1').catch((e) => e);
+		expect(err.status).toBe(429);
+		state.jobs = []; // user deletes both jobs
+		await expect(requireDemoJobQuota('u1')).rejects.toMatchObject({ status: 429 });
+		expect(state.inserts.filter((i) => i.table === 'demo_usage')).toHaveLength(2);
 	});
 });

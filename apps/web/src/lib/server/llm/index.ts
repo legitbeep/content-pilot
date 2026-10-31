@@ -11,7 +11,7 @@ import { keyFor, loadUserAI, markInvalid, resolveLLM, type KeySource } from './k
 import { buildRequest, interpret, type CallRequest, type Usage } from './providers';
 
 export { AIError, MISSING_KEY_MESSAGE, type ErrorKind } from './errors';
-export { isDemoUser, requireAIKeys, requireDemoJobQuota, type Needs } from './keys';
+export { isDemoUser, recordDemoJob, requireAIKeys, requireDemoJobQuota, type Needs } from './keys';
 
 export type GenerateOptions = { userId: string; task: Task; system: string; prompt: string };
 export type GenerateResult<T> = {

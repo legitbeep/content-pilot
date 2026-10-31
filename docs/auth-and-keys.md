@@ -71,7 +71,7 @@ daily job cap), also in `docs/llm.md`. Missing key → "Add an AI provider key i
 Settings → AI providers lists the providers in `$lib/entities/api-key/providers.ts`: **groq**
 (LLM + transcription; one Groq key covers everything), **anthropic** (Claude, LLM), **gemini**
 (LLM), **deepgram** (transcription with speaker labels) and **wispr** (optional voice input).
-Uploading needs a transcription key (later also an LLM key); see "Gating AI actions" in
+Uploading needs an LLM key and a transcription key (one Groq key is both); see "Gating AI actions" in
 `docs/llm.md`. The `key_provider` enum also has `assemblyai`, not offered.
 
 - **Storage format** (one format, both languages): AES-256-GCM, key = base64 `ENCRYPTION_KEY`
@@ -96,7 +96,7 @@ Uploading needs a transcription key (later also an LLM key); see "Gating AI acti
 - **Read for UI**: `user_keys_public` view → provider, last4, validated_at, invalid_at, created_at.
 - **Worker use**: `worker/keys.py` `get_key(user_id, provider)` decrypts; `mark_valid` /
   `mark_invalid` set `validated_at` / `invalid_at` after the first real call.
-- **Upload gate**: the Queue's Upload button is wrapped in `<RequiresAI need="transcription">`
+- **Upload gate**: the Queue's Upload button is wrapped in `<RequiresAI need={['llm', 'transcription']}>`
   (disabled + tooltip + "Add a key in Settings"); the presign/create/retry actions call
   `requireAIKeys` (409 with the missing_key message). `docs/llm.md`.
 
