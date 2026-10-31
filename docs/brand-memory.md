@@ -63,8 +63,7 @@ an LLM + transcription capability, or demo; the server re-checks with `requireAI
   replaces the candidates with `active` rules, sets `onboarding_completed_at` (+
   `profiles.onboarded_at`) and redirects to Home. AI errors show their message inline.
 - Gate: the shell layout sends users without `onboarding_completed_at` to `/onboarding`;
-  onboarding sends completed users to `/`. Dev login sets it for its test user. TEMP:
-  `SKIP_ONBOARDING=true` skips the gate (`docs/env.md`), removed in plan10.
+  onboarding sends completed users to `/`. Dev login sets it for its test user.
 
 ## Brand Memory page (`routes/(authed)/(shell)/brand`)
 Tabs: **Rules** (grouped by scope; filter by scope and source, "Show archived"; per rule

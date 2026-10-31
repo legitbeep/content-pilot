@@ -24,7 +24,6 @@ Set these in the Vercel project (Production and Preview). Meanings: `docs/env.md
 | `DEMO_ALLOWED_EMAILS` | optional; empty disables the demo keys (ADR 0008) |
 | `DEMO_DAILY_JOB_LIMIT` | optional; default 10 |
 | `GEMINI_API_KEY`, `GROQ_API_KEY` | secret; shared demo keys, only needed with `DEMO_ALLOWED_EMAILS` |
-| `SKIP_ONBOARDING` | **temporary**; `true` skips the onboarding gate for testing. Unset it when plan10 removes the bypass |
 
 **Never set `DEV_LOGIN` (or `DEV_LOGIN_EMAIL` / `DEV_LOGIN_PASSWORD`) on Vercel.** Production
 builds ignore it anyway (`dev` is false), but it must not exist there.
