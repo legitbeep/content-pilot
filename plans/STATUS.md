@@ -9,9 +9,9 @@ Parallelism cap: 3 subagents (Opus).
 |---|---|---|---|---|---|
 | prep | 0 | main | - | merged | committed 87c6da8 (check+test pass) |
 | llm | 0 | feat/llm-adapter | .worktrees/llm | merged | d400a60; main check+test pass; worktree removed; awaiting user db push |
-| 4 | 1 | feat/brand | .worktrees/brand | todo | |
-| 6 | 1 | feat/editor | .worktrees/editor | todo | |
-| 8 | 1 | feat/publish | .worktrees/publish | todo | |
+| 4 | 1 | feat/brand | .worktrees/brand | running | port 5173 |
+| 6 | 1 | feat/editor | .worktrees/editor | running | port 5174 |
+| 8 | 1 | feat/publish | .worktrees/publish | running | port 5175 |
 | 5 | 2 | feat/clips | .worktrees/clips | todo | |
 | 7 | 2 | feat/agent | .worktrees/agent | todo | |
 | 9 | 2 | feat/performance | .worktrees/performance | todo | |
@@ -52,3 +52,5 @@ Parallelism cap: 3 subagents (Opus).
 - plan-llm done (4 commits, ec72f2f). Orchestrator re-ran check+test in worktree: pass (web 63, schema 6, worker 76). Migration applied via psycopg (psql not installed). Risks: Groq JSON mode untested, plan 5 must switch upload guard to 'both', deleting jobs frees demo cap. Checkpoint A2 pending.
 - Resumed (new session). llm branch at 737c3e2 has fix round; decision 11 still missing. Status report to user, awaiting OK.
 - llm fix round done (1829d9d). Merged to main d400a60; check pass, tests web 65 / schema 6 / worker 77. DEMO_* vars copied to main .env files. Demo user_id 3af4ed6b-2029-4a50-8c74-1350dcdbd07f. Waiting on user: npx supabase db push --include-all.
+- User ran db push (2 llm migrations applied). Docs sync subagent launched.
+- Docs sync fbb6c06 (architecture.md, queue.md). Wave 1 worktrees created from main; 3 subagents launched.
